@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>VoidCapture — Controller</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+:root{
+  --bg:#0d0d1a;--bg2:#12121f;--bg3:#1a1a2e;--bg4:#0a0a14;
+  --acc:#e94560;--grn:#50c878;--amb:#ffb432;--pur:#b48fff;--sky:#5ba8ff;
+  --txt:#eaeaea;--dim:#8888aa;--bdr:#2a2a4a;
+  --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;--r:6px
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:14px;line-height:1.5}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg2)}::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:3px}
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 20% 50%,#1a0a1e 0%,var(--bg) 65%)}
+.card{width:420px;padding:40px;background:var(--bg2);border:1px solid var(--bdr);border-radius:12px;box-shadow:0 0 60px rgba(233,69,96,.1),0 4px 24px rgba(0,0,0,.5)}
+.logo-line{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--acc);text-transform:uppercase;margin-bottom:8px}
+.login-h1{font-size:26px;font-weight:600;margin-bottom:4px;background:linear-gradient(135deg,#fff 40%,var(--acc));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.login-sub{color:var(--dim);font-size:11px;margin-bottom:28px}
+.field{margin-bottom:16px}
+.flbl{font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--dim);text-transform:uppercase;margin-bottom:6px;display:block}
+.fhint{font-size:10px;color:var(--dim);margin-top:5px;font-style:italic;line-height:1.5}
+input[type=text],input[type=password]{width:100%;background:var(--bg);border:1px solid var(--bdr);border-radius:var(--r);color:var(--txt);padding:11px 14px;font-family:var(--mono);font-size:13px;outline:none;transition:border-color .14s}
+input[type=text].code-in{text-transform:uppercase;font-size:20px;letter-spacing:.22em;text-align:center}
+input[type=password].pin-in{font-size:20px;letter-spacing:.16em;text-align:center}
+input[type=text].url-in{font-size:11px;letter-spacing:0;text-align:left}
+input:focus{border-color:var(--acc)}
+input::placeholder{color:var(--dim);opacity:.35;font-size:12px;letter-spacing:0;text-align:center}
+input[type=number]{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--r);color:var(--txt);padding:7px 10px;font-family:var(--mono);font-size:12px;outline:none}
+input[type=number]:focus{border-color:var(--acc)}
+textarea{width:100%;background:var(--bg4);border:1px solid var(--bdr);border-radius:var(--r);color:var(--txt);padding:12px;font-family:var(--mono);font-size:11px;line-height:1.8;outline:none;resize:vertical;transition:border-color .14s}
+textarea:focus{border-color:var(--acc)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:var(--r);border:1px solid transparent;cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:500;transition:all .14s;white-space:nowrap;user-select:none}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-p{background:var(--acc);color:#fff;border-color:var(--acc);width:100%;padding:13px;font-size:15px;font-weight:600;margin-top:8px}
+.btn-p:not(:disabled):hover{background:#c73850}
+.btn-g{background:transparent;color:var(--dim);border-color:var(--bdr)}
+.btn-g:not(:disabled):hover{border-color:var(--txt);color:var(--txt)}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-xs{padding:3px 9px;font-size:11px}
+.btn-d{background:rgba(233,69,96,.1);color:var(--acc);border-color:rgba(233,69,96,.3)}
+.btn-d:not(:disabled):hover{background:rgba(233,69,96,.22)}
+.btn-s{background:rgba(80,200,120,.1);color:var(--grn);border-color:rgba(80,200,120,.3)}
+.btn-s:not(:disabled):hover{background:rgba(80,200,120,.22)}
+.btn-a{background:rgba(180,143,255,.1);color:var(--pur);border-color:rgba(180,143,255,.3)}
+.btn-a:not(:disabled):hover{background:rgba(180,143,255,.22)}
+.btn-sky{background:rgba(91,168,255,.1);color:var(--sky);border-color:rgba(91,168,255,.3)}
+.btn-sky:not(:disabled):hover{background:rgba(91,168,255,.22)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.err-box{background:rgba(233,69,96,.08);border:1px solid rgba(233,69,96,.3);border-radius:var(--r);color:var(--acc);padding:10px 14px;font-size:12px;margin-top:10px;display:none;line-height:1.5}
+.err-box.on{display:block}
+#app-screen{display:none;height:100vh;flex-direction:column}
+#app-screen.on{display:flex}
+.topbar{display:flex;align-items:center;gap:8px;padding:0 16px;height:52px;min-height:52px;background:var(--bg2);border-bottom:1px solid var(--bdr);flex-shrink:0}
+.t-logo{font-family:var(--mono);font-size:12px;color:var(--acc);font-weight:700}
+.t-role{font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--pur);background:rgba(180,143,255,.08);border:1px solid rgba(180,143,255,.22);padding:2px 8px;border-radius:3px;text-transform:uppercase}
+.now-pill{display:flex;align-items:center;gap:7px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;transition:all .3s}
+.now-pill.live{background:rgba(80,200,120,.1);color:var(--grn);border:1px solid rgba(80,200,120,.3)}
+.now-pill.idle{background:rgba(136,136,170,.07);color:var(--dim);border:1px solid var(--bdr)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--dim);flex-shrink:0;transition:all .3s}
+.dot.on{background:var(--grn);box-shadow:0 0 7px var(--grn)}
+.t-url{font-size:11px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;font-family:var(--mono)}
+.t-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.tbtn{padding:4px 11px;font-size:12px;background:transparent;border:1px solid var(--bdr);color:var(--dim);border-radius:var(--r);cursor:pointer;font-family:var(--sans);transition:all .13s}
+.tbtn:hover{color:var(--txt);border-color:var(--dim)}
+.tbtn.red{border-color:rgba(233,69,96,.35);color:rgba(233,69,96,.7)}
+.tbtn.red:hover{border-color:var(--acc);color:var(--acc);background:rgba(233,69,96,.08)}
+.app-body{display:flex;flex:1;overflow:hidden}
+.sidebar{width:160px;min-width:160px;background:var(--bg2);border-right:1px solid var(--bdr);display:flex;flex-direction:column;padding:10px 0;flex-shrink:0;overflow-y:auto}
+.ni{display:flex;align-items:center;gap:8px;padding:9px 14px;cursor:pointer;font-size:13px;color:var(--dim);border-left:3px solid transparent;transition:all .12s;user-select:none}
+.ni:hover{color:var(--txt);background:rgba(255,255,255,.025)}
+.ni.on{color:var(--txt);border-left-color:var(--acc);background:rgba(233,69,96,.07)}
+.nii{font-size:14px;width:18px;text-align:center}
+.content{flex:1;overflow-y:auto;padding:20px 22px}
+.tab{display:none}.tab.on{display:block}
+.panel{background:var(--bg2);border:1px solid var(--bdr);border-radius:8px;padding:18px;margin-bottom:14px}
+.panel-dark{background:var(--bg4)}
+.phdr{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r);padding:13px}
+.sv{font-family:var(--mono);font-size:20px;font-weight:700;line-height:1.2}
+.sl{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(42,42,74,.4);font-size:12px}
+.info-row:last-child{border:none}
+.info-key{color:var(--dim)}.info-val{font-family:var(--mono);font-size:11px}
+.sl-row{display:grid;grid-template-columns:80px 1fr 52px;align-items:center;gap:12px;margin-bottom:13px}
+.sl-lbl{font-size:12px;color:var(--dim)}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--bdr);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--acc);cursor:pointer}
+.sv-lbl{font-family:var(--mono);font-size:12px;color:var(--txt);text-align:right;min-width:46px}
+.tog-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(42,42,74,.6)}
+.tog-row:last-child{border:none;padding-bottom:0}
+.tog-lbl{font-size:13px;color:var(--txt)}.tog-sub{font-size:10px;color:var(--dim);margin-top:2px}
+.switch{position:relative;width:38px;height:21px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.sw-track{position:absolute;inset:0;background:var(--bdr);border-radius:21px;cursor:pointer;transition:.2s}
+.sw-track::before{content:'';position:absolute;width:15px;height:15px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+.switch input:checked + .sw-track{background:var(--acc)}
+.switch input:checked + .sw-track::before{transform:translateX(17px)}
+.cmd-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:520px){.cmd-grid{grid-template-columns:1fr}}
+.q-list{list-style:none;max-height:340px;overflow-y:auto}
+.q-item{display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid rgba(42,42,74,.5);transition:background .1s}
+.q-item:last-child{border:none}
+.q-item:hover{background:rgba(255,255,255,.02)}
+.q-n{font-family:var(--mono);font-size:10px;color:var(--acc);width:20px;flex-shrink:0;text-align:right}
+.q-u{flex:1;font-family:var(--mono);font-size:11px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.q-rm{cursor:pointer;color:var(--dim);opacity:.4;font-size:16px;padding:0 4px;line-height:1;transition:all .12s;flex-shrink:0}
+.q-rm:hover{color:var(--acc);opacity:1}
+.pl-row{display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid rgba(42,42,74,.5)}
+.pl-row:last-child{border:none}
+.pl-row:hover{background:rgba(255,255,255,.02)}
+.pl-n{font-family:var(--mono);font-size:10px;color:var(--dim);width:24px;flex-shrink:0;text-align:right}
+.pl-u{flex:1;font-family:var(--mono);font-size:11px;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl-u.dir{color:var(--pur)}
+.pl-acts{display:flex;gap:3px;flex-shrink:0}
+.mq-preview{background:rgba(0,0,0,.4);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 14px;font-family:var(--mono);font-size:14px;color:#fff;min-height:42px;margin:10px 0;word-break:break-all}
+.hist-item{padding:7px 0;border-bottom:1px solid rgba(42,42,74,.5);font-size:11px;font-family:var(--mono);display:flex;gap:12px;align-items:baseline}
+.hist-item:last-child{border:none}
+.hist-date{color:var(--acc);flex-shrink:0;font-size:10px}
+.hist-url{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toasts{position:fixed;bottom:18px;right:18px;z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.toast{padding:9px 16px;border-radius:var(--r);font-size:12px;max-width:320px;background:var(--bg3);border:1px solid var(--bdr);color:var(--txt);box-shadow:0 4px 24px rgba(0,0,0,.6);animation:tin .18s ease;transition:opacity .3s;pointer-events:auto}
+.toast.ok{border-left:3px solid var(--grn)}.toast.err{border-left:3px solid var(--acc);color:var(--acc)}.toast.inf{border-left:3px solid var(--sky);color:var(--sky)}
+@keyframes tin{from{transform:translateX(22px);opacity:0}to{transform:none;opacity:1}}
+.lock-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:var(--r);font-size:12px;font-weight:600;margin-bottom:10px}
+.lock-badge.locked{background:rgba(233,69,96,.1);color:var(--acc);border:1px solid rgba(233,69,96,.3)}
+.lock-badge.unlocked{background:rgba(80,200,120,.07);color:var(--grn);border:1px solid rgba(80,200,120,.2)}
+</style>
+</head>
+<body>
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="card">
+    <div class="logo-line">VoidCapture</div>
+    <h1 class="login-h1">Controller</h1>
+    <p class="login-sub">Enter the session details shown in VoidCapture</p>
+
+    <div class="field">
+      <label class="flbl">Tunnel URL</label>
+      <input type="text" id="f-url" class="url-in" placeholder="https://xxxx.trycloudflare.com"
+             autocomplete="off" spellcheck="false">
+      <div class="fhint">From tray → 🎮 Controller Session</div>
+    </div>
+    <div class="field">
+      <label class="flbl">Session Code</label>
+      <input type="text" id="f-code" class="code-in" placeholder="A3K9M2"
+             maxlength="6" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="field">
+      <label class="flbl">PIN</label>
+      <input type="password" id="f-pin" class="pin-in" placeholder="000000"
+             maxlength="6" autocomplete="off" inputmode="numeric">
+    </div>
+    <button class="btn btn-p" id="lbtn" onclick="doLogin()">Connect</button>
+    <div class="err-box" id="lerr"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <div class="topbar">
+    <span class="t-logo">⊙ VC</span>
+    <span class="t-role">🔗 Controller</span>
+    <div class="now-pill idle" id="now-pill">
+      <div class="dot" id="t-dot"></div>
+      <span id="t-stxt">Idle</span>
+    </div>
+    <span class="t-url" id="t-url"></span>
+    <div class="t-right">
+      <button class="tbtn" id="sync-btn" onclick="forceSync()">↻ Sync</button>
+      <button class="tbtn red" onclick="cmd('panic')">⚠ Panic</button>
+      <button class="tbtn" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="app-body">
+    <nav class="sidebar">
+      <div class="ni on" data-tab="dash"     onclick="go('dash')">    <span class="nii">◈</span>Dashboard</div>
+      <div class="ni"    data-tab="controls" onclick="go('controls')"><span class="nii">◎</span>Controls</div>
+      <div class="ni"    data-tab="marquee"  onclick="go('marquee')"> <span class="nii">✦</span>Marquee</div>
+      <div class="ni"    data-tab="schedule" onclick="go('schedule')"><span class="nii">⏱</span>Schedule</div>
+      <div class="ni"    data-tab="playlist" onclick="go('playlist')"><span class="nii">≡</span>Playlist</div>
+      <div class="ni"    data-tab="queue"    onclick="go('queue')">   <span class="nii">▷</span>Queue</div>
+      <div class="ni"    data-tab="stats"    onclick="go('stats')">   <span class="nii">◻</span>Stats</div>
+    </nav>
+
+    <main class="content">
+
+      <!-- Dashboard -->
+      <div class="tab on" id="tab-dash">
+        <div class="sgrid">
+          <div class="stat"><div class="sv" id="s-today">—</div><div class="sl">Today</div></div>
+          <div class="stat"><div class="sv" id="s-total">—</div><div class="sl">All Time</div></div>
+          <div class="stat"><div class="sv" id="s-tvids">—</div><div class="sl">Videos Today</div></div>
+          <div class="stat"><div class="sv" id="s-queue">—</div><div class="sl">In Queue</div></div>
+        </div>
+        <div class="panel">
+          <div class="phdr">Live Settings</div>
+          <div class="info-row"><span class="info-key">Speed</span>      <span class="info-val" id="d-speed">—</span></div>
+          <div class="info-row"><span class="info-key">Volume</span>     <span class="info-val" id="d-vol">—</span></div>
+          <div class="info-row"><span class="info-key">Brightness</span> <span class="info-val" id="d-bri">—</span></div>
+          <div class="info-row"><span class="info-key">Loop</span>       <span class="info-val" id="d-loop">—</span></div>
+          <div class="info-row"><span class="info-key">Min Session</span><span class="info-val" id="d-minsess">—</span></div>
+          <div class="info-row"><span class="info-key">Marquee</span>    <span class="info-val" id="d-marquee">—</span></div>
+        </div>
+        <div class="panel">
+          <div class="phdr">Quick Actions</div>
+          <div class="cmd-grid" style="margin-bottom:10px">
+            <button class="btn btn-g btn-sm" onclick="cmd('skip')">⏭ Skip</button>
+            <button class="btn btn-g btn-sm" onclick="cmd('clearqueue')">✕ Clear Queue</button>
+            <button class="btn btn-g btn-sm" onclick="cmd('softstop')">⏹ Soft Stop</button>
+            <button class="btn btn-d btn-sm" onclick="cmd('panic')">⚠ Panic</button>
+          </div>
+          <div class="row">
+            <span style="font-size:12px;color:var(--dim)">Extend</span>
+            <input type="number" id="ext-d" value="15" min="1" max="480" style="width:58px">
+            <span style="font-size:12px;color:var(--dim)">min</span>
+            <button class="btn btn-sm btn-g" onclick="cmd('extend',+document.getElementById('ext-d').value||15)">Extend</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="phdr">Quick Queue</div>
+          <div class="row">
+            <input type="text" id="add-url-d" placeholder="https://…" style="flex:1;font-family:var(--mono);font-size:11px;padding:8px 12px">
+            <button class="btn btn-sm btn-g" onclick="cmdQueue('add-url-d')">Queue</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="tab" id="tab-controls">
+        <div class="panel">
+          <div class="phdr">Playback — applied immediately</div>
+          <div class="sl-row">
+            <span class="sl-lbl">Volume</span>
+            <input type="range" id="sl-vl" min="0" max="200" value="100" oninput="slShow('vl',this.value)" onchange="cmd('volume',+this.value,true)">
+            <span class="sv-lbl" id="v-vl">100</span>
+          </div>
+          <div class="sl-row">
+            <span class="sl-lbl">Speed</span>
+            <input type="range" id="sl-sp" min="25" max="400" value="100" oninput="slShow('sp',this.value)" onchange="cmd('speed',+(this.value/100).toFixed(2),true)">
+            <span class="sv-lbl" id="v-sp">1.00×</span>
+          </div>
+          <div class="sl-row">
+            <span class="sl-lbl">Brightness</span>
+            <input type="range" id="sl-br" min="50" max="100" value="100" oninput="slShow('br',this.value)" onchange="cmd('brightness',+this.value,true)">
+            <span class="sv-lbl" id="v-br">100%</span>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="phdr">Session Controls</div>
+          <div class="cmd-grid" style="margin-bottom:12px">
+            <button class="btn btn-g btn-sm" onclick="cmd('skip')">⏭ Skip Current</button>
+            <button class="btn btn-g btn-sm" onclick="cmd('clearqueue')">✕ Clear Queue</button>
+            <button class="btn btn-g btn-sm" onclick="cmd('softstop')">⏹ Soft Stop</button>
+            <button class="btn btn-d btn-sm" onclick="cmd('panic')">⚠ Panic / Stop</button>
+          </div>
+          <div class="row" style="margin-bottom:10px">
+            <span style="font-size:12px;color:var(--dim)">Extend by</span>
+            <input type="number" id="ext-c" value="15" min="1" max="480" style="width:58px">
+            <span style="font-size:12px;color:var(--dim)">min</span>
+            <button class="btn btn-sm btn-g" onclick="cmd('extend',+document.getElementById('ext-c').value||15)">Extend</button>
+          </div>
+          <div class="row">
+            <span style="font-size:12px;color:var(--dim)">Max time</span>
+            <input type="number" id="maxt-c" value="60" min="0" max="480" style="width:58px">
+            <span style="font-size:12px;color:var(--dim)">min (0=off)</span>
+            <button class="btn btn-sm btn-g" onclick="cmd('maxtime',+document.getElementById('maxt-c').value)">Set</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="phdr">Lock / Unlock Panic</div>
+          <div id="lock-badge" class="lock-badge unlocked">🔓 Panic hotkey active</div>
+          <div class="cmd-grid">
+            <button class="btn btn-sm btn-d" onclick="cmd('lock')">🔒 Lock (disable panic)</button>
+            <button class="btn btn-sm btn-s" onclick="cmd('unlock')">🔓 Unlock</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="phdr">Session Options</div>
+          <div class="tog-row">
+            <div><div class="tog-lbl">Loop</div><div class="tog-sub">Re-queue when playlist ends</div></div>
+            <label class="switch"><input type="checkbox" id="tog-loop" onchange="cmd('loop',this.checked)"><span class="sw-track"></span></label>
+          </div>
+          <div class="tog-row">
+            <div><div class="tog-lbl">Show Cursor</div><div class="tog-sub">Keep cursor visible during playback</div></div>
+            <label class="switch"><input type="checkbox" id="tog-cur" onchange="cmd('cursorshow',this.checked)"><span class="sw-track"></span></label>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="phdr">Advanced</div>
+          <div class="row" style="margin-bottom:10px">
+            <span style="font-size:12px;color:var(--dim)">Min session lock</span>
+            <input type="number" id="minsess-c" value="0" min="0" max="3600" style="width:70px">
+            <span style="font-size:12px;color:var(--dim)">sec</span>
+            <button class="btn btn-sm btn-g" onclick="cmd('minsession',+document.getElementById('minsess-c').value)">Set</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Marquee -->
+      <div class="tab" id="tab-marquee">
+        <div class="panel">
+          <div class="phdr">Marquee Text</div>
+          <div class="mq-preview" id="mq-preview">No marquee active</div>
+          <textarea id="mq-text" rows="3" placeholder="Text to display on screen…" style="margin-bottom:8px"></textarea>
+          <div class="row">
+            <button class="btn btn-sm btn-a" onclick="cmdMarqueeSet()">Send to Screen</button>
+            <button class="btn btn-sm btn-d" onclick="cmd('marqueeoff')">✕ Off</button>
+            <button class="btn btn-sm btn-g" onclick="cmd('marqueetop')">↑ Top</button>
+            <button class="btn btn-sm btn-g" onclick="cmd('marqueebottom')">↓ Bottom</button>
+          </div>
+        </div>
+        <div class="panel panel-dark">
+          <div class="phdr">Quick Phrases</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px" id="quick-phrases"></div>
+        </div>
+      </div>
+
+      <!-- Schedule -->
+      <div class="tab" id="tab-schedule">
+        <div class="panel">
+          <div class="phdr">Trigger Now</div>
+          <div class="cmd-grid" style="margin-bottom:10px">
+            <button class="btn btn-sky btn-sm" onclick="cmd('autostartnow')">▶ Start Session Now</button>
+            <button class="btn btn-g btn-sm"   onclick="cmd('cancelschedule')">✕ Cancel Schedule</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="phdr">Schedule at Time</div>
+          <div class="row" style="margin-bottom:10px">
+            <span style="font-size:12px;color:var(--dim)">Start at</span>
+            <input type="text" id="sched-t" placeholder="14:30" maxlength="5" style="width:80px;font-size:14px;font-family:var(--mono);text-align:center;padding:8px">
+            <button class="btn btn-sm btn-sky" onclick="cmdSchedule()">Set</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="phdr">Idle Auto-Start</div>
+          <div class="row">
+            <span style="font-size:12px;color:var(--dim)">Start after</span>
+            <input type="number" id="idle-m" value="30" min="1" max="480" style="width:70px">
+            <span style="font-size:12px;color:var(--dim)">min idle</span>
+            <button class="btn btn-sm btn-sky" onclick="cmd('idlestart',+document.getElementById('idle-m').value||30)">Set</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="phdr">Delay Start</div>
+          <div class="row">
+            <span style="font-size:12px;color:var(--dim)">Delay by</span>
+            <input type="number" id="delay-m" value="10" min="1" max="240" style="width:70px">
+            <span style="font-size:12px;color:var(--dim)">min</span>
+            <button class="btn btn-sm btn-g" onclick="cmd('delay',+document.getElementById('delay-m').value||10)">Set</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Playlist -->
+      <div class="tab" id="tab-playlist">
+        <div class="panel">
+          <div class="phdr">Playlist <span style="font-family:var(--mono);font-size:9px;color:var(--dim)" id="pl-count"></span></div>
+          <div style="font-size:11px;color:var(--dim);margin-bottom:12px;line-height:1.6">
+            Stored in the app — no files on GitHub. Changes take effect immediately.
+          </div>
+          <div id="pl-list" style="max-height:360px;overflow-y:auto;margin-bottom:12px">
+            <div style="color:var(--dim);font-size:11px">Loading…</div>
+          </div>
+          <div class="row" style="margin-bottom:8px">
+            <input type="text" id="pl-add" placeholder="https://… or #DIRECTIVE" style="flex:1;font-family:var(--mono);font-size:11px;padding:8px 12px">
+            <button class="btn btn-sm btn-s"   onclick="plAppend()">+ Append</button>
+            <button class="btn btn-sm btn-sky" onclick="plPrepend()">+ Prepend</button>
+          </div>
+          <div class="row">
+            <button class="btn btn-sm btn-g"  onclick="loadPlaylist()">↻ Reload</button>
+            <button class="btn btn-sm btn-d"  onclick="plClear()">✕ Clear All</button>
+            <span id="pl-st" style="font-size:11px;margin-left:4px"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Queue -->
+      <div class="tab" id="tab-queue">
+        <div class="panel">
+          <div class="phdr">Now Playing</div>
+          <div id="q-now" style="font-family:var(--mono);font-size:11px;color:var(--dim);word-break:break-all;min-height:18px">—</div>
+        </div>
+        <div class="panel">
+          <div class="phdr">Up Next <span id="q-count" style="font-family:var(--mono);font-size:10px;color:var(--dim);font-weight:400"></span></div>
+          <ul class="q-list" id="q-list"><li class="q-item"><span class="q-u" style="color:var(--dim)">Queue is empty</span></li></ul>
+          <div class="row" style="margin-top:12px">
+            <button class="btn btn-sm btn-g" onclick="cmd('skip')">⏭ Skip</button>
+            <button class="btn btn-sm btn-d" onclick="cmd('clearqueue')">✕ Clear</button>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="phdr">Queue URL</div>
+          <div class="row">
+            <input type="text" id="add-url-q" placeholder="https://…" style="flex:1;font-family:var(--mono);font-size:11px;padding:8px 12px">
+            <button class="btn btn-sm btn-g" onclick="cmdQueue('add-url-q')">Queue</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="tab" id="tab-stats">
+        <div class="sgrid">
+          <div class="stat"><div class="sv" id="st-today">—</div><div class="sl">Today</div></div>
+          <div class="stat"><div class="sv" id="st-total">—</div><div class="sl">All Time</div></div>
+          <div class="stat"><div class="sv" id="st-tvids">—</div><div class="sl">Videos</div></div>
+          <div class="stat"><div class="sv" id="st-panics">—</div><div class="sl">Panics</div></div>
+        </div>
+        <div class="panel">
+          <div class="phdr">Recent History</div>
+          <div id="hist-list" style="max-height:420px;overflow-y:auto">
+            <div style="font-size:11px;color:var(--dim)">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+// ── State ────────────────────────────────────────────────────────────────────
+var S = { tunnelUrl:null, token:null };
+var _refreshTimer = null;
+var _lastStatus   = null;
+
+// ── API helpers ──────────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  var opts = {
+    method:  method,
+    headers: { 'Content-Type':'application/json' },
+  };
+  if (S.token) opts.headers['Authorization'] = 'Bearer ' + S.token;
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  var r = await fetch(S.tunnelUrl + path, opts);
+  if (!r.ok) {
+    var e = await r.json().catch(function(){return{error:'HTTP '+r.status};});
+    throw new Error(e.error || e.message || 'HTTP '+r.status);
+  }
+  return r.json();
+}
+
+// ── Login ────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  var urlRaw = document.getElementById('f-url').value.trim().replace(/\/+$/, '');
+  var code   = document.getElementById('f-code').value.trim().toUpperCase();
+  var pin    = document.getElementById('f-pin').value.trim();
+  var btn    = document.getElementById('lbtn');
+  var errEl  = document.getElementById('lerr');
+  errEl.classList.remove('on');
+
+  function fail(m){ errEl.textContent=m; errEl.classList.add('on'); btn.disabled=false; btn.innerHTML='Connect'; }
+
+  if (!urlRaw.startsWith('https://')) { fail('Tunnel URL must start with https://'); return; }
+  if (code.length !== 6) { fail('Session code must be 6 characters.'); return; }
+  if (!/^\d{6}$/.test(pin)) { fail('PIN must be 6 digits.'); return; }
+
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Connecting…';
+
+  S.tunnelUrl = urlRaw;
+  try {
+    var res = await api('POST', '/auth', { code, pin });
+    if (!res.ok) { fail(res.error || 'Authentication failed'); return; }
+    S.token = res.token;
+
+    // Load initial status
+    var st = await api('GET', '/status');
+    applyStatus(st);
+    await loadPlaylist();
+    syncControls(st.pendingOptions || {}, st.playlistSettings);
+    renderHistory(st.recentHistory || []);
+
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-screen').classList.add('on');
+    startRefresh();
+    toast('Connected', 'ok');
+  } catch(e) {
+    fail('Connection failed: ' + e.message + '\n\nCheck the tunnel URL is correct and VoidCapture is running.');
+  }
+}
+
+function doLogout() {
+  clearInterval(_refreshTimer); _refreshTimer = null;
+  S.tunnelUrl = S.token = null; _lastStatus = null;
+  document.getElementById('app-screen').classList.remove('on');
+  document.getElementById('login-screen').style.display = '';
+  document.getElementById('f-pin').value = '';
+}
+
+// ── Navigation ───────────────────────────────────────────────────────────────
+function go(name) {
+  document.querySelectorAll('.ni').forEach(function(n){ n.classList.toggle('on', n.dataset.tab===name); });
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('on', t.id==='tab-'+name); });
+  if (name==='playlist') loadPlaylist();
+  if (name==='stats')    renderHistory(_lastStatus&&_lastStatus.recentHistory||[]);
+}
+
+// ── Refresh ──────────────────────────────────────────────────────────────────
+function startRefresh() {
+  clearInterval(_refreshTimer);
+  _refreshTimer = setInterval(doRefresh, 3000); // 3s — direct to app, instant
+}
+
+async function doRefresh() {
+  try {
+    var st = await api('GET', '/status');
+    _lastStatus = st;
+    applyStatus(st);
+    syncControls(st.pendingOptions || {}, st.playlistSettings);
+  } catch(_) {}
+}
+
+async function forceSync() {
+  var btn = document.getElementById('sync-btn');
+  btn.textContent = '…'; btn.disabled = true;
+  try { await doRefresh(); } catch(_){}
+  btn.textContent = '↻ Sync'; btn.disabled = false;
+  toast('Synced', 'inf');
+}
+
+function applyStatus(d) {
+  if (!d) return;
+  _lastStatus = d;
+  var live = !!d.playing;
+  var pill = document.getElementById('now-pill');
+  pill.className = 'now-pill ' + (live ? 'live' : 'idle');
+  document.getElementById('t-dot').className = 'dot' + (live ? ' on' : '');
+  document.getElementById('t-stxt').textContent = live ? 'Playing' : 'Idle';
+  document.getElementById('t-url').textContent = live && d.currentUrl ? trunc(d.currentUrl, 50) : '';
+  sv('s-today', d.todayTime||'—'); sv('s-total', d.totalTime||'—');
+  sv('s-tvids', d.todayVideos!==undefined?d.todayVideos:'—');
+  sv('s-queue', d.queueLength!==undefined?d.queueLength:'—');
+  sv('st-today',d.todayTime||'—'); sv('st-total',d.totalTime||'—');
+  sv('st-tvids',d.todayVideos!==undefined?d.todayVideos:'—');
+  sv('st-panics',d.todayPanics!==undefined?d.todayPanics:'—');
+  sv('q-now', d.currentUrl||'—');
+  sv('q-count', d.queueLength ? '('+d.queueLength+' items)' : '(empty)');
+  var opts = d.pendingOptions || {};
+  sv('d-speed',   opts.speed !== undefined ? opts.speed+'×' : '—');
+  sv('d-vol',     opts.volume !== undefined ? opts.volume : '—');
+  sv('d-bri',     opts.brightness !== undefined ? opts.brightness+'%' : '—');
+  sv('d-loop',    opts.loop !== undefined ? (opts.loop?'On':'Off') : '—');
+  sv('d-minsess', opts.minSession ? opts.minSession+'s' : 'Off');
+  sv('d-marquee', opts.marqueeText && opts.marqueeText.trim() ? trunc(opts.marqueeText,40) : 'Off');
+  renderQueue(d.queueItems || []);
+  renderHistory(d.recentHistory || []);
+}
+
+function syncControls(opts, plSettings) {
+  slSync('sl-vl','v-vl', opts.volume!==undefined?opts.volume:100, function(v){return v;});
+  slSync('sl-sp','v-sp', opts.speed!==undefined?Math.round(opts.speed*100):100, function(v){return (v/100).toFixed(2)+'×';});
+  slSync('sl-br','v-br', opts.brightness!==undefined?opts.brightness:100, function(v){return v+'%';});
+  togSync('tog-loop', opts.loop);
+  togSync('tog-cur',  opts.cursorShow);
+  if (opts.marqueeText !== undefined) {
+    var mq = document.getElementById('mq-preview');
+    mq.textContent = opts.marqueeText && opts.marqueeText.trim() ? opts.marqueeText : 'No marquee active';
+    mq.style.color = opts.marqueeText && opts.marqueeText.trim() ? '#fff' : 'var(--dim)';
+  }
+  if (plSettings) {
+    togSync('tog-shuf',  plSettings.shuffle);
+    togSync('tog-norep', plSettings.noRepeat);
+    numSync('maxvids-c',  plSettings.maxVideos||0);
+    numSync('startfrom-c',plSettings.startFrom||0);
+  }
+}
+function numSync(id, val) { var e=document.getElementById(id); if(e&&!e.matches(':focus')) e.value=val; }
+
+// ── Commands — instant POST to app ──────────────────────────────────────────
+async function cmd(name, value, silent) {
+  try {
+    var body = { cmd: name };
+    if (value !== undefined) body.value = value;
+    await api('POST', '/command', body);
+    if (!silent) toast('✓ '+name, 'ok');
+    setTimeout(doRefresh, 200);
+  } catch(e) {
+    toast(e.message, 'err');
+  }
+}
+
+function cmdQueue(inputId) {
+  var inp = document.getElementById(inputId);
+  var u = inp.value.trim();
+  if (!u || !u.startsWith('http')) { toast('Enter a valid URL','err'); return; }
+  cmd('appendurl', u); inp.value='';
+}
+function cmdPlayNow() {
+  if (!confirm('Clear the current queue and start playing the playlist now?')) return;
+  cmd('playnow');
+}
+
+function cmdMarqueeSet() {
+  var t = document.getElementById('mq-text').value.trim();
+  if (!t) { toast('Enter text first','err'); return; }
+  var mq = document.getElementById('mq-preview');
+  mq.textContent = t; mq.style.color = '#fff';
+  cmd('marquee', t);
+}
+
+function cmdSchedule() {
+  var t = document.getElementById('sched-t').value.trim();
+  if (!/^\d{2}:\d{2}$/.test(t)) { toast('Use HH:MM format','err'); return; }
+  cmd('schedule', t);
+}
+
+// ── Playlist — direct API ────────────────────────────────────────────────────
+async function loadPlaylist() {
+  plSt('Loading…', false);
+  try {
+    var res = await api('GET', '/playlist');
+    renderPlaylist(res.entries || []);
+    if (res.shuffle!==undefined)   togSync('tog-shuf',   res.shuffle);
+    if (res.noRepeat!==undefined)  togSync('tog-norep',  res.noRepeat);
+    if (res.maxVideos!==undefined) numSync('maxvids-c',  res.maxVideos||0);
+    if (res.startFrom!==undefined) numSync('startfrom-c',res.startFrom||0);
+    plSt('', false);
+  } catch(e) { plSt('Failed: '+e.message, true); }
+}
+
+function renderPlaylist(entries) {
+  sv('pl-count', entries.length+' items');
+  var list = document.getElementById('pl-list');
+  if (!entries.length) { list.innerHTML='<div style="color:var(--dim);font-size:11px">Playlist is empty</div>'; return; }
+  list.innerHTML = entries.map(function(e,i){
+    var isDir = e.startsWith('#');
+    return '<div class="pl-row">' +
+      '<span class="pl-n">'+(i+1)+'</span>' +
+      '<span class="pl-u'+(isDir?' dir':'')+'">'+esc(trunc(e,80))+'</span>' +
+      '<span class="pl-acts">' +
+        '<button class="btn btn-xs btn-g" onclick="plMove('+i+',-1)" title="Move up">↑</button>' +
+        '<button class="btn btn-xs btn-g" onclick="plMove('+i+',1)"  title="Move down">↓</button>' +
+        '<button class="btn btn-xs btn-d" onclick="plRemove('+i+')"  title="Remove">✕</button>' +
+      '</span>' +
+    '</div>';
+  }).join('');
+}
+
+async function plOp(action, opts) {
+  try {
+    await api('POST', '/playlist', Object.assign({action:action}, opts||{}));
+    await loadPlaylist();
+    toast('✓ '+action, 'ok');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+function plAppend()  { var u=document.getElementById('pl-add').value.trim(); if(!u){toast('Enter a URL or directive','err');return;} plOp('append',{entry:u}); document.getElementById('pl-add').value=''; }
+function plPrepend() { var u=document.getElementById('pl-add').value.trim(); if(!u){toast('Enter a URL or directive','err');return;} plOp('prepend',{entry:u}); document.getElementById('pl-add').value=''; }
+function plRemove(i) { if(confirm('Remove item '+(i+1)+'?')) plOp('remove',{index:i}); }
+function plMove(i,d) { plOp(d<0?'moveup':'movedown',{index:i}); }
+function plClear()   { if(confirm('Clear the entire playlist?')) plOp('clear'); }
+function plSt(m,e)   { var el=document.getElementById('pl-st'); el.textContent=m; el.style.color=e?'var(--acc)':'var(--grn)'; }
+
+// ── Queue ────────────────────────────────────────────────────────────────────
+function renderQueue(items) {
+  var list = document.getElementById('q-list');
+  if (!items.length) { list.innerHTML='<li class="q-item"><span class="q-u" style="color:var(--dim)">Queue is empty</span></li>'; return; }
+  list.innerHTML = items.slice(0,50).map(function(u,i){
+    return '<li class="q-item"><span class="q-n">'+(i+1)+'</span>' +
+      '<span class="q-u" title="'+esc(u)+'">'+esc(trunc(u,70))+'</span>' +
+      '<span class="q-rm" onclick="cmd(\'removequeue\','+i+')" title="Remove">×</span></li>';
+  }).join('');
+}
+
+// ── History ──────────────────────────────────────────────────────────────────
+function renderHistory(hist) {
+  var el = document.getElementById('hist-list');
+  if (!hist||!hist.length) { el.innerHTML='<div style="font-size:11px;color:var(--dim)">No history yet.</div>'; return; }
+  el.innerHTML = hist.slice(0,100).map(function(h){
+    return '<div class="hist-item"><span class="hist-date">'+new Date(h.lastWatched).toLocaleDateString()+'</span>' +
+           '<span class="hist-url" title="'+esc(h.url)+'">'+esc(trunc(h.url,80))+'</span></div>';
+  }).join('');
+}
+
+// ── Marquee quick phrases ────────────────────────────────────────────────────
+(function(){
+  var phrases = ['Good girl','Keep watching','Relax and enjoy','You have no choice','Submit','Let go'];
+  var c = document.getElementById('quick-phrases');
+  c.innerHTML = phrases.map(function(p){
+    return '<button class="btn btn-xs btn-a" onclick="setMqQuick(\''+esc(p)+'\')">'+esc(p)+'</button>';
+  }).join('');
+})();
+
+function setMqQuick(t){ document.getElementById('mq-text').value=t; cmdMarqueeSet(); }
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function slShow(n,v){ v=parseInt(v); var el=document.getElementById('v-'+n);
+  if(n==='sp') el.textContent=(v/100).toFixed(2)+'×'; else if(n==='vl') el.textContent=v; else el.textContent=v+'%'; }
+function slSync(si,vi,val,fmt){ var s=document.getElementById(si),v=document.getElementById(vi); if(!s||!v||s.matches(':active'))return; s.value=val; v.textContent=fmt(val); }
+function togSync(id,val){ var e=document.getElementById(id); if(e&&!e.matches(':focus')&&val!==undefined) e.checked=!!val; }
+function sv(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; }
+function trunc(s,n){ return s&&s.length>n?s.slice(0,n)+'…':s; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;'); }
+function toast(msg,type){ var c=document.getElementById('toasts'),el=document.createElement('div');
+  el.className='toast '+(type||'ok'); el.textContent=msg; c.appendChild(el);
+  setTimeout(function(){ el.style.opacity='0'; setTimeout(function(){el.remove();},320); },3000); }
+
+// ── URL fragment auto-fill: #C=CODE&P=PIN&T=TUNNELURL ────────────────────────
+(function(){
+  try {
+    var hash = window.location.hash.slice(1); if (!hash) return;
+    var p = {};
+    hash.split('&').forEach(function(x){ var kv=x.split('='); if(kv.length===2) p[decodeURIComponent(kv[0])]=decodeURIComponent(kv[1]); });
+    if (p.T) document.getElementById('f-url').value  = p.T;
+    if (p.C) document.getElementById('f-code').value = p.C.toUpperCase();
+    if (p.P) document.getElementById('f-pin').value  = p.P;
+    history.replaceState(null,'',window.location.pathname);
+    if (p.T && p.C && p.P) setTimeout(doLogin, 120);
+  } catch(_) {}
+})();
+
+document.getElementById('f-url') .addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('f-code').focus();});
+document.getElementById('f-code').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('f-pin').focus();});
+document.getElementById('f-pin') .addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+</script>
+</body>
+</html>
