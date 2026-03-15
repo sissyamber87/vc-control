@@ -262,7 +262,7 @@ function cmdMq(){var t=E('mq-t').value.trim();if(!t){toast('Enter text','err');r
 function cmdSch(){var t=E('sch-t').value.trim();if(!/^\d{2}:\d{2}$/.test(t)){toast('Use HH:MM','err');return}cmd('schedule',t)}
 
 // Disconnect on logout + browser close
-function disconnect(){if(S.t&&S.u)try{navigator.sendBeacon(S.u+'/disconnect',JSON.stringify({token:S.t}))}catch(e){}}
+function disconnect(){if(!S.t||!S.u)return;var body=JSON.stringify({token:S.t});try{var blob=new Blob([body],{type:'text/plain'});navigator.sendBeacon(S.u+'/disconnect',blob)}catch(e){try{fetch(S.u+'/disconnect',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+S.t},body:body,keepalive:true}).catch(function(){})}catch(e2){}}}
 async function doLogin(){var url=E('f-url').value.trim().replace(/\/+$/,''),code=E('f-code').value.trim().toUpperCase(),pin=E('f-pin').value.trim(),btn=E('lbtn'),err=E('lerr');err.classList.remove('on');
 function fail(m){err.textContent=m;err.classList.add('on');btn.disabled=false;btn.innerHTML='Connect'}
 if(!url.startsWith('https://')){fail('URL must start with https://');return}if(code.length!==6){fail('Code must be 6 characters');return}if(!/^\d{6}$/.test(pin)){fail('PIN must be 6 digits');return}
@@ -279,7 +279,7 @@ function updateTzDisplay(){var tz=_userTz||'Unknown';E('tz-disp').textContent=tz
 
 function go(n){document.querySelectorAll('.ni').forEach(function(i){i.classList.toggle('on',i.dataset.t===n)});document.querySelectorAll('.bn').forEach(function(i){i.classList.toggle('on',i.dataset.t===n)});document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.id==='tab-'+n)});if(n==='list')loadPl()}
 function startPoll(){clearInterval(_rt);_rt=setInterval(poll,2500)}
-async function poll(){try{var st=await api('GET','/status');_ls=st;apply(st);sync(st.pendingOptions||{},st.playlistSettings);renderHist(st.recentHistory||[]);renderQ(st.queueItems||[])}catch(e){}}
+async function poll(){try{var st=await api('GET','/status');_ls=st;apply(st);sync(st.pendingOptions||{},st.playlistSettings);renderHist(st.recentHistory||[]);renderQ(st.queueItems||[])}catch(e){if(e.message&&(e.message.includes('401')||e.message.includes('expired'))){clearInterval(_rt);_rt=null;S.u=S.t=null;_ls=null;E('app').classList.remove('on');E('login').style.display='';toast('Session ended \u2014 disconnected by app or another controller','err')}}}
 async function forceSync(){var b=E('sync-btn');b.innerHTML='<span class="spin"></span>';b.disabled=true;try{await poll()}catch(e){}b.innerHTML='\u21bb';b.disabled=false;toast('Synced','inf')}
 
 function apply(d){if(!d)return;var l=!!d.playing;E('pill').className='tpill '+(l?'live':'idle');E('dot').className='tdot '+(l?'on':'off');E('stxt').textContent=l?'Playing':'Idle';E('live-b').style.display=l?'':'none';
