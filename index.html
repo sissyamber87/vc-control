@@ -705,10 +705,17 @@ function doLogout() {
 }
 
 // ── Navigation ───────────────────────────────────────────────────────────────
+// ── Performance: Debounced playlist load ─────────────────────────────────────
+var _plDebounce = null;
+function debouncedLoadPlaylist() {
+  if (_plDebounce) clearTimeout(_plDebounce);
+  _plDebounce = setTimeout(function() { _plDebounce = null; loadPlaylist(); }, 300);
+}
+
 function go(name) {
   document.querySelectorAll('.ni').forEach(function(n) { n.classList.toggle('on', n.dataset.tab === name); });
   document.querySelectorAll('.tab').forEach(function(t) { t.classList.toggle('on', t.id === 'tab-' + name); });
-  if (name === 'playlist') loadPlaylist();
+  if (name === 'playlist') debouncedLoadPlaylist();
   if (name === 'stats')    renderHistory(_lastStatus && _lastStatus.recentHistory || []);
   if (name === 'queue')    renderQueue(_lastStatus && _lastStatus.queueItems || []);
 }
@@ -887,7 +894,8 @@ function toast(msg,type) {
   setTimeout(function(){el.style.opacity='0';setTimeout(function(){el.remove();},300);},3000);
 }
 
-// ── URL fragment: #C=CODE&P=PIN&T=TUNNELURL ──────────────────────────────────
+// ── URL fragment: #C=CODE&T=TUNNELURL ──────────────────────────────────
+// SEC-004 FIX: PIN removed from URL — must be entered manually
 (function() {
   try {
     var hash=window.location.hash.slice(1); if(!hash) return;
@@ -895,9 +903,8 @@ function toast(msg,type) {
     hash.split('&').forEach(function(x){var kv=x.split('=');if(kv.length===2)p[decodeURIComponent(kv[0])]=decodeURIComponent(kv[1]);});
     if(p.T) document.getElementById('f-url').value  = p.T;
     if(p.C) document.getElementById('f-code').value = p.C.toUpperCase();
-    if(p.P) document.getElementById('f-pin').value  = p.P;
+    // PIN intentionally NOT in URL — must be shared separately for security
     history.replaceState(null,'',window.location.pathname);
-    if(p.T&&p.C&&p.P) setTimeout(doLogin,120);
   } catch(_){}
 })();
 
