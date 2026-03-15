@@ -177,13 +177,11 @@ textarea{width:100%;background:var(--input);border:1px solid var(--bdr);border-r
 <div class="prog-time"><span id="prog-cur">0:00</span><span id="prog-len">0:00</span></div>
 <div class="ir"><span class="ik">Speed</span><span class="iv" id="d-sp">—</span></div>
 <div class="ir"><span class="ik">Volume</span><span class="iv" id="d-vl">—</span></div>
-<div class="ir"><span class="ik">Brightness</span><span class="iv" id="d-br">—</span></div>
 <div class="ir"><span class="ik">Loop</span><span class="iv" id="d-lp">—</span></div>
 <div class="ir"><span class="ik">Marquee</span><span class="iv" id="d-mq">Off</span></div>
 <div id="countdown-wrap" style="display:none"><div class="ir"><span class="ik">Session Timer</span><span class="countdown" id="countdown">—</span></div></div>
 </div>
-<div class="c"><div class="ch">Quick Actions</div><div class="ag"><button class="b bg bsm" onclick="cmd('skip')">⏭ Skip</button><button class="b bg bsm" onclick="cmd('softstop')">⏹ Soft Stop</button><button class="b bg bsm" onclick="cmd('clearqueue')">✕ Clear Queue</button><button class="b bd bsm" onclick="cmd('panic')">⚠ Panic</button></div>
-<div class="rw"><input type="text" id="url-d" placeholder="https://… add to queue" style="flex:1"><button class="b bg bsm" onclick="qAdd('url-d')">+ Queue</button></div></div>
+
 <div class="c"><div class="ch">Session Stats</div><div class="sg" style="margin-bottom:0"><div class="sc p"><div class="sv" id="st-td">—</div><div class="sl">Today</div></div><div class="sc bl"><div class="sv" id="st-tt">—</div><div class="sl">All Time</div></div><div class="sc g"><div class="sv" id="st-tv">—</div><div class="sl">Videos</div></div><div class="sc r"><div class="sv" id="st-tp">—</div><div class="sl">Panics</div></div></div></div>
 <div class="c"><div class="ch">Watch History</div><div id="hist" style="max-height:40vh;overflow-y:auto"><div style="color:var(--dim);font-size:12px">Loading…</div></div></div>
 </div>
@@ -192,13 +190,14 @@ textarea{width:100%;background:var(--input);border:1px solid var(--bdr);border-r
 <div class="tab" id="tab-ctrl">
 <div class="c"><div class="ch">Live Sliders <span class="badge badge-g">INSTANT</span></div>
 <div class="sr"><span style="color:var(--dim)">Volume</span><input type="range" id="sl-vl" min="0" max="200" value="100" oninput="slS('vl',this.value)" onchange="cmd('volume',+this.value,1)"><span class="iv" style="color:var(--iris)" id="v-vl">100</span></div>
-<div class="sr"><span style="color:var(--dim)">Speed</span><input type="range" id="sl-sp" min="25" max="400" value="100" oninput="slS('sp',this.value)" onchange="cmd('speed',+(this.value/100).toFixed(2),1)"><span class="iv" style="color:var(--iris)" id="v-sp">1.00×</span></div>
-<div class="sr"><span style="color:var(--dim)">Bright</span><input type="range" id="sl-br" min="50" max="100" value="100" oninput="slS('br',this.value)" onchange="cmd('brightness',+this.value,1)"><span class="iv" style="color:var(--iris)" id="v-br">100%</span></div></div>
+<div class="sr"><span style="color:var(--dim)">Speed</span><input type="range" id="sl-sp" min="25" max="150" value="100" oninput="slS('sp',this.value)" onchange="cmd('speed',+(this.value/100).toFixed(2),1)"><span class="iv" style="color:var(--iris)" id="v-sp">1.00×</span></div>
+</div>
 <div class="c"><div class="ch">Playback</div>
 <div class="sec"><div class="ag"><button class="b bg bsm" onclick="cmd('skip')">⏭ Skip</button><button class="b bg bsm" onclick="cmd('softstop')">⏹ Soft Stop</button><button class="b bg bsm" onclick="cmd('clearqueue')">✕ Clear Queue</button><button class="b bd bsm" onclick="cmd('panic')">⚠ Panic</button></div>
 <div class="nr"><span class="nf"><strong>Extend Session</strong>Add minutes</span><input type="number" id="ext-v" value="15" min="0"><span class="dim" style="font-size:11px">min</span><button class="b bg bsm" onclick="cmd('extend',+E('ext-v').value)">Add</button></div>
 <div class="nr"><span class="nf"><strong>Max Time</strong>0 = no limit</span><input type="number" id="maxt-v" value="60" min="0"><span class="dim" style="font-size:11px">min</span><button class="b bg bsm" onclick="cmd('maxtime',+E('maxt-v').value)">Set</button></div></div>
 <div class="sec"><div class="sec-h">Lock / Unlock</div><div id="lock-b" style="margin-bottom:8px;font-size:13px;color:var(--grn)">🔓 Panic hotkey active</div><div class="rw"><button class="b bd bsm" onclick="cmdLock(1)">🔒 Lock</button><button class="b bs bsm" onclick="cmdLock(0)">🔓 Unlock</button></div></div>
+<div class="sec"><div class="sec-h">Reset</div><button class="b ba" style="width:100%" onclick="if(confirm('Reset ALL settings to defaults?\nVolume, speed, loop, shuffle, marquee, lock — everything.'))cmd('reset')">⟳ Reset All Settings to Defaults</button></div>
 <div class="sec"><div class="sec-h">Play From Playlist</div><button class="b bs" style="width:100%" onclick="cmdPlayNow()">▶ Start Playing Playlist Now</button></div></div>
 <div class="c"><div class="ch">Session Options</div>
 <div class="sec"><div class="sec-h">Behaviour</div>
@@ -293,9 +292,9 @@ if(l&&d.sessionStartedAt&&d.sessionMaxMins>0){cw.style.display='';var elapsed=(D
 sv('s-today',d.todayTime||'\u2014');sv('s-total',d.totalTime||'\u2014');sv('s-vids',d.todayVideos!==undefined?d.todayVideos:'\u2014');sv('s-queue',d.queueLength!==undefined?d.queueLength:'\u2014');
 sv('st-td',d.todayTime||'\u2014');sv('st-tt',d.totalTime||'\u2014');sv('st-tv',d.todayVideos!==undefined?d.todayVideos:'\u2014');sv('st-tp',d.todayPanics!==undefined?d.todayPanics:'\u2014');
 sv('q-now',d.currentUrl||'\u2014');sv('q-ct',d.queueLength?'('+d.queueLength+')':'(empty)');
-var o=d.pendingOptions||{};sv('d-sp',o.speed!==undefined?o.speed+'\u00d7':'\u2014');sv('d-vl',o.volume!==undefined?o.volume:'\u2014');sv('d-br',o.brightness!==undefined?o.brightness+'%':'\u2014');sv('d-lp',o.loop!==undefined?(o.loop?'On':'Off'):'\u2014');var mq=o.marqueeText&&o.marqueeText.trim();sv('d-mq',mq?trunc(mq,25):'Off')}
+var o=d.pendingOptions||{};sv('d-sp',o.speed!==undefined?o.speed+'\u00d7':'\u2014');sv('d-vl',o.volume!==undefined?o.volume:'\u2014');sv('d-lp',o.loop!==undefined?(o.loop?'On':'Off'):'\u2014');var mq=o.marqueeText&&o.marqueeText.trim();sv('d-mq',mq?trunc(mq,25):'Off')}
 
-function sync(o,ps){if(!o)return;slY('sl-vl','v-vl',o.volume!==undefined?o.volume:100,function(v){return v});slY('sl-sp','v-sp',o.speed!==undefined?Math.round(o.speed*100):100,function(v){return(v/100).toFixed(2)+'\u00d7'});slY('sl-br','v-br',o.brightness!==undefined?o.brightness:100,function(v){return v+'%'});
+function sync(o,ps){if(!o)return;slY('sl-vl','v-vl',o.volume!==undefined?o.volume:100,function(v){return v});slY('sl-sp','v-sp',o.speed!==undefined?Math.round(o.speed*100):100,function(v){return(v/100).toFixed(2)+'\u00d7'});
 tg('tog-loop',o.loop);tg('tog-cur',o.cursorShow);var mq=o.marqueeText&&o.marqueeText.trim();if(o.marqueeText!==undefined){var p=E('mq-p');p.textContent=mq||'No marquee active';p.classList.toggle('on',!!mq)}
 if(ps){tg('tog-shuf',ps.shuffle);tg('pl-shuf',ps.shuffle);tg('tog-norep',ps.noRepeat);tg('pl-norep',ps.noRepeat);nv('mv-v',ps.maxVideos||0);nv('pl-mv',ps.maxVideos||0);nv('sf-v',ps.startFrom||0);nv('pl-sf',ps.startFrom||0)}}
 
@@ -345,7 +344,7 @@ function wkSave(){cmd('weeklyschedule',JSON.stringify(_wk))}
 function setMq(t){E('mq-t').value=t;cmdMq()}
 
 // Helpers
-function slS(n,v){v=parseInt(v);var e=E('v-'+n);if(n==='sp')e.textContent=(v/100).toFixed(2)+'\u00d7';else if(n==='vl')e.textContent=v;else e.textContent=v+'%'}
+function slS(n,v){v=parseInt(v);var e=E('v-'+n);if(n==='sp')e.textContent=(v/100).toFixed(2)+'\u00d7';else e.textContent=v}
 function slY(si,vi,val,fmt){var s=E(si),v=E(vi);if(!s||!v||s.matches(':active'))return;s.value=val;v.textContent=fmt(val)}
 function tg(id,val){var e=E(id);if(e&&!e.matches(':focus')&&val!==undefined)e.checked=!!val}
 function nv(id,val){var e=E(id);if(e&&!e.matches(':focus'))e.value=val}
