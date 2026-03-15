@@ -2,915 +2,228 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>VoidCapture — Controller</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src *; script-src 'unsafe-inline'">
+<title>VoidCapture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
-:root{
-  --bg:#0d0d1a;--bg2:#12121f;--bg3:#1a1a2e;--bg4:#080812;
-  --acc:#e94560;--grn:#50c878;--amb:#ffb432;--pur:#b48fff;--sky:#5ba8ff;
-  --txt:#eaeaea;--dim:#7878a8;--bdr:#252545;
-  --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;--r:6px;
-}
+:root{--void:#0a0a12;--bg:#0d0d1a;--card:#12121f;--card2:#181830;--hover:#1c1c36;--input:#08080f;--bdr:#262644;--bdr2:#36365a;--ring1:#4a3fa8;--ring2:#5e52c4;--ring3:#7a6ee0;--iris:#c4b8ff;--acc:#e94560;--grn:#50c878;--amb:#ffb432;--sky:#5ba8ff;--txt:#eaeaea;--dim:#7878a8;--mute:#505078;--font:'Outfit',sans-serif;--mono:'JetBrains Mono',monospace;--r:8px;--r2:12px}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:14px;line-height:1.5}
+html{height:100%;-webkit-tap-highlight-color:transparent}
+body{height:100%;background:var(--void);color:var(--txt);font-family:var(--font);font-size:14px;line-height:1.5;overflow:hidden}
 ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:2px}
+::selection{background:var(--ring3);color:#fff}
+input,textarea,select,button{font-family:inherit;font-size:inherit}
+.hide{display:none!important}.mono{font-family:var(--mono)}.dim{color:var(--dim)}.mute{color:var(--mute)}
 
-/* ── Tooltip ────────────────────────────────────────────────────────────── */
-[data-tip]{position:relative}
-[data-tip]::after{
-  content:attr(data-tip);
-  position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
-  background:var(--bg3);color:var(--txt);border:1px solid var(--bdr);
-  font-size:11px;font-family:var(--sans);font-weight:400;
-  padding:6px 10px;border-radius:5px;pointer-events:none;
-  opacity:0;transition:opacity .15s;z-index:9999;
-  white-space:normal;text-align:center;width:max-content;max-width:240px;
-  box-shadow:0 4px 18px rgba(0,0,0,.55);line-height:1.45;
-}
-[data-tip]:hover::after{opacity:1}
-[data-tip].tip-b::after{top:calc(100% + 8px);bottom:auto}
-[data-tip].tip-r::after{left:auto;right:0;transform:none}
+/* Login */
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 30% 60%,#14082a 0%,var(--void) 55%)}
+.login-card{width:min(400px,90vw);padding:36px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r2);box-shadow:0 0 80px rgba(122,110,224,.06),0 12px 48px rgba(0,0,0,.5)}
+.login-brand{font-family:var(--mono);font-size:10px;letter-spacing:.25em;color:var(--ring3);text-transform:uppercase;margin-bottom:8px}
+.login-title{font-size:24px;font-weight:700;margin-bottom:4px;background:linear-gradient(135deg,#fff 30%,var(--iris));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.login-sub{color:var(--dim);font-size:12px;margin-bottom:24px}
+.field{margin-bottom:14px}.field label{display:block;font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-bottom:5px}
+.field input{width:100%;background:var(--input);border:1px solid var(--bdr);border-radius:var(--r);color:var(--txt);padding:11px 14px;font-family:var(--mono);outline:none;transition:border .15s}
+.field input:focus{border-color:var(--ring3)}.field input.code{text-transform:uppercase;font-size:22px;letter-spacing:.2em;text-align:center}
+.field input.pin{font-size:22px;letter-spacing:.15em;text-align:center}.field .hint{font-size:10px;color:var(--mute);margin-top:4px;font-style:italic}
+.err{background:rgba(233,69,96,.06);border:1px solid rgba(233,69,96,.2);border-radius:var(--r);color:var(--acc);padding:10px 14px;font-size:12px;margin-top:12px;display:none;line-height:1.6}.err.on{display:block}
 
-/* ── Login ──────────────────────────────────────────────────────────────── */
-#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;
-  background:radial-gradient(ellipse at 25% 55%,#18082a 0%,var(--bg) 60%)}
-.card{width:390px;padding:38px;background:var(--bg2);border:1px solid var(--bdr);
-  border-radius:12px;box-shadow:0 0 70px rgba(233,69,96,.07),0 8px 40px rgba(0,0,0,.6)}
-.logo-line{font-family:var(--mono);font-size:9px;letter-spacing:.22em;color:var(--acc);text-transform:uppercase;margin-bottom:10px}
-.login-h1{font-size:23px;font-weight:600;margin-bottom:4px;
-  background:linear-gradient(135deg,#fff 35%,var(--acc));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.login-sub{color:var(--dim);font-size:11px;margin-bottom:26px}
-.fld{margin-bottom:14px}
-.flbl{font-size:10px;font-weight:600;letter-spacing:.08em;color:var(--dim);text-transform:uppercase;margin-bottom:5px;display:block}
-.fhint{font-size:10px;color:var(--dim);margin-top:4px;font-style:italic}
-input[type=text],input[type=password]{width:100%;background:var(--bg);border:1px solid var(--bdr);
-  border-radius:var(--r);color:var(--txt);padding:10px 13px;font-family:var(--mono);font-size:13px;outline:none;transition:border-color .14s}
-input[type=text].code-in{text-transform:uppercase;font-size:20px;letter-spacing:.2em;text-align:center}
-input[type=password].pin-in{font-size:20px;letter-spacing:.15em;text-align:center}
-input[type=text].url-in{font-size:11px;letter-spacing:0}
-input:focus{border-color:var(--acc)}
-input::placeholder{color:var(--dim);opacity:.28;font-size:11px;letter-spacing:0;text-align:center}
-.err-box{background:rgba(233,69,96,.07);border:1px solid rgba(233,69,96,.28);border-radius:var(--r);
-  color:var(--acc);padding:10px 13px;font-size:11px;margin-top:10px;display:none;line-height:1.6}
-.err-box.on{display:block}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:8px 14px;border-radius:var(--r);border:1px solid transparent;cursor:pointer;font-family:var(--font);font-size:12px;font-weight:600;transition:all .12s;white-space:nowrap;user-select:none;line-height:1.2}
+.btn:active{transform:scale(.97)}.btn-primary{background:var(--ring3);color:#fff;border-color:var(--ring3);width:100%;padding:13px;font-size:15px;margin-top:8px}.btn-primary:hover{background:var(--ring2)}
+.btn-ghost{background:transparent;color:var(--dim);border-color:var(--bdr)}.btn-ghost:hover{border-color:var(--txt);color:var(--txt)}
+.btn-danger{background:rgba(233,69,96,.06);color:var(--acc);border-color:rgba(233,69,96,.2)}.btn-danger:hover{background:rgba(233,69,96,.14)}
+.btn-success{background:rgba(80,200,120,.06);color:var(--grn);border-color:rgba(80,200,120,.2)}.btn-success:hover{background:rgba(80,200,120,.14)}
+.btn-accent{background:rgba(122,110,224,.06);color:var(--iris);border-color:rgba(122,110,224,.2)}.btn-accent:hover{background:rgba(122,110,224,.14)}
+.btn-sky{background:rgba(91,168,255,.06);color:var(--sky);border-color:rgba(91,168,255,.2)}.btn-sky:hover{background:rgba(91,168,255,.14)}
+.btn-sm{padding:6px 11px;font-size:11px}
 
-/* ── Buttons ────────────────────────────────────────────────────────────── */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:7px 13px;
-  border-radius:var(--r);border:1px solid transparent;cursor:pointer;font-family:var(--sans);
-  font-size:12px;font-weight:500;transition:all .12s;white-space:nowrap;user-select:none;line-height:1.2}
-.btn:disabled{opacity:.28;cursor:not-allowed}
-.btn-p{background:var(--acc);color:#fff;border-color:var(--acc);width:100%;padding:12px;font-size:14px;font-weight:600;margin-top:8px}
-.btn-p:not(:disabled):hover{background:#c83050}
-.btn-g{background:transparent;color:var(--dim);border-color:var(--bdr)}
-.btn-g:not(:disabled):hover{border-color:var(--txt);color:var(--txt);background:rgba(255,255,255,.02)}
-.btn-sm{padding:5px 10px;font-size:11px}
-.btn-xs{padding:3px 7px;font-size:10px}
-.btn-d{background:rgba(233,69,96,.07);color:var(--acc);border-color:rgba(233,69,96,.24)}
-.btn-d:not(:disabled):hover{background:rgba(233,69,96,.16)}
-.btn-s{background:rgba(80,200,120,.07);color:var(--grn);border-color:rgba(80,200,120,.24)}
-.btn-s:not(:disabled):hover{background:rgba(80,200,120,.16)}
-.btn-a{background:rgba(180,143,255,.07);color:var(--pur);border-color:rgba(180,143,255,.24)}
-.btn-a:not(:disabled):hover{background:rgba(180,143,255,.16)}
-.btn-sky{background:rgba(91,168,255,.07);color:var(--sky);border-color:rgba(91,168,255,.24)}
-.btn-sky:not(:disabled):hover{background:rgba(91,168,255,.16)}
-
-/* ── Form controls ──────────────────────────────────────────────────────── */
-input[type=number]{background:var(--bg);border:1px solid var(--bdr);border-radius:var(--r);
-  color:var(--txt);padding:6px 8px;font-family:var(--mono);font-size:12px;outline:none;
-  text-align:center;width:68px;-moz-appearance:textfield}
-input[type=number]::-webkit-outer-spin-button,
-input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
-input[type=number]:focus{border-color:var(--acc)}
-input[type=range]{-webkit-appearance:none;width:100%;height:3px;background:var(--bdr);border-radius:2px;outline:none;cursor:pointer}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--acc);cursor:pointer;transition:transform .1s}
-input[type=range]::-webkit-slider-thumb:active{transform:scale(1.25)}
-textarea{width:100%;background:var(--bg4);border:1px solid var(--bdr);border-radius:var(--r);
-  color:var(--txt);padding:11px;font-family:var(--mono);font-size:11px;line-height:1.75;
-  outline:none;resize:vertical;transition:border-color .14s}
-textarea:focus{border-color:var(--acc)}
-
-/* ── App shell ──────────────────────────────────────────────────────────── */
-#app-screen{display:none;height:100vh;flex-direction:column}
-#app-screen.on{display:flex}
-
-.topbar{display:flex;align-items:center;gap:8px;padding:0 14px;height:46px;min-height:46px;
-  background:var(--bg2);border-bottom:1px solid var(--bdr);flex-shrink:0}
-.t-logo{font-family:var(--mono);font-size:11px;color:var(--acc);font-weight:700}
-.t-role{font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--pur);
-  background:rgba(180,143,255,.06);border:1px solid rgba(180,143,255,.18);padding:2px 7px;border-radius:3px;text-transform:uppercase}
-.spill{display:flex;align-items:center;gap:6px;padding:3px 10px;border-radius:16px;font-size:10px;font-weight:600;transition:all .25s}
-.spill.live{background:rgba(80,200,120,.08);color:var(--grn);border:1px solid rgba(80,200,120,.22)}
-.spill.idle{background:rgba(255,255,255,.02);color:var(--dim);border:1px solid var(--bdr)}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--dim);flex-shrink:0;transition:all .25s}
-.dot.on{background:var(--grn);box-shadow:0 0 6px var(--grn)}
-.t-url{font-size:9px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;font-family:var(--mono)}
-.t-r{margin-left:auto;display:flex;align-items:center;gap:6px}
-.tbtn{padding:3px 9px;font-size:11px;background:transparent;border:1px solid var(--bdr);
-  color:var(--dim);border-radius:var(--r);cursor:pointer;font-family:var(--sans);transition:all .1s}
-.tbtn:hover{color:var(--txt);border-color:var(--dim)}
-.tbtn.red{border-color:rgba(233,69,96,.28);color:rgba(233,69,96,.6)}
-.tbtn.red:hover{border-color:var(--acc);color:var(--acc);background:rgba(233,69,96,.06)}
-
+/* App shell */
+#app{display:none;height:100vh;flex-direction:column}#app.on{display:flex}
+.topbar{display:flex;align-items:center;gap:10px;padding:0 16px;height:48px;min-height:48px;background:var(--void);border-bottom:1px solid var(--bdr);flex-shrink:0;position:relative;z-index:10}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--ring1),var(--acc),var(--ring1));opacity:.3}
+.tb-logo{font-family:var(--mono);font-size:12px;color:var(--ring3);font-weight:700}
+.tb-status{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;transition:.2s}
+.tb-status.live{background:rgba(80,200,120,.06);color:var(--grn);border:1px solid rgba(80,200,120,.15)}
+.tb-status.idle{background:rgba(255,255,255,.02);color:var(--dim);border:1px solid var(--bdr)}
+.tb-dot{width:6px;height:6px;border-radius:50%;transition:.2s;flex-shrink:0}.tb-dot.on{background:var(--grn);box-shadow:0 0 8px var(--grn)}.tb-dot.off{background:var(--mute)}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:6px}
+.tb-btn{padding:4px 10px;font-size:11px;background:transparent;border:1px solid var(--bdr);color:var(--dim);border-radius:var(--r);cursor:pointer;transition:.1s}
+.tb-btn:hover{color:var(--txt);border-color:var(--dim)}.tb-btn.red{border-color:rgba(233,69,96,.25);color:rgba(233,69,96,.6)}.tb-btn.red:hover{border-color:var(--acc);color:var(--acc)}
 .app-body{display:flex;flex:1;overflow:hidden}
-.sidebar{width:146px;min-width:146px;background:var(--bg2);border-right:1px solid var(--bdr);
-  display:flex;flex-direction:column;padding:8px 0;flex-shrink:0;overflow-y:auto}
-.ni{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;font-size:12px;
-  color:var(--dim);border-left:3px solid transparent;transition:all .1s;user-select:none}
-.ni:hover{color:var(--txt);background:rgba(255,255,255,.018)}
-.ni.on{color:var(--txt);border-left-color:var(--acc);background:rgba(233,69,96,.055)}
-.nii{font-size:12px;width:16px;text-align:center}
-.content{flex:1;overflow-y:auto;padding:16px 18px}
-.tab{display:none}.tab.on{display:block}
 
-/* ── Panels ─────────────────────────────────────────────────────────────── */
-.panel{background:var(--bg2);border:1px solid var(--bdr);border-radius:8px;padding:14px 16px;margin-bottom:10px}
-.panel.dark{background:var(--bg4)}
-.ph{font-size:9px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
-  color:var(--dim);margin-bottom:12px;display:flex;align-items:center;gap:7px}
-.badge{font-size:9px;padding:1px 6px;border-radius:3px;font-weight:600;font-family:var(--mono)}
-.badge-grn{color:var(--grn);background:rgba(80,200,120,.07);border:1px solid rgba(80,200,120,.2)}
-.badge-red{color:var(--acc);background:rgba(233,69,96,.07);border:1px solid rgba(233,69,96,.2)}
+/* Sidebar */
+.sidebar{width:160px;min-width:160px;background:var(--card);border-right:1px solid var(--bdr);display:flex;flex-direction:column;padding:8px 0;flex-shrink:0;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;font-size:13px;color:var(--dim);border-left:3px solid transparent;transition:all .12s;user-select:none}
+.nav-item:hover{color:var(--txt);background:rgba(255,255,255,.015)}.nav-item.active{color:var(--txt);border-left-color:var(--ring3);background:rgba(122,110,224,.04)}
+.nav-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
 
-/* ── Stats ──────────────────────────────────────────────────────────────── */
-.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
-@media(max-width:480px){.sgrid{grid-template-columns:repeat(2,1fr)}}
-.stat{background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r);padding:12px}
-.sv{font-family:var(--mono);font-size:17px;font-weight:700;line-height:1.2}
-.sl{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-top:3px}
+/* Bottom nav mobile */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:60px;background:var(--card);border-top:1px solid var(--bdr);z-index:100;justify-content:space-around;align-items:center;padding:0 4px;box-shadow:0 -4px 20px rgba(0,0,0,.4)}
+.bnav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 8px;cursor:pointer;color:var(--mute);font-size:8px;font-weight:600;transition:.1s;border-radius:var(--r);min-width:48px}
+.bnav-item .bnav-icon{font-size:18px}.bnav-item.active{color:var(--ring3);background:rgba(122,110,224,.06)}
 
-/* ── Info rows ──────────────────────────────────────────────────────────── */
-.irow{display:flex;justify-content:space-between;align-items:center;
-  padding:6px 0;border-bottom:1px solid rgba(37,37,69,.9);font-size:12px}
-.irow:last-child{border:none;padding-bottom:0}
-.ik{color:var(--dim)} .iv{font-family:var(--mono);font-size:11px}
+/* Content */
+.content{flex:1;overflow-y:auto;padding:20px;scroll-behavior:smooth}.tab{display:none}.tab.on{display:block}
 
-/* ── Sliders ────────────────────────────────────────────────────────────── */
-.slrow{display:grid;grid-template-columns:74px 1fr 48px;align-items:center;gap:10px;margin-bottom:10px}
-.sllbl{font-size:12px;color:var(--dim)}
-.slval{font-family:var(--mono);font-size:11px;color:var(--txt);text-align:right}
+/* Cards */
+.card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r2);padding:16px 18px;margin-bottom:12px}
+.card-title{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.badge{font-size:9px;padding:2px 7px;border-radius:4px;font-weight:700;font-family:var(--mono)}.badge-grn{color:var(--grn);background:rgba(80,200,120,.06);border:1px solid rgba(80,200,120,.15)}
 
-/* ── Toggles ────────────────────────────────────────────────────────────── */
-.trow{display:flex;align-items:center;justify-content:space-between;
-  padding:8px 0;border-bottom:1px solid rgba(37,37,69,.8)}
-.trow:last-child{border:none;padding-bottom:0}
-.tlbl{font-size:12px;color:var(--txt)} .tsub{font-size:10px;color:var(--dim);margin-top:1px}
-.sw{position:relative;width:34px;height:19px;flex-shrink:0}
-.sw input{opacity:0;width:0;height:0}
-.sw-t{position:absolute;inset:0;background:var(--bdr);border-radius:19px;cursor:pointer;transition:.18s}
-.sw-t::before{content:'';position:absolute;width:13px;height:13px;left:3px;bottom:3px;
-  background:#fff;border-radius:50%;transition:.18s}
-.sw input:checked + .sw-t{background:var(--acc)}
-.sw input:checked + .sw-t::before{transform:translateX(15px)}
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:14px}
+.stat-card{background:var(--card2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;opacity:.4}
+.stat-card.purple::after{background:var(--ring3)}.stat-card.green::after{background:var(--grn)}.stat-card.blue::after{background:var(--sky)}.stat-card.amber::after{background:var(--amb)}.stat-card.red::after{background:var(--acc)}
+.stat-val{font-family:var(--mono);font-size:20px;font-weight:700;line-height:1.2}.stat-lbl{font-size:9px;color:var(--mute);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
 
-/* ── Command grid ───────────────────────────────────────────────────────── */
-.cg2{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px}
-.cg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:8px}
-@media(max-width:480px){.cg2,.cg3{grid-template-columns:1fr}}
-.row{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+/* Info rows */
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(38,38,68,.6);font-size:13px}.info-row:last-child{border:none}.info-key{color:var(--dim)}.info-val{font-family:var(--mono);font-size:12px}
 
-/* ── Number row ─────────────────────────────────────────────────────────── */
-.nrow{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(37,37,69,.8)}
-.nrow:last-child{border:none;padding-bottom:0}
-.nlbl{flex:1;font-size:12px;color:var(--dim);line-height:1.4}
-.nlbl strong{display:block;color:var(--txt);font-weight:500}
+/* Sliders */
+.slider-row{display:grid;grid-template-columns:80px 1fr 52px;align-items:center;gap:12px;margin-bottom:12px}.slider-lbl{font-size:13px;color:var(--dim)}.slider-val{font-family:var(--mono);font-size:12px;text-align:right;color:var(--iris)}
+input[type=range]{-webkit-appearance:none;width:100%;height:4px;background:var(--bdr);border-radius:2px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--ring3);cursor:pointer;transition:transform .1s;box-shadow:0 0 8px rgba(122,110,224,.3)}
+input[type=range]::-webkit-slider-thumb:active{transform:scale(1.3)}
 
-/* ── Queue ──────────────────────────────────────────────────────────────── */
-.q-list{list-style:none;max-height:300px;overflow-y:auto}
-.q-item{display:flex;align-items:center;gap:7px;padding:8px 10px;
-  border-bottom:1px solid rgba(37,37,69,.7)}
-.q-item:last-child{border:none}
-.q-n{font-family:var(--mono);font-size:10px;color:var(--acc);width:18px;flex-shrink:0;text-align:right}
-.q-u{flex:1;font-family:var(--mono);font-size:10px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.q-rm{cursor:pointer;color:var(--dim);opacity:.35;font-size:15px;padding:0 3px;transition:all .1s;flex-shrink:0}
-.q-rm:hover{color:var(--acc);opacity:1}
+/* Toggles */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(38,38,68,.5)}.toggle-row:last-child{border:none}
+.toggle-label{font-size:13px;color:var(--txt)}.sw{position:relative;width:38px;height:20px;flex-shrink:0}.sw input{opacity:0;width:0;height:0}
+.sw-track{position:absolute;inset:0;background:var(--bdr2);border-radius:20px;cursor:pointer;transition:.2s}
+.sw-track::before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+.sw input:checked+.sw-track{background:var(--ring3)}.sw input:checked+.sw-track::before{transform:translateX(18px)}
 
-/* ── Playlist ───────────────────────────────────────────────────────────── */
-.pl-list{max-height:380px;overflow-y:auto}
-.pl-row{display:flex;align-items:center;gap:7px;padding:7px 8px;
-  border-bottom:1px solid rgba(37,37,69,.7);transition:background .08s}
-.pl-row:last-child{border:none}
-.pl-row:hover{background:rgba(255,255,255,.015)}
-.pl-n{font-family:var(--mono);font-size:10px;color:var(--bdr);width:22px;flex-shrink:0;text-align:right}
-.pl-u{flex:1;font-family:var(--mono);font-size:11px;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pl-u.dir{color:var(--pur)}
-.pl-acts{display:flex;gap:3px;flex-shrink:0}
+/* Grids */
+.action-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:10px}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 
-/* ── Marquee preview ────────────────────────────────────────────────────── */
-.mq-preview{background:rgba(0,0,0,.5);border:1px solid var(--bdr);border-radius:var(--r);
-  padding:10px 13px;font-family:var(--mono);font-size:14px;color:rgba(255,255,255,.5);
-  min-height:40px;margin:8px 0 10px;word-break:break-all;line-height:1.4;
-  transition:color .2s}
-.mq-preview.active{color:#fff;text-shadow:0 0 14px rgba(255,255,255,.3)}
+/* Number rows */
+.num-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(38,38,68,.5)}.num-row:last-child{border:none}
+.num-info{flex:1;font-size:13px;color:var(--dim);line-height:1.4}.num-info strong{display:block;color:var(--txt);font-weight:500}
+input[type=number]{background:var(--input);border:1px solid var(--bdr);border-radius:var(--r);color:var(--txt);padding:7px 10px;font-family:var(--mono);font-size:13px;outline:none;text-align:center;width:70px;-moz-appearance:textfield}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}input[type=number]:focus{border-color:var(--ring3)}
+textarea{width:100%;background:var(--input);border:1px solid var(--bdr);border-radius:var(--r);color:var(--txt);padding:12px;font-family:var(--mono);font-size:12px;line-height:1.7;outline:none;resize:vertical;transition:border .15s}textarea:focus{border-color:var(--ring3)}
+input[type=text]{background:var(--input);border:1px solid var(--bdr);border-radius:var(--r);color:var(--txt);padding:9px 12px;font-family:var(--mono);font-size:12px;outline:none;transition:border .15s}input[type=text]:focus{border-color:var(--ring3)}
 
-/* ── History ────────────────────────────────────────────────────────────── */
-.h-item{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid rgba(37,37,69,.7);font-size:11px}
-.h-item:last-child{border:none}
-.h-date{color:var(--acc);font-family:var(--mono);font-size:10px;flex-shrink:0}
-.h-url{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+/* Queue */
+.q-list{list-style:none;max-height:50vh;overflow-y:auto}.q-item{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid rgba(38,38,68,.5)}.q-item:last-child{border:none}
+.q-num{font-family:var(--mono);font-size:10px;color:var(--ring3);width:20px;flex-shrink:0;text-align:right}.q-url{flex:1;font-family:var(--mono);font-size:11px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.q-rm{cursor:pointer;color:var(--mute);font-size:16px;padding:0 4px;transition:.1s;flex-shrink:0}.q-rm:hover{color:var(--acc)}
 
-/* ── Spinner / toast ────────────────────────────────────────────────────── */
-.spin{display:inline-block;width:11px;height:11px;border:2px solid rgba(255,255,255,.18);
-  border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.toasts{position:fixed;bottom:16px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none}
-.toast{padding:8px 14px;border-radius:var(--r);font-size:12px;max-width:300px;
-  background:var(--bg3);border:1px solid var(--bdr);color:var(--txt);
-  box-shadow:0 4px 20px rgba(0,0,0,.6);animation:tin .15s ease;transition:opacity .28s;pointer-events:auto}
-.toast.ok{border-left:3px solid var(--grn)}
-.toast.err{border-left:3px solid var(--acc);color:var(--acc)}
-.toast.inf{border-left:3px solid var(--sky);color:var(--sky)}
-@keyframes tin{from{transform:translateX(18px);opacity:0}to{transform:none;opacity:1}}
+/* Playlist */
+.pl-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(38,38,68,.5);transition:background .08s}.pl-row:last-child{border:none}.pl-row:hover{background:rgba(255,255,255,.01)}
+.pl-num{font-family:var(--mono);font-size:10px;color:var(--mute);width:24px;flex-shrink:0;text-align:right}.pl-url{flex:1;font-family:var(--mono);font-size:11px;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pl-url.directive{color:var(--iris)}.pl-acts{display:flex;gap:3px;flex-shrink:0}
+
+/* History */
+.h-item{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid rgba(38,38,68,.5);font-size:12px}.h-item:last-child{border:none}.h-date{color:var(--ring3);font-family:var(--mono);font-size:10px;flex-shrink:0}.h-url{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+
+/* Marquee */
+.mq-preview{background:rgba(0,0,0,.5);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;font-family:var(--mono);font-size:15px;color:rgba(255,255,255,.4);min-height:44px;margin:10px 0;word-break:break-all;line-height:1.4;transition:color .2s}.mq-preview.active{color:#fff;text-shadow:0 0 16px rgba(196,184,255,.3)}
+
+/* Toast */
+.toasts{position:fixed;bottom:70px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+@media(min-width:769px){.toasts{bottom:16px}}
+.toast{padding:10px 16px;border-radius:var(--r);font-size:12px;font-weight:600;max-width:320px;background:var(--card2);border:1px solid var(--bdr);color:var(--txt);box-shadow:0 6px 24px rgba(0,0,0,.5);animation:tin .2s ease;transition:opacity .3s;pointer-events:auto}
+.toast.ok{border-left:3px solid var(--grn);color:var(--grn)}.toast.err{border-left:3px solid var(--acc);color:var(--acc)}.toast.inf{border-left:3px solid var(--sky);color:var(--sky)}
+@keyframes tin{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.15);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Responsive */
+@media(max-width:768px){.sidebar{display:none!important}.bottom-nav{display:flex!important}.content{padding:14px 12px 76px 12px}.stats-grid{grid-template-columns:repeat(2,1fr)}.action-grid{grid-template-columns:1fr 1fr}.slider-row{grid-template-columns:60px 1fr 44px;gap:8px}.topbar{padding:0 12px}}
+@media(max-width:400px){.stats-grid{grid-template-columns:1fr 1fr}.stat-val{font-size:16px}.login-card{padding:24px 20px}}
 </style>
 </head>
 <body>
+<div id="login"><div class="login-card">
+<div class="login-brand">VoidCapture</div><h1 class="login-title">Controller</h1>
+<p class="login-sub">Enter the details shown in VoidCapture → Controller Session</p>
+<div class="field"><label>Tunnel URL</label><input type="text" id="f-url" placeholder="https://xxxx.trycloudflare.com" autocomplete="off" spellcheck="false"><div class="hint">HTTPS address from the Controller Session window</div></div>
+<div class="field"><label>Session Code</label><input type="text" id="f-code" class="code" placeholder="A3K9M2" maxlength="6" autocomplete="off" spellcheck="false"></div>
+<div class="field"><label>PIN</label><input type="password" id="f-pin" class="pin" placeholder="000000" maxlength="6" autocomplete="off" inputmode="numeric"></div>
+<button class="btn btn-primary" id="lbtn" onclick="doLogin()">Connect</button>
+<div class="err" id="lerr"></div></div></div>
 
-<!-- ── LOGIN ─────────────────────────────────────────────────────────────── -->
-<div id="login-screen">
-  <div class="card">
-    <div class="logo-line">VoidCapture</div>
-    <h1 class="login-h1">Controller</h1>
-    <p class="login-sub">Enter the details shown in VoidCapture tray → 🎮 Controller Session</p>
-
-    <div class="fld">
-      <label class="flbl">Tunnel URL</label>
-      <input type="text" id="f-url" class="url-in" placeholder="https://xxxx.trycloudflare.com" autocomplete="off" spellcheck="false">
-      <div class="fhint">The HTTPS address shown in the Controller Session window</div>
-    </div>
-    <div class="fld">
-      <label class="flbl">Session Code</label>
-      <input type="text" id="f-code" class="code-in" placeholder="A3K9M2" maxlength="6" autocomplete="off" spellcheck="false">
-    </div>
-    <div class="fld">
-      <label class="flbl">PIN</label>
-      <input type="password" id="f-pin" class="pin-in" placeholder="000000" maxlength="6" autocomplete="off" inputmode="numeric">
-    </div>
-
-    <button class="btn btn-p" id="lbtn" onclick="doLogin()">Connect</button>
-    <div class="err-box" id="lerr"></div>
-  </div>
-</div>
-
-<!-- ── APP ───────────────────────────────────────────────────────────────── -->
-<div id="app-screen">
-
-  <div class="topbar">
-    <span class="t-logo">⊙ VC</span>
-    <span class="t-role">Controller</span>
-    <div class="spill idle" id="spill">
-      <div class="dot" id="t-dot"></div>
-      <span id="t-stxt">Idle</span>
-    </div>
-    <span class="t-url" id="t-url"></span>
-    <div class="t-r">
-      <button class="tbtn tip tip-b" data-tip="Refresh status from app immediately" onclick="forceSync()" id="sync-btn">↻ Sync</button>
-      <button class="tbtn red tip tip-b" data-tip="Emergency stop — immediately halts all playback" onclick="cmd('panic')">⚠ Panic</button>
-      <button class="tbtn" onclick="doLogout()">Logout</button>
-    </div>
-  </div>
-
-  <div class="app-body">
-    <nav class="sidebar">
-      <div class="ni on" data-tab="dash"      onclick="go('dash')">     <span class="nii">◈</span>Dashboard</div>
-      <div class="ni"    data-tab="playback"  onclick="go('playback')"> <span class="nii">◎</span>Playback</div>
-      <div class="ni"    data-tab="session"   onclick="go('session')">  <span class="nii">⚙</span>Session</div>
-      <div class="ni"    data-tab="marquee"   onclick="go('marquee')">  <span class="nii">✦</span>Marquee</div>
-      <div class="ni"    data-tab="schedule"  onclick="go('schedule')"> <span class="nii">⏱</span>Schedule</div>
-      <div class="ni"    data-tab="playlist"  onclick="go('playlist')"> <span class="nii">≡</span>Playlist</div>
-      <div class="ni"    data-tab="queue"     onclick="go('queue')">    <span class="nii">▷</span>Queue</div>
-      <div class="ni"    data-tab="stats"     onclick="go('stats')">    <span class="nii">◻</span>Stats</div>
-    </nav>
-
-    <main class="content">
-
-      <!-- ═══ DASHBOARD ═══════════════════════════════════════════════════ -->
-      <div class="tab on" id="tab-dash">
-        <div class="sgrid">
-          <div class="stat tip" data-tip="Total watch time today"><div class="sv" id="s-today">—</div><div class="sl">Today</div></div>
-          <div class="stat tip" data-tip="Total watch time all time"><div class="sv" id="s-total">—</div><div class="sl">All Time</div></div>
-          <div class="stat tip" data-tip="Videos watched today"><div class="sv" id="s-tvids">—</div><div class="sl">Videos</div></div>
-          <div class="stat tip" data-tip="Items waiting in the play queue"><div class="sv" id="s-queue">—</div><div class="sl">Queued</div></div>
-        </div>
-
-        <div class="panel">
-          <div class="ph">Now Playing <span class="badge badge-grn" id="live-badge" style="display:none">LIVE</span></div>
-          <div class="irow"><span class="ik">Status</span><span class="iv" id="d-status">Idle</span></div>
-          <div class="irow"><span class="ik">Speed</span><span class="iv" id="d-speed">—</span></div>
-          <div class="irow"><span class="ik">Volume</span><span class="iv" id="d-vol">—</span></div>
-          <div class="irow"><span class="ik">Brightness</span><span class="iv" id="d-bri">—</span></div>
-          <div class="irow"><span class="ik">Loop</span><span class="iv" id="d-loop">—</span></div>
-          <div class="irow"><span class="ik">Marquee</span><span class="iv" id="d-mq">Off</span></div>
-        </div>
-
-        <div class="panel">
-          <div class="ph">Quick Actions</div>
-          <div class="cg2" style="margin-bottom:8px">
-            <button class="btn btn-g btn-sm tip" data-tip="Skip to the next video in queue" onclick="cmd('skip')">⏭ Skip</button>
-            <button class="btn btn-g btn-sm tip" data-tip="Stop after current video finishes" onclick="cmd('softstop')">⏹ Soft Stop</button>
-            <button class="btn btn-g btn-sm tip" data-tip="Clear all waiting items from queue" onclick="cmd('clearqueue')">✕ Clear Queue</button>
-            <button class="btn btn-d btn-sm tip" data-tip="Immediately halt all playback" onclick="cmd('panic')">⚠ Panic Stop</button>
-          </div>
-          <div class="row">
-            <input type="text" id="add-url-d" placeholder="https://… — add to queue" style="flex:1;font-family:var(--mono);font-size:11px;padding:7px 11px"
-              data-tip="Paste a video URL to add to the current play queue" class="tip tip-b">
-            <button class="btn btn-g btn-sm tip" data-tip="Add this URL to the play queue" onclick="cmdQueue('add-url-d')">Queue</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ═══ PLAYBACK ════════════════════════════════════════════════════ -->
-      <div class="tab" id="tab-playback">
-
-        <div class="panel">
-          <div class="ph">Live Sliders <span class="badge badge-grn">INSTANT</span></div>
-          <p style="font-size:11px;color:var(--dim);margin-bottom:12px">Changes apply to the currently playing video immediately.</p>
-          <div class="slrow">
-            <span class="sllbl tip" data-tip="Player volume. 100 = normal, 200 = 2× boost">Volume</span>
-            <input type="range" id="sl-vl" min="0" max="200" value="100" oninput="slShow('vl',this.value)" onchange="cmd('volume',+this.value,true)">
-            <span class="slval" id="v-vl">100</span>
-          </div>
-          <div class="slrow">
-            <span class="sllbl tip" data-tip="Playback speed. 1.00× = normal, 2.00× = double speed">Speed</span>
-            <input type="range" id="sl-sp" min="25" max="400" value="100" oninput="slShow('sp',this.value)" onchange="cmd('speed',+(this.value/100).toFixed(2),true)">
-            <span class="slval" id="v-sp">1.00×</span>
-          </div>
-          <div class="slrow">
-            <span class="sllbl tip" data-tip="Screen brightness. 100 = full, 50 = half brightness">Brightness</span>
-            <input type="range" id="sl-br" min="50" max="100" value="100" oninput="slShow('br',this.value)" onchange="cmd('brightness',+this.value,true)">
-            <span class="slval" id="v-br">100%</span>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="ph">Session Controls</div>
-          <div class="cg2" style="margin-bottom:10px">
-            <button class="btn btn-g btn-sm tip" data-tip="Skip to the next video in queue immediately" onclick="cmd('skip')">⏭ Skip Current</button>
-            <button class="btn btn-g btn-sm tip" data-tip="Finish the current video then stop — does not skip" onclick="cmd('softstop')">⏹ Soft Stop</button>
-            <button class="btn btn-g btn-sm tip" data-tip="Remove all queued videos — currently playing video continues" onclick="cmd('clearqueue')">✕ Clear Queue</button>
-            <button class="btn btn-d btn-sm tip" data-tip="Immediately halt everything. Panic hotkey must not be locked" onclick="cmd('panic')">⚠ Panic / Stop</button>
-          </div>
-          <div class="nrow">
-            <span class="nlbl"><strong>Extend Session</strong>Add extra minutes to the current max-time limit</span>
-            <input type="number" id="ext-v" value="15" min="0">
-            <span style="font-size:11px;color:var(--dim)">min</span>
-            <button class="btn btn-g btn-sm tip" data-tip="Add these minutes to the current session time limit" onclick="cmd('extend',+document.getElementById('ext-v').value)">Add</button>
-          </div>
-          <div class="nrow">
-            <span class="nlbl"><strong>Set Max Time</strong>Hard limit for this session (0 = no limit)</span>
-            <input type="number" id="maxt-v" value="60" min="0">
-            <span style="font-size:11px;color:var(--dim)">min</span>
-            <button class="btn btn-g btn-sm tip" data-tip="Set the maximum session length. 0 disables the limit" onclick="cmd('maxtime',+document.getElementById('maxt-v').value)">Set</button>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="ph">Lock / Unlock</div>
-          <div id="lock-badge" style="margin-bottom:10px;font-size:12px;color:var(--grn)">🔓 Panic hotkey active</div>
-          <div class="cg2">
-            <button class="btn btn-d btn-sm tip" data-tip="Disable the Owner's panic hotkey — they cannot stop playback until unlocked" onclick="cmdLock(true)">🔒 Lock Panic</button>
-            <button class="btn btn-s btn-sm tip" data-tip="Re-enable the Owner's panic hotkey" onclick="cmdLock(false)">🔓 Unlock Panic</button>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="ph">Play From Playlist</div>
-          <button class="btn btn-s tip" style="width:100%;margin-bottom:8px"
-            data-tip="Clear the queue and immediately start playing all URLs from the playlist using current shuffle and start-from settings"
-            onclick="cmdPlayNow()">▶ Start Playing Playlist Now</button>
-          <p style="font-size:11px;color:var(--dim)">Clears the queue and loads all playlist URLs. Applies shuffle and start-from position settings.</p>
-        </div>
-
-      </div>
-
-      <!-- ═══ SESSION OPTIONS ══════════════════════════════════════════════ -->
-      <div class="tab" id="tab-session">
-
-        <div class="panel">
-          <div class="ph">Playback Behaviour</div>
-          <div class="trow">
-            <div><div class="tlbl tip" data-tip="When the queue empties, automatically re-queue the whole playlist and keep playing">Loop Playlist</div></div>
-            <label class="sw"><input type="checkbox" id="tog-loop" onchange="cmd('loop',this.checked)"><span class="sw-t"></span></label>
-          </div>
-          <div class="trow">
-            <div><div class="tlbl tip" data-tip="Randomise the order of videos each time the playlist is loaded">Shuffle Order</div></div>
-            <label class="sw"><input type="checkbox" id="tog-shuf" onchange="cmd('shuffle',this.checked)"><span class="sw-t"></span></label>
-          </div>
-          <div class="trow">
-            <div><div class="tlbl tip" data-tip="Skip URLs that have already been watched in previous sessions">No Repeat</div></div>
-            <label class="sw"><input type="checkbox" id="tog-norep" onchange="cmd('norepeat',this.checked)"><span class="sw-t"></span></label>
-          </div>
-          <div class="trow">
-            <div><div class="tlbl tip" data-tip="Keep the mouse cursor visible while video is playing">Show Cursor</div></div>
-            <label class="sw"><input type="checkbox" id="tog-cur" onchange="cmd('cursorshow',this.checked)"><span class="sw-t"></span></label>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="ph">Limits &amp; Timing</div>
-          <div class="nrow">
-            <span class="nlbl"><strong>Min Session Lock</strong>Disable panic for N seconds after a video starts (0 = off)</span>
-            <input type="number" id="minsess-v" value="0" min="0">
-            <span style="font-size:11px;color:var(--dim)">sec</span>
-            <button class="btn btn-g btn-sm tip" data-tip="Set minimum session duration before panic hotkey activates. 0 = always active" onclick="cmd('minsession',+document.getElementById('minsess-v').value)">Set</button>
-          </div>
-          <div class="nrow">
-            <span class="nlbl"><strong>Max Videos</strong>Stop after N videos in a session (0 = unlimited)</span>
-            <input type="number" id="maxvid-v" value="0" min="0">
-            <button class="btn btn-g btn-sm tip" data-tip="Limit how many videos play per session. 0 = no limit" onclick="cmd('maxvideos',+document.getElementById('maxvid-v').value)">Set</button>
-          </div>
-          <div class="nrow">
-            <span class="nlbl"><strong>Start From</strong>Skip the first N playlist entries (0 = start from beginning)</span>
-            <input type="number" id="startfrom-v" value="0" min="0">
-            <button class="btn btn-g btn-sm tip" data-tip="Skip this many entries from the start of the playlist. 0 = play from the beginning" onclick="cmd('startfrom',+document.getElementById('startfrom-v').value)">Set</button>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- ═══ MARQUEE ══════════════════════════════════════════════════════ -->
-      <div class="tab" id="tab-marquee">
-        <div class="panel">
-          <div class="ph">On-Screen Text <span class="badge badge-grn">LIVE</span></div>
-          <p style="font-size:11px;color:var(--dim);margin-bottom:8px">Text is overlaid on the video while playing. Updates instantly.</p>
-          <div class="mq-preview" id="mq-preview">No marquee active</div>
-          <textarea id="mq-text" rows="2" placeholder="Type text to display on screen…" style="margin-bottom:8px"></textarea>
-          <div class="row" style="margin-bottom:12px">
-            <button class="btn btn-a btn-sm tip" data-tip="Send this text to the screen immediately" onclick="cmdMarqueeSet()">▶ Send to Screen</button>
-            <button class="btn btn-d btn-sm tip" data-tip="Remove the marquee overlay from the screen" onclick="cmd('marqueeoff')">✕ Remove</button>
-          </div>
-          <div class="cg2">
-            <button class="btn btn-g btn-sm tip" data-tip="Move marquee text to the top of the screen" onclick="cmd('marqueetop')">↑ Move to Top</button>
-            <button class="btn btn-g btn-sm tip" data-tip="Move marquee text to the bottom of the screen" onclick="cmd('marqueebottom')">↓ Move to Bottom</button>
-          </div>
-        </div>
-        <div class="panel dark">
-          <div class="ph">Quick Phrases</div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px" id="quick-phrases"></div>
-        </div>
-      </div>
-
-      <!-- ═══ SCHEDULE ═════════════════════════════════════════════════════ -->
-      <div class="tab" id="tab-schedule">
-
-        <div class="panel">
-          <div class="ph">Start Now</div>
-          <div class="cg2" style="margin-bottom:8px">
-            <button class="btn btn-s tip" data-tip="Immediately clear the queue and start playing all playlist URLs"
-              onclick="cmd('autostartnow')">▶ Start Session Now</button>
-            <button class="btn btn-g btn-sm tip" data-tip="Cancel any pending scheduled start time"
-              onclick="cmd('cancelschedule')">✕ Cancel Schedule</button>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="ph">Schedule at Time</div>
-          <div class="nrow">
-            <span class="nlbl"><strong>Start at exact time</strong>VoidCapture will begin the session at this time today</span>
-            <input type="text" id="sched-t" placeholder="14:30" maxlength="5"
-              style="width:72px;font-size:14px;font-family:var(--mono);text-align:center;padding:7px;border:1px solid var(--bdr);border-radius:var(--r);background:var(--bg);color:var(--txt);outline:none">
-            <button class="btn btn-sky btn-sm tip" data-tip="Schedule the session to begin at this HH:MM time (24-hour format)" onclick="cmdSchedule()">Set</button>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="ph">Auto-Start on Idle</div>
-          <div class="nrow">
-            <span class="nlbl"><strong>Idle Auto-Start</strong>Automatically start after N minutes of Owner PC inactivity (0 = off)</span>
-            <input type="number" id="idle-v" value="0" min="0">
-            <span style="font-size:11px;color:var(--dim)">min</span>
-            <button class="btn btn-sky btn-sm tip" data-tip="Start a session automatically when the Owner's PC has been idle for this many minutes. 0 = disabled" onclick="cmd('idlestart',+document.getElementById('idle-v').value)">Set</button>
-          </div>
-          <div class="nrow">
-            <span class="nlbl"><strong>Delay Start</strong>Delay the next session start by N minutes (0 = no delay)</span>
-            <input type="number" id="delay-v" value="0" min="0">
-            <span style="font-size:11px;color:var(--dim)">min</span>
-            <button class="btn btn-g btn-sm tip" data-tip="Add a delay before the next session starts. 0 = no delay" onclick="cmd('delay',+document.getElementById('delay-v').value)">Set</button>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- ═══ PLAYLIST ══════════════════════════════════════════════════════ -->
-      <div class="tab" id="tab-playlist">
-
-        <div class="panel">
-          <div class="ph">Playlist <span id="pl-count" style="font-family:var(--mono);font-size:9px;color:var(--dim);font-weight:400"></span></div>
-          <p style="font-size:11px;color:var(--dim);margin-bottom:10px;line-height:1.5">
-            Stored in the app — no files on GitHub. Lines starting with <span style="color:var(--pur);font-family:var(--mono)">#</span> are directives. Changes take effect immediately.
-          </p>
-          <div class="pl-list" id="pl-list" style="margin-bottom:10px">
-            <div style="color:var(--dim);font-size:11px;padding:8px">Loading…</div>
-          </div>
-          <div class="row" style="margin-bottom:8px">
-            <input type="text" id="pl-add" placeholder="https://… or #DIRECTIVE"
-              style="flex:1;font-family:var(--mono);font-size:11px;padding:7px 11px;border:1px solid var(--bdr);border-radius:var(--r);background:var(--bg);color:var(--txt);outline:none"
-              data-tip="Enter a URL or a #DIRECTIVE to add to the playlist" class="tip tip-b">
-            <button class="btn btn-s btn-sm tip" data-tip="Add to the end of the playlist" onclick="plAppend()">+ Append</button>
-            <button class="btn btn-sky btn-sm tip" data-tip="Add to the very beginning of the playlist" onclick="plPrepend()">+ Prepend</button>
-          </div>
-          <div class="row">
-            <button class="btn btn-g btn-sm tip" data-tip="Reload playlist from the app" onclick="loadPlaylist()">↻ Reload</button>
-            <button class="btn btn-d btn-sm tip" data-tip="Remove every entry from the playlist permanently" onclick="plClear()">✕ Clear All</button>
-            <span id="pl-st" style="font-size:11px;margin-left:4px"></span>
-          </div>
-        </div>
-
-        <div class="panel dark">
-          <div class="ph">Playlist Settings</div>
-          <div class="trow">
-            <div><div class="tlbl tip" data-tip="Randomise the order of videos each time the playlist plays">Shuffle</div></div>
-            <label class="sw"><input type="checkbox" id="pl-shuf" onchange="cmd('shuffle',this.checked)"><span class="sw-t"></span></label>
-          </div>
-          <div class="trow">
-            <div><div class="tlbl tip" data-tip="Skip URLs already watched in past sessions">No Repeat</div></div>
-            <label class="sw"><input type="checkbox" id="pl-norep" onchange="cmd('norepeat',this.checked)"><span class="sw-t"></span></label>
-          </div>
-          <div class="nrow">
-            <span class="nlbl"><strong>Max Videos</strong>Stop after N videos (0 = no limit)</span>
-            <input type="number" id="pl-maxvid" value="0" min="0">
-            <button class="btn btn-g btn-sm tip" data-tip="Maximum videos per session. 0 = unlimited" onclick="cmd('maxvideos',+document.getElementById('pl-maxvid').value)">Set</button>
-          </div>
-          <div class="nrow">
-            <span class="nlbl"><strong>Start From</strong>Skip first N entries (0 = from the beginning)</span>
-            <input type="number" id="pl-start" value="0" min="0">
-            <button class="btn btn-g btn-sm tip" data-tip="Skip this many entries from the top of the playlist. 0 = play from the start" onclick="cmd('startfrom',+document.getElementById('pl-start').value)">Set</button>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- ═══ QUEUE ═════════════════════════════════════════════════════════ -->
-      <div class="tab" id="tab-queue">
-        <div class="panel">
-          <div class="ph">Now Playing</div>
-          <div id="q-now" style="font-family:var(--mono);font-size:11px;color:var(--dim);word-break:break-all;min-height:16px">—</div>
-        </div>
-        <div class="panel">
-          <div class="ph">Up Next <span id="q-count" style="font-family:var(--mono);font-size:9px;color:var(--dim);font-weight:400"></span></div>
-          <ul class="q-list" id="q-list"><li style="color:var(--dim);font-size:11px;padding:8px">Queue is empty</li></ul>
-          <div class="row" style="margin-top:10px">
-            <button class="btn btn-g btn-sm tip" data-tip="Skip the current video and move to the next in queue" onclick="cmd('skip')">⏭ Skip Current</button>
-            <button class="btn btn-d btn-sm tip" data-tip="Remove all waiting items from the queue" onclick="cmd('clearqueue')">✕ Clear Queue</button>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="ph">Add to Queue</div>
-          <div class="row">
-            <input type="text" id="add-url-q" placeholder="https://…"
-              style="flex:1;font-family:var(--mono);font-size:11px;padding:7px 11px;border:1px solid var(--bdr);border-radius:var(--r);background:var(--bg);color:var(--txt);outline:none"
-              data-tip="Paste a URL to add it to the live play queue" class="tip tip-b">
-            <button class="btn btn-g btn-sm tip" data-tip="Add this URL to the queue — plays after current video" onclick="cmdQueue('add-url-q')">Queue</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ═══ STATS ══════════════════════════════════════════════════════════ -->
-      <div class="tab" id="tab-stats">
-        <div class="sgrid">
-          <div class="stat tip" data-tip="Time watched today"><div class="sv" id="st-today">—</div><div class="sl">Today</div></div>
-          <div class="stat tip" data-tip="Total time across all sessions"><div class="sv" id="st-total">—</div><div class="sl">All Time</div></div>
-          <div class="stat tip" data-tip="Videos watched today"><div class="sv" id="st-tvids">—</div><div class="sl">Videos</div></div>
-          <div class="stat tip" data-tip="Number of panic stops"><div class="sv" id="st-panics">—</div><div class="sl">Panics</div></div>
-        </div>
-        <div class="panel">
-          <div class="ph">Watch History</div>
-          <div id="hist-list" style="max-height:440px;overflow-y:auto">
-            <div style="font-size:11px;color:var(--dim)">Loading…</div>
-          </div>
-        </div>
-      </div>
-
-    </main>
-  </div>
-</div>
-
+<div id="app">
+<div class="topbar"><span class="tb-logo">⊙ VC</span><div class="tb-status idle" id="spill"><div class="tb-dot off" id="t-dot"></div><span id="t-stxt">Idle</span></div>
+<div class="tb-right"><button class="tb-btn" onclick="forceSync()" id="sync-btn">↻</button><button class="tb-btn red" onclick="cmd('panic')">⚠ Panic</button><button class="tb-btn" onclick="doLogout()">Logout</button></div></div>
+<div class="app-body">
+<nav class="sidebar" id="sidebar">
+<div class="nav-item active" data-tab="dash" onclick="go('dash')"><span class="nav-icon">◈</span>Dashboard</div>
+<div class="nav-item" data-tab="playback" onclick="go('playback')"><span class="nav-icon">◎</span>Playback</div>
+<div class="nav-item" data-tab="session" onclick="go('session')"><span class="nav-icon">⚙</span>Session</div>
+<div class="nav-item" data-tab="marquee" onclick="go('marquee')"><span class="nav-icon">✦</span>Marquee</div>
+<div class="nav-item" data-tab="schedule" onclick="go('schedule')"><span class="nav-icon">⏱</span>Schedule</div>
+<div class="nav-item" data-tab="playlist" onclick="go('playlist')"><span class="nav-icon">≡</span>Playlist</div>
+<div class="nav-item" data-tab="queue" onclick="go('queue')"><span class="nav-icon">▷</span>Queue</div>
+<div class="nav-item" data-tab="stats" onclick="go('stats')"><span class="nav-icon">◻</span>Stats</div>
+</nav>
+<main class="content">
+<div class="tab on" id="tab-dash"><div class="stats-grid"><div class="stat-card purple"><div class="stat-val" id="s-today">—</div><div class="stat-lbl">Today</div></div><div class="stat-card blue"><div class="stat-val" id="s-total">—</div><div class="stat-lbl">All Time</div></div><div class="stat-card green"><div class="stat-val" id="s-tvids">—</div><div class="stat-lbl">Videos</div></div><div class="stat-card amber"><div class="stat-val" id="s-queue">—</div><div class="stat-lbl">Queued</div></div></div>
+<div class="card"><div class="card-title">Now Playing <span class="badge badge-grn" id="live-badge" style="display:none">LIVE</span></div><div class="info-row"><span class="info-key">Status</span><span class="info-val" id="d-status">Idle</span></div><div class="info-row"><span class="info-key">Speed</span><span class="info-val" id="d-speed">—</span></div><div class="info-row"><span class="info-key">Volume</span><span class="info-val" id="d-vol">—</span></div><div class="info-row"><span class="info-key">Brightness</span><span class="info-val" id="d-bri">—</span></div><div class="info-row"><span class="info-key">Loop</span><span class="info-val" id="d-loop">—</span></div><div class="info-row"><span class="info-key">Marquee</span><span class="info-val" id="d-mq">Off</span></div></div>
+<div class="card"><div class="card-title">Quick Actions</div><div class="action-grid" style="margin-bottom:10px"><button class="btn btn-ghost btn-sm" onclick="cmd('skip')">⏭ Skip</button><button class="btn btn-ghost btn-sm" onclick="cmd('softstop')">⏹ Soft Stop</button><button class="btn btn-ghost btn-sm" onclick="cmd('clearqueue')">✕ Clear Queue</button><button class="btn btn-danger btn-sm" onclick="cmd('panic')">⚠ Panic</button></div><div class="row"><input type="text" id="add-url-d" placeholder="https://… add to queue" style="flex:1"><button class="btn btn-ghost btn-sm" onclick="cmdQueue('add-url-d')">+ Queue</button></div></div></div>
+<div class="tab" id="tab-playback"><div class="card"><div class="card-title">Live Sliders <span class="badge badge-grn">INSTANT</span></div><div class="slider-row"><span class="slider-lbl">Volume</span><input type="range" id="sl-vl" min="0" max="200" value="100" oninput="slShow('vl',this.value)" onchange="cmd('volume',+this.value,true)"><span class="slider-val" id="v-vl">100</span></div><div class="slider-row"><span class="slider-lbl">Speed</span><input type="range" id="sl-sp" min="25" max="400" value="100" oninput="slShow('sp',this.value)" onchange="cmd('speed',+(this.value/100).toFixed(2),true)"><span class="slider-val" id="v-sp">1.00×</span></div><div class="slider-row"><span class="slider-lbl">Brightness</span><input type="range" id="sl-br" min="50" max="100" value="100" oninput="slShow('br',this.value)" onchange="cmd('brightness',+this.value,true)"><span class="slider-val" id="v-br">100%</span></div></div>
+<div class="card"><div class="card-title">Session Controls</div><div class="action-grid" style="margin-bottom:12px"><button class="btn btn-ghost btn-sm" onclick="cmd('skip')">⏭ Skip</button><button class="btn btn-ghost btn-sm" onclick="cmd('softstop')">⏹ Soft Stop</button><button class="btn btn-ghost btn-sm" onclick="cmd('clearqueue')">✕ Clear Queue</button><button class="btn btn-danger btn-sm" onclick="cmd('panic')">⚠ Panic</button></div>
+<div class="num-row"><span class="num-info"><strong>Extend Session</strong>Add extra minutes</span><input type="number" id="ext-v" value="15" min="0"><span class="dim" style="font-size:11px">min</span><button class="btn btn-ghost btn-sm" onclick="cmd('extend',+G('ext-v').value)">Add</button></div>
+<div class="num-row"><span class="num-info"><strong>Max Time</strong>Hard limit (0 = none)</span><input type="number" id="maxt-v" value="60" min="0"><span class="dim" style="font-size:11px">min</span><button class="btn btn-ghost btn-sm" onclick="cmd('maxtime',+G('maxt-v').value)">Set</button></div></div>
+<div class="card"><div class="card-title">Lock / Unlock</div><div id="lock-badge" style="margin-bottom:10px;font-size:13px;color:var(--grn)">🔓 Panic hotkey active</div><div class="row"><button class="btn btn-danger btn-sm" onclick="cmdLock(true)">🔒 Lock Panic</button><button class="btn btn-success btn-sm" onclick="cmdLock(false)">🔓 Unlock</button></div></div>
+<div class="card"><div class="card-title">Play From Playlist</div><button class="btn btn-success" style="width:100%" onclick="cmdPlayNow()">▶ Start Playing Playlist Now</button></div></div>
+<div class="tab" id="tab-session"><div class="card"><div class="card-title">Playback Behaviour</div><div class="toggle-row"><div><div class="toggle-label">Loop Playlist</div></div><label class="sw"><input type="checkbox" id="tog-loop" onchange="cmd('loop',this.checked)"><span class="sw-track"></span></label></div><div class="toggle-row"><div><div class="toggle-label">Shuffle Order</div></div><label class="sw"><input type="checkbox" id="tog-shuf" onchange="cmd('shuffle',this.checked)"><span class="sw-track"></span></label></div><div class="toggle-row"><div><div class="toggle-label">No Repeat</div></div><label class="sw"><input type="checkbox" id="tog-norep" onchange="cmd('norepeat',this.checked)"><span class="sw-track"></span></label></div><div class="toggle-row"><div><div class="toggle-label">Show Cursor</div></div><label class="sw"><input type="checkbox" id="tog-cur" onchange="cmd('cursorshow',this.checked)"><span class="sw-track"></span></label></div></div>
+<div class="card"><div class="card-title">Limits &amp; Timing</div><div class="num-row"><span class="num-info"><strong>Min Session Lock</strong>Disable panic for N sec (0 = off)</span><input type="number" id="minsess-v" value="0" min="0"><span class="dim" style="font-size:11px">sec</span><button class="btn btn-ghost btn-sm" onclick="cmd('minsession',+G('minsess-v').value)">Set</button></div><div class="num-row"><span class="num-info"><strong>Max Videos</strong>Stop after N (0 = unlimited)</span><input type="number" id="maxvid-v" value="0" min="0"><button class="btn btn-ghost btn-sm" onclick="cmd('maxvideos',+G('maxvid-v').value)">Set</button></div><div class="num-row"><span class="num-info"><strong>Start From</strong>Skip first N entries</span><input type="number" id="startfrom-v" value="0" min="0"><button class="btn btn-ghost btn-sm" onclick="cmd('startfrom',+G('startfrom-v').value)">Set</button></div></div></div>
+<div class="tab" id="tab-marquee"><div class="card"><div class="card-title">On-Screen Text <span class="badge badge-grn">LIVE</span></div><div class="mq-preview" id="mq-preview">No marquee active</div><textarea id="mq-text" rows="2" placeholder="Type text to display on screen…"></textarea><div class="row" style="margin:10px 0"><button class="btn btn-accent btn-sm" onclick="cmdMarqueeSet()">▶ Send</button><button class="btn btn-danger btn-sm" onclick="cmd('marqueeoff')">✕ Remove</button><button class="btn btn-ghost btn-sm" onclick="cmd('marqueetop')">↑ Top</button><button class="btn btn-ghost btn-sm" onclick="cmd('marqueebottom')">↓ Bottom</button></div></div><div class="card" style="background:var(--void)"><div class="card-title">Quick Phrases</div><div style="display:flex;flex-wrap:wrap;gap:6px" id="quick-phrases"></div></div></div>
+<div class="tab" id="tab-schedule"><div class="card"><div class="card-title">Start Now</div><div class="row"><button class="btn btn-success" onclick="cmd('autostartnow')">▶ Start Session Now</button><button class="btn btn-ghost btn-sm" onclick="cmd('cancelschedule')">✕ Cancel Schedule</button></div></div><div class="card"><div class="card-title">Schedule at Time</div><div class="num-row"><span class="num-info"><strong>Start at exact time</strong>Begin at HH:MM today</span><input type="text" id="sched-t" placeholder="14:30" maxlength="5" style="width:72px;text-align:center"><button class="btn btn-sky btn-sm" onclick="cmdSchedule()">Set</button></div></div><div class="card"><div class="card-title">Auto-Start on Idle</div><div class="num-row"><span class="num-info"><strong>Idle Auto-Start</strong>Start after N min inactivity (0 = off)</span><input type="number" id="idle-v" value="0" min="0"><span class="dim" style="font-size:11px">min</span><button class="btn btn-sky btn-sm" onclick="cmd('idlestart',+G('idle-v').value)">Set</button></div><div class="num-row"><span class="num-info"><strong>Delay Start</strong>Delay next session by N min</span><input type="number" id="delay-v" value="0" min="0"><span class="dim" style="font-size:11px">min</span><button class="btn btn-ghost btn-sm" onclick="cmd('delay',+G('delay-v').value)">Set</button></div></div></div>
+<div class="tab" id="tab-playlist"><div class="card"><div class="card-title">Playlist <span id="pl-count" class="dim mono" style="font-size:9px;font-weight:400"></span></div><div id="pl-list" style="max-height:45vh;overflow-y:auto;margin-bottom:10px"><div class="dim" style="font-size:12px;padding:8px">Loading…</div></div><div class="row" style="margin-bottom:8px"><input type="text" id="pl-add" placeholder="https://… or #DIRECTIVE" style="flex:1"><button class="btn btn-success btn-sm" onclick="plAppend()">+ Append</button><button class="btn btn-sky btn-sm" onclick="plPrepend()">+ Prepend</button></div><div class="row"><button class="btn btn-ghost btn-sm" onclick="loadPlaylist()">↻ Reload</button><button class="btn btn-danger btn-sm" onclick="plClear()">✕ Clear</button><span id="pl-st" style="font-size:11px;margin-left:4px"></span></div></div><div class="card" style="background:var(--void)"><div class="card-title">Playlist Settings</div><div class="toggle-row"><div class="toggle-label">Shuffle</div><label class="sw"><input type="checkbox" id="pl-shuf" onchange="cmd('shuffle',this.checked)"><span class="sw-track"></span></label></div><div class="toggle-row"><div class="toggle-label">No Repeat</div><label class="sw"><input type="checkbox" id="pl-norep" onchange="cmd('norepeat',this.checked)"><span class="sw-track"></span></label></div><div class="num-row"><span class="num-info"><strong>Max Videos</strong>0 = unlimited</span><input type="number" id="pl-maxvid" value="0" min="0"><button class="btn btn-ghost btn-sm" onclick="cmd('maxvideos',+G('pl-maxvid').value)">Set</button></div><div class="num-row"><span class="num-info"><strong>Start From</strong>0 = beginning</span><input type="number" id="pl-start" value="0" min="0"><button class="btn btn-ghost btn-sm" onclick="cmd('startfrom',+G('pl-start').value)">Set</button></div></div></div>
+<div class="tab" id="tab-queue"><div class="card"><div class="card-title">Now Playing</div><div id="q-now" class="mono dim" style="font-size:12px;word-break:break-all;min-height:18px">—</div></div><div class="card"><div class="card-title">Up Next <span id="q-count" class="dim mono" style="font-size:9px;font-weight:400"></span></div><ul class="q-list" id="q-list"><li class="dim" style="font-size:12px;padding:8px">Queue is empty</li></ul><div class="row" style="margin-top:12px"><button class="btn btn-ghost btn-sm" onclick="cmd('skip')">⏭ Skip</button><button class="btn btn-danger btn-sm" onclick="cmd('clearqueue')">✕ Clear</button></div></div><div class="card"><div class="card-title">Add to Queue</div><div class="row"><input type="text" id="add-url-q" placeholder="https://…" style="flex:1"><button class="btn btn-ghost btn-sm" onclick="cmdQueue('add-url-q')">+ Queue</button></div></div></div>
+<div class="tab" id="tab-stats"><div class="stats-grid"><div class="stat-card purple"><div class="stat-val" id="st-today">—</div><div class="stat-lbl">Today</div></div><div class="stat-card blue"><div class="stat-val" id="st-total">—</div><div class="stat-lbl">All Time</div></div><div class="stat-card green"><div class="stat-val" id="st-tvids">—</div><div class="stat-lbl">Videos</div></div><div class="stat-card red"><div class="stat-val" id="st-panics">—</div><div class="stat-lbl">Panics</div></div></div><div class="card"><div class="card-title">Watch History</div><div id="hist-list" style="max-height:55vh;overflow-y:auto"><div class="dim" style="font-size:12px">Loading…</div></div></div></div>
+</main></div>
+<nav class="bottom-nav" id="bnav"><div class="bnav-item active" data-tab="dash" onclick="go('dash')"><span class="bnav-icon">◈</span>Home</div><div class="bnav-item" data-tab="playback" onclick="go('playback')"><span class="bnav-icon">◎</span>Play</div><div class="bnav-item" data-tab="session" onclick="go('session')"><span class="bnav-icon">⚙</span>Set</div><div class="bnav-item" data-tab="playlist" onclick="go('playlist')"><span class="bnav-icon">≡</span>List</div><div class="bnav-item" data-tab="queue" onclick="go('queue')"><span class="bnav-icon">▷</span>Queue</div><div class="bnav-item" data-tab="stats" onclick="go('stats')"><span class="bnav-icon">◻</span>Stats</div></nav></div>
 <div class="toasts" id="toasts"></div>
-
 <script>
-// ── State ────────────────────────────────────────────────────────────────────
-var S = { tunnelUrl: null, token: null };
-var _refreshTimer = null;
-var _lastStatus   = null;
-
-// ── API ──────────────────────────────────────────────────────────────────────
-async function api(method, path, body) {
-  var opts = { method: method, headers: { 'Content-Type': 'application/json' } };
-  if (S.token) opts.headers['Authorization'] = 'Bearer ' + S.token;
-  if (body !== undefined) opts.body = JSON.stringify(body);
-  var r = await fetch(S.tunnelUrl + path, opts);
-  if (!r.ok) {
-    var e = await r.json().catch(function(){return{error:'HTTP '+r.status};});
-    throw new Error(e.error || e.message || 'HTTP ' + r.status);
-  }
-  return r.json();
-}
-
-// ── Commands — all instant POST to the app ───────────────────────────────────
-async function cmd(name, value, silent) {
-  try {
-    var body = { cmd: name };
-    if (value !== undefined) body.value = value;
-    var res = await api('POST', '/command', body);
-    if (!res.success) throw new Error(res.message || 'command failed');
-    if (!silent) toast('✓ ' + name, 'ok');
-    setTimeout(doRefresh, 250);
-  } catch(e) {
-    if (!silent) toast(e.message, 'err');
-  }
-}
-
-function cmdQueue(id) {
-  var u = document.getElementById(id).value.trim();
-  if (!u || !u.startsWith('http')) { toast('Enter a valid URL', 'err'); return; }
-  cmd('appendurl', u);
-  document.getElementById(id).value = '';
-}
-
-function cmdPlayNow() {
-  if (!confirm('Clear queue and start playing the playlist now?')) return;
-  cmd('playnow');
-}
-
-function cmdLock(lock) {
-  if (lock && !confirm('Lock the panic hotkey?\nThe Owner will not be able to stop playback until you unlock it.')) return;
-  cmd(lock ? 'lock' : 'unlock');
-}
-
-function cmdMarqueeSet() {
-  var t = document.getElementById('mq-text').value.trim();
-  if (!t) { toast('Enter text first', 'err'); return; }
-  var p = document.getElementById('mq-preview');
-  p.textContent = t; p.classList.add('active');
-  cmd('marquee', t);
-}
-
-function cmdSchedule() {
-  var t = document.getElementById('sched-t').value.trim();
-  if (!/^\d{2}:\d{2}$/.test(t)) { toast('Use HH:MM format (e.g. 14:30)', 'err'); return; }
-  cmd('schedule', t);
-}
-
-// ── Login ────────────────────────────────────────────────────────────────────
-async function doLogin() {
-  var url  = document.getElementById('f-url').value.trim().replace(/\/+$/, '');
-  var code = document.getElementById('f-code').value.trim().toUpperCase();
-  var pin  = document.getElementById('f-pin').value.trim();
-  var btn  = document.getElementById('lbtn');
-  var err  = document.getElementById('lerr');
-  err.classList.remove('on');
-
-  function fail(m) { err.textContent = m; err.classList.add('on'); btn.disabled = false; btn.innerHTML = 'Connect'; }
-
-  if (!url.startsWith('https://')) { fail('Tunnel URL must start with https://'); return; }
-  if (code.length !== 6) { fail('Session code must be 6 characters'); return; }
-  if (!/^\d{6}$/.test(pin)) { fail('PIN must be 6 digits'); return; }
-
-  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Connecting…';
-  S.tunnelUrl = url;
-
-  try {
-    var res = await api('POST', '/auth', { code, pin });
-    if (!res.ok) { fail(res.error || 'Authentication failed'); return; }
-    S.token = res.token;
-
-    var st = await api('GET', '/status');
-    _lastStatus = st;
-    applyStatus(st);
-    syncControls(st.pendingOptions || {}, st.playlistSettings);
-    renderHistory(st.recentHistory || []);
-    await loadPlaylist();
-
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app-screen').classList.add('on');
-    startRefresh();
-    toast('Connected', 'ok');
-  } catch(e) {
-    S.tunnelUrl = S.token = null;
-    var m = e.message || '';
-    if (m.includes('Failed to fetch') || m.includes('NetworkError'))
-      fail('Cannot reach the tunnel URL. Check VoidCapture is running and the URL is correct.');
-    else if (m.includes('401'))
-      fail('Incorrect code or PIN.');
-    else
-      fail('Connection failed: ' + m);
-  }
-}
-
-function doLogout() {
-  clearInterval(_refreshTimer); _refreshTimer = null;
-  S.tunnelUrl = S.token = null; _lastStatus = null;
-  document.getElementById('app-screen').classList.remove('on');
-  document.getElementById('login-screen').style.display = '';
-  document.getElementById('f-pin').value = '';
-}
-
-// ── Navigation ───────────────────────────────────────────────────────────────
-// ── Performance: Debounced playlist load ─────────────────────────────────────
-var _plDebounce = null;
-function debouncedLoadPlaylist() {
-  if (_plDebounce) clearTimeout(_plDebounce);
-  _plDebounce = setTimeout(function() { _plDebounce = null; loadPlaylist(); }, 300);
-}
-
-function go(name) {
-  document.querySelectorAll('.ni').forEach(function(n) { n.classList.toggle('on', n.dataset.tab === name); });
-  document.querySelectorAll('.tab').forEach(function(t) { t.classList.toggle('on', t.id === 'tab-' + name); });
-  if (name === 'playlist') debouncedLoadPlaylist();
-  if (name === 'stats')    renderHistory(_lastStatus && _lastStatus.recentHistory || []);
-  if (name === 'queue')    renderQueue(_lastStatus && _lastStatus.queueItems || []);
-}
-
-// ── Refresh ──────────────────────────────────────────────────────────────────
-function startRefresh() {
-  clearInterval(_refreshTimer);
-  _refreshTimer = setInterval(doRefresh, 3000);
-}
-
-async function doRefresh() {
-  try {
-    var st = await api('GET', '/status');
-    _lastStatus = st;
-    applyStatus(st);
-    syncControls(st.pendingOptions || {}, st.playlistSettings);
-    renderHistory(st.recentHistory || []);
-    renderQueue(st.queueItems || []);
-  } catch(_) {}
-}
-
-async function forceSync() {
-  var b = document.getElementById('sync-btn');
-  b.innerHTML = '<span class="spin"></span>'; b.disabled = true;
-  try { await doRefresh(); } catch(_) {}
-  b.innerHTML = '↻ Sync'; b.disabled = false;
-  toast('Synced', 'inf');
-}
-
-// ── Apply status ─────────────────────────────────────────────────────────────
-function applyStatus(d) {
-  if (!d) return;
-  var live = !!d.playing;
-  var pill = document.getElementById('spill');
-  pill.className = 'spill ' + (live ? 'live' : 'idle');
-  document.getElementById('t-dot').className = 'dot' + (live ? ' on' : '');
-  document.getElementById('t-stxt').textContent = live ? 'Playing' : 'Idle';
-  document.getElementById('t-url').textContent = live && d.currentUrl ? trunc(d.currentUrl, 48) : '';
-  document.getElementById('live-badge').style.display = live ? '' : 'none';
-
-  sv('d-status', live ? (d.currentUrl ? trunc(d.currentUrl, 55) : 'Playing') : 'Idle');
-  sv('s-today',  d.todayTime  || '—'); sv('s-total',  d.totalTime  || '—');
-  sv('s-tvids',  d.todayVideos  !== undefined ? d.todayVideos  : '—');
-  sv('s-queue',  d.queueLength  !== undefined ? d.queueLength  : '—');
-  sv('st-today', d.todayTime  || '—'); sv('st-total', d.totalTime  || '—');
-  sv('st-tvids', d.todayVideos  !== undefined ? d.todayVideos  : '—');
-  sv('st-panics',d.todayPanics  !== undefined ? d.todayPanics  : '—');
-  sv('q-now', d.currentUrl || '—');
-  sv('q-count', d.queueLength ? '(' + d.queueLength + ' items)' : '(empty)');
-
-  var o = d.pendingOptions || {};
-  sv('d-speed', o.speed     !== undefined ? o.speed + '×'   : '—');
-  sv('d-vol',   o.volume    !== undefined ? o.volume         : '—');
-  sv('d-bri',   o.brightness !== undefined ? o.brightness+'%': '—');
-  sv('d-loop',  o.loop      !== undefined ? (o.loop ? 'On' : 'Off') : '—');
-  var mqt = o.marqueeText && o.marqueeText.trim();
-  sv('d-mq', mqt ? trunc(mqt, 35) : 'Off');
-}
-
-function syncControls(o, ps) {
-  if (!o) return;
-  slSync('sl-vl', 'v-vl', o.volume    !== undefined ? o.volume : 100,            function(v){return v;});
-  slSync('sl-sp', 'v-sp', o.speed     !== undefined ? Math.round(o.speed*100):100,function(v){return (v/100).toFixed(2)+'×';});
-  slSync('sl-br', 'v-br', o.brightness!== undefined ? o.brightness : 100,        function(v){return v+'%';});
-  togSync('tog-loop', o.loop);
-  togSync('tog-cur',  o.cursorShow);
-  var mqt = o.marqueeText && o.marqueeText.trim();
-  if (o.marqueeText !== undefined) {
-    var p = document.getElementById('mq-preview');
-    p.textContent = mqt || 'No marquee active';
-    p.classList.toggle('active', !!mqt);
-  }
-  if (ps) {
-    togSync('tog-shuf',  ps.shuffle);  togSync('pl-shuf',  ps.shuffle);
-    togSync('tog-norep', ps.noRepeat); togSync('pl-norep', ps.noRepeat);
-    numSync('maxvid-v',  ps.maxVideos || 0); numSync('pl-maxvid', ps.maxVideos || 0);
-    numSync('startfrom-v', ps.startFrom || 0); numSync('pl-start', ps.startFrom || 0);
-  }
-}
-
-// ── Playlist ─────────────────────────────────────────────────────────────────
-async function loadPlaylist() {
-  plSt('Loading…', false);
-  try {
-    var res = await api('GET', '/playlist');
-    renderPlaylist(res.entries || []);
-    if (res.shuffle   !== undefined) { togSync('tog-shuf',  res.shuffle);  togSync('pl-shuf',  res.shuffle); }
-    if (res.noRepeat  !== undefined) { togSync('tog-norep', res.noRepeat); togSync('pl-norep', res.noRepeat); }
-    if (res.maxVideos !== undefined) { numSync('maxvid-v',  res.maxVideos||0); numSync('pl-maxvid', res.maxVideos||0); }
-    if (res.startFrom !== undefined) { numSync('startfrom-v', res.startFrom||0); numSync('pl-start', res.startFrom||0); }
-    plSt('', false);
-  } catch(e) { plSt('Failed: ' + e.message, true); }
-}
-
-function renderPlaylist(entries) {
-  sv('pl-count', entries.length + ' items');
-  var list = document.getElementById('pl-list');
-  if (!entries.length) {
-    list.innerHTML = '<div style="color:var(--dim);font-size:11px;padding:8px">Playlist is empty — add URLs below.</div>';
-    return;
-  }
-  list.innerHTML = entries.map(function(e, i) {
-    var dir = e.startsWith('#');
-    return '<div class="pl-row">' +
-      '<span class="pl-n">' + (i+1) + '</span>' +
-      '<span class="pl-u' + (dir ? ' dir' : '') + '" title="' + esc(e) + '">' + esc(trunc(e, 75)) + '</span>' +
-      '<span class="pl-acts">' +
-        '<button class="btn btn-xs btn-g tip" data-tip="Move up" onclick="plMove(' + i + ',-1)">↑</button>' +
-        '<button class="btn btn-xs btn-g tip" data-tip="Move down" onclick="plMove(' + i + ',1)">↓</button>' +
-        '<button class="btn btn-xs btn-d tip" data-tip="Remove this entry" onclick="plRemove(' + i + ')">✕</button>' +
-      '</span>' +
-    '</div>';
-  }).join('');
-}
-
-async function plOp(action, opts) {
-  try {
-    await api('POST', '/playlist', Object.assign({ action: action }, opts || {}));
-    await loadPlaylist();
-    if (action !== 'moveup' && action !== 'movedown') toast('✓ ' + action, 'ok');
-  } catch(e) { toast(e.message, 'err'); }
-}
-
-function plAppend()  { var u=document.getElementById('pl-add').value.trim(); if(!u){toast('Enter a URL or directive','err');return;} plOp('append',{entry:u}); document.getElementById('pl-add').value=''; }
-function plPrepend() { var u=document.getElementById('pl-add').value.trim(); if(!u){toast('Enter a URL or directive','err');return;} plOp('prepend',{entry:u}); document.getElementById('pl-add').value=''; }
-function plRemove(i) { if(confirm('Remove item '+(i+1)+' from the playlist?')) plOp('remove',{index:i}); }
-function plMove(i,d) { plOp(d<0?'moveup':'movedown',{index:i}); }
-function plClear()   { if(confirm('Clear the entire playlist? This cannot be undone.')) plOp('clear'); }
-function plSt(m,e)   { var el=document.getElementById('pl-st'); el.textContent=m; el.style.color=e?'var(--acc)':'var(--grn)'; }
-
-// ── Queue ─────────────────────────────────────────────────────────────────────
-function renderQueue(items) {
-  var list = document.getElementById('q-list');
-  if (!items || !items.length) {
-    list.innerHTML = '<li style="color:var(--dim);font-size:11px;padding:8px">Queue is empty</li>';
-    return;
-  }
-  list.innerHTML = items.slice(0,50).map(function(u,i) {
-    return '<li class="q-item"><span class="q-n">' + (i+1) + '</span>' +
-      '<span class="q-u" title="'+esc(u)+'">'+esc(trunc(u,68))+'</span>' +
-      '<span class="q-rm tip" data-tip="Remove this item from queue" onclick="cmd(\'removequeue\','+i+')">×</span></li>';
-  }).join('');
-}
-
-// ── History ───────────────────────────────────────────────────────────────────
-function renderHistory(hist) {
-  var el = document.getElementById('hist-list');
-  if (!hist || !hist.length) { el.innerHTML='<div style="font-size:11px;color:var(--dim)">No watch history yet.</div>'; return; }
-  el.innerHTML = hist.slice(0,100).map(function(h) {
-    return '<div class="h-item"><span class="h-date">'+new Date(h.lastWatched).toLocaleDateString()+'</span>' +
-           '<span class="h-url" title="'+esc(h.url)+'">'+esc(trunc(h.url,80))+'</span></div>';
-  }).join('');
-}
-
-// ── Quick phrases ─────────────────────────────────────────────────────────────
-(function() {
-  var phrases = ['Good girl','Keep watching','You have no choice','Submit','Let go','Relax'];
-  document.getElementById('quick-phrases').innerHTML = phrases.map(function(p) {
-    return '<button class="btn btn-xs btn-a tip" data-tip="Send this phrase to the screen now" onclick="setMqQuick(\''+esc(p)+'\')">'+esc(p)+'</button>';
-  }).join('');
-})();
-function setMqQuick(t) { document.getElementById('mq-text').value=t; cmdMarqueeSet(); }
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function slShow(n,v) { v=parseInt(v); var el=document.getElementById('v-'+n);
-  if(n==='sp') el.textContent=(v/100).toFixed(2)+'×'; else if(n==='vl') el.textContent=v; else el.textContent=v+'%'; }
-function slSync(si,vi,val,fmt) { var s=document.getElementById(si),v=document.getElementById(vi); if(!s||!v||s.matches(':active'))return; s.value=val; v.textContent=fmt(val); }
-function togSync(id,val) { var e=document.getElementById(id); if(e&&!e.matches(':focus')&&val!==undefined) e.checked=!!val; }
-function numSync(id,val) { var e=document.getElementById(id); if(e&&!e.matches(':focus')) e.value=val; }
-function sv(id,v) { var e=document.getElementById(id); if(e) e.textContent=v; }
-function trunc(s,n) { return s&&s.length>n?s.slice(0,n)+'…':s; }
-function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;'); }
-function toast(msg,type) {
-  var c=document.getElementById('toasts'),el=document.createElement('div');
-  el.className='toast '+(type||'ok'); el.textContent=msg; c.appendChild(el);
-  setTimeout(function(){el.style.opacity='0';setTimeout(function(){el.remove();},300);},3000);
-}
-
-// ── URL fragment: #C=CODE&T=TUNNELURL ──────────────────────────────────
-// SEC-004 FIX: PIN removed from URL — must be entered manually
-(function() {
-  try {
-    var hash=window.location.hash.slice(1); if(!hash) return;
-    var p={};
-    hash.split('&').forEach(function(x){var kv=x.split('=');if(kv.length===2)p[decodeURIComponent(kv[0])]=decodeURIComponent(kv[1]);});
-    if(p.T) document.getElementById('f-url').value  = p.T;
-    if(p.C) document.getElementById('f-code').value = p.C.toUpperCase();
-    // PIN intentionally NOT in URL — must be shared separately for security
-    history.replaceState(null,'',window.location.pathname);
-  } catch(_){}
-})();
-
-document.getElementById('f-url') .addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('f-code').focus();});
-document.getElementById('f-code').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('f-pin').focus();});
-document.getElementById('f-pin') .addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+var G=function(id){return document.getElementById(id)},S={tunnelUrl:null,token:null},_refreshTimer=null,_lastStatus=null;
+async function api(m,p,b){var o={method:m,headers:{'Content-Type':'application/json'}};if(S.token)o.headers['Authorization']='Bearer '+S.token;if(b!==undefined)o.body=JSON.stringify(b);var r=await fetch(S.tunnelUrl+p,o);if(!r.ok){var e=await r.json().catch(function(){return{error:'HTTP '+r.status}});throw new Error(e.error||e.message||'HTTP '+r.status)}return r.json()}
+async function cmd(n,v,si){try{var b={cmd:n};if(v!==undefined)b.value=v;var r=await api('POST','/command',b);if(!r.success)throw new Error(r.message||'failed');if(!si)toast('✓ '+n,'ok');setTimeout(doRefresh,250)}catch(e){if(!si)toast(e.message,'err')}}
+function cmdQueue(id){var u=G(id).value.trim();if(!u||!u.startsWith('http')){toast('Enter a valid URL','err');return}cmd('appendurl',u);G(id).value=''}
+function cmdPlayNow(){if(!confirm('Clear queue and start playlist?'))return;cmd('playnow')}
+function cmdLock(l){if(l&&!confirm('Lock the panic hotkey?'))return;cmd(l?'lock':'unlock')}
+function cmdMarqueeSet(){var t=G('mq-text').value.trim();if(!t){toast('Enter text','err');return}var p=G('mq-preview');p.textContent=t;p.classList.add('active');cmd('marquee',t)}
+function cmdSchedule(){var t=G('sched-t').value.trim();if(!/^\d{2}:\d{2}$/.test(t)){toast('Use HH:MM','err');return}cmd('schedule',t)}
+async function doLogin(){var url=G('f-url').value.trim().replace(/\/+$/,''),code=G('f-code').value.trim().toUpperCase(),pin=G('f-pin').value.trim(),btn=G('lbtn'),err=G('lerr');err.classList.remove('on');
+function fail(m){err.textContent=m;err.classList.add('on');btn.disabled=false;btn.innerHTML='Connect'}
+if(!url.startsWith('https://')){fail('URL must start with https://');return}if(code.length!==6){fail('Code must be 6 characters');return}if(!/^\d{6}$/.test(pin)){fail('PIN must be 6 digits');return}
+btn.disabled=true;btn.innerHTML='<span class="spin"></span> Connecting…';S.tunnelUrl=url;
+try{var res=await api('POST','/auth',{code:code,pin:pin});if(!res.ok){fail(res.error||'Auth failed');return}S.token=res.token;var st=await api('GET','/status');_lastStatus=st;applyStatus(st);syncControls(st.pendingOptions||{},st.playlistSettings);renderHistory(st.recentHistory||[]);await loadPlaylist();G('login').style.display='none';G('app').classList.add('on');startRefresh();toast('Connected','ok')}catch(e){S.tunnelUrl=S.token=null;var m=e.message||'';if(m.includes('Failed to fetch')||m.includes('NetworkError'))fail('Cannot reach tunnel URL.');else if(m.includes('401'))fail('Incorrect code or PIN.');else fail('Failed: '+m)}}
+function doLogout(){clearInterval(_refreshTimer);_refreshTimer=null;S.tunnelUrl=S.token=null;_lastStatus=null;G('app').classList.remove('on');G('login').style.display='';G('f-pin').value=''}
+var _plD=null;function go(n){document.querySelectorAll('.nav-item').forEach(function(i){i.classList.toggle('active',i.dataset.tab===n)});document.querySelectorAll('.bnav-item').forEach(function(i){i.classList.toggle('active',i.dataset.tab===n)});document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.id==='tab-'+n)});if(n==='playlist'){if(_plD)clearTimeout(_plD);_plD=setTimeout(function(){_plD=null;loadPlaylist()},300)}if(n==='stats')renderHistory(_lastStatus&&_lastStatus.recentHistory||[]);if(n==='queue')renderQueue(_lastStatus&&_lastStatus.queueItems||[])}
+function startRefresh(){clearInterval(_refreshTimer);_refreshTimer=setInterval(doRefresh,3000)}
+async function doRefresh(){try{var st=await api('GET','/status');_lastStatus=st;applyStatus(st);syncControls(st.pendingOptions||{},st.playlistSettings);renderHistory(st.recentHistory||[]);renderQueue(st.queueItems||[])}catch(e){}}
+async function forceSync(){var b=G('sync-btn');b.innerHTML='<span class="spin"></span>';b.disabled=true;try{await doRefresh()}catch(e){}b.innerHTML='↻';b.disabled=false;toast('Synced','inf')}
+function applyStatus(d){if(!d)return;var l=!!d.playing,p=G('spill');p.className='tb-status '+(l?'live':'idle');G('t-dot').className='tb-dot '+(l?'on':'off');G('t-stxt').textContent=l?'Playing':'Idle';G('live-badge').style.display=l?'':'none';sv('d-status',l?(d.currentUrl?trunc(d.currentUrl,50):'Playing'):'Idle');sv('s-today',d.todayTime||'—');sv('s-total',d.totalTime||'—');sv('s-tvids',d.todayVideos!==undefined?d.todayVideos:'—');sv('s-queue',d.queueLength!==undefined?d.queueLength:'—');sv('st-today',d.todayTime||'—');sv('st-total',d.totalTime||'—');sv('st-tvids',d.todayVideos!==undefined?d.todayVideos:'—');sv('st-panics',d.todayPanics!==undefined?d.todayPanics:'—');sv('q-now',d.currentUrl||'—');sv('q-count',d.queueLength?'('+d.queueLength+')':'(empty)');var o=d.pendingOptions||{};sv('d-speed',o.speed!==undefined?o.speed+'×':'—');sv('d-vol',o.volume!==undefined?o.volume:'—');sv('d-bri',o.brightness!==undefined?o.brightness+'%':'—');sv('d-loop',o.loop!==undefined?(o.loop?'On':'Off'):'—');var mq=o.marqueeText&&o.marqueeText.trim();sv('d-mq',mq?trunc(mq,30):'Off')}
+function syncControls(o,ps){if(!o)return;slSync('sl-vl','v-vl',o.volume!==undefined?o.volume:100,function(v){return v});slSync('sl-sp','v-sp',o.speed!==undefined?Math.round(o.speed*100):100,function(v){return(v/100).toFixed(2)+'×'});slSync('sl-br','v-br',o.brightness!==undefined?o.brightness:100,function(v){return v+'%'});togSync('tog-loop',o.loop);togSync('tog-cur',o.cursorShow);var mq=o.marqueeText&&o.marqueeText.trim();if(o.marqueeText!==undefined){var p=G('mq-preview');p.textContent=mq||'No marquee active';p.classList.toggle('active',!!mq)}if(ps){togSync('tog-shuf',ps.shuffle);togSync('pl-shuf',ps.shuffle);togSync('tog-norep',ps.noRepeat);togSync('pl-norep',ps.noRepeat);numSync('maxvid-v',ps.maxVideos||0);numSync('pl-maxvid',ps.maxVideos||0);numSync('startfrom-v',ps.startFrom||0);numSync('pl-start',ps.startFrom||0)}}
+async function loadPlaylist(){plSt('Loading…',0);try{var r=await api('GET','/playlist');renderPlaylist(r.entries||[]);if(r.shuffle!==undefined){togSync('tog-shuf',r.shuffle);togSync('pl-shuf',r.shuffle)}if(r.noRepeat!==undefined){togSync('tog-norep',r.noRepeat);togSync('pl-norep',r.noRepeat)}if(r.maxVideos!==undefined){numSync('maxvid-v',r.maxVideos||0);numSync('pl-maxvid',r.maxVideos||0)}if(r.startFrom!==undefined){numSync('startfrom-v',r.startFrom||0);numSync('pl-start',r.startFrom||0)}plSt('',0)}catch(e){plSt('Failed: '+e.message,1)}}
+function renderPlaylist(entries){sv('pl-count',entries.length+' items');var list=G('pl-list');if(!entries.length){list.innerHTML='<div class="dim" style="font-size:12px;padding:8px">Playlist empty — add URLs below.</div>';return}list.innerHTML=entries.map(function(e,i){var d=e.startsWith('#');return'<div class="pl-row"><span class="pl-num">'+(i+1)+'</span><span class="pl-url'+(d?' directive':'')+'" title="'+esc(e)+'">'+esc(trunc(e,65))+'</span><span class="pl-acts"><button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:10px" onclick="plMove('+i+',-1)">↑</button><button class="btn btn-ghost btn-sm" style="padding:2px 6px;font-size:10px" onclick="plMove('+i+',1)">↓</button><button class="btn btn-danger btn-sm" style="padding:2px 6px;font-size:10px" onclick="plRemove('+i+')">✕</button></span></div>'}).join('')}
+async function plOp(a,o){try{await api('POST','/playlist',Object.assign({action:a},o||{}));await loadPlaylist();if(a!=='moveup'&&a!=='movedown')toast('✓ '+a,'ok')}catch(e){toast(e.message,'err')}}
+function plAppend(){var u=G('pl-add').value.trim();if(!u){toast('Enter a URL','err');return}plOp('append',{entry:u});G('pl-add').value=''}
+function plPrepend(){var u=G('pl-add').value.trim();if(!u){toast('Enter a URL','err');return}plOp('prepend',{entry:u});G('pl-add').value=''}
+function plRemove(i){if(confirm('Remove item '+(i+1)+'?'))plOp('remove',{index:i})}
+function plMove(i,d){plOp(d<0?'moveup':'movedown',{index:i})}
+function plClear(){if(confirm('Clear entire playlist?'))plOp('clear')}
+function plSt(m,e){var el=G('pl-st');el.textContent=m;el.style.color=e?'var(--acc)':'var(--grn)'}
+function renderQueue(items){var l=G('q-list');if(!items||!items.length){l.innerHTML='<li class="dim" style="font-size:12px;padding:8px">Queue is empty</li>';return}l.innerHTML=items.slice(0,50).map(function(u,i){return'<li class="q-item"><span class="q-num">'+(i+1)+'</span><span class="q-url" title="'+esc(u)+'">'+esc(trunc(u,60))+'</span><span class="q-rm" onclick="cmd(\'removequeue\','+i+')">×</span></li>'}).join('')}
+function renderHistory(h){var el=G('hist-list');if(!h||!h.length){el.innerHTML='<div class="dim" style="font-size:12px">No history yet.</div>';return}el.innerHTML=h.slice(0,100).map(function(e){return'<div class="h-item"><span class="h-date">'+new Date(e.lastWatched).toLocaleDateString()+'</span><span class="h-url" title="'+esc(e.url)+'">'+esc(trunc(e.url,70))+'</span></div>'}).join('')}
+(function(){var p=['Good girl','Keep watching','You have no choice','Submit','Let go','Relax'];G('quick-phrases').innerHTML=p.map(function(t){return'<button class="btn btn-accent btn-sm" onclick="setMqQuick(\''+esc(t)+'\')">'+esc(t)+'</button>'}).join('')})();
+function setMqQuick(t){G('mq-text').value=t;cmdMarqueeSet()}
+function slShow(n,v){v=parseInt(v);var e=G('v-'+n);if(n==='sp')e.textContent=(v/100).toFixed(2)+'×';else if(n==='vl')e.textContent=v;else e.textContent=v+'%'}
+function slSync(si,vi,val,fmt){var s=G(si),v=G(vi);if(!s||!v||s.matches(':active'))return;s.value=val;v.textContent=fmt(val)}
+function togSync(id,val){var e=G(id);if(e&&!e.matches(':focus')&&val!==undefined)e.checked=!!val}
+function numSync(id,val){var e=G(id);if(e&&!e.matches(':focus'))e.value=val}
+function sv(id,v){var e=G(id);if(e)e.textContent=v}
+function trunc(s,n){return s&&s.length>n?s.slice(0,n)+'…':s}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;').replace(/"/g,'&quot;')}
+function toast(msg,type){var c=G('toasts'),el=document.createElement('div');el.className='toast '+(type||'ok');el.textContent=msg;c.appendChild(el);setTimeout(function(){el.style.opacity='0';setTimeout(function(){el.remove()},300)},3000)}
+(function(){try{var h=window.location.hash.slice(1);if(!h)return;var p={};h.split('&').forEach(function(x){var kv=x.split('=');if(kv.length===2)p[decodeURIComponent(kv[0])]=decodeURIComponent(kv[1])});if(p.T)G('f-url').value=p.T;if(p.C)G('f-code').value=p.C.toUpperCase();history.replaceState(null,'',window.location.pathname)}catch(e){}})();
+G('f-url').addEventListener('keydown',function(e){if(e.key==='Enter')G('f-code').focus()});
+G('f-code').addEventListener('keydown',function(e){if(e.key==='Enter')G('f-pin').focus()});
+G('f-pin').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
 </script>
 </body>
 </html>
