@@ -163,7 +163,7 @@ textarea{width:100%;background:var(--input);border:1px solid var(--bdr);border-r
 <div id="app">
 <div class="top"><span class="tlogo">⊙ VC</span><div class="tpill idle" id="pill"><div class="tdot off" id="dot"></div><span id="stxt">Idle</span></div>
 <span id="tz-disp" class="tz-info" style="margin-left:6px"></span>
-<div class="tright"><button class="tb" onclick="forceSync()" id="sync-btn">↻</button><button class="tb red" onclick="cmd('panic')">⚠ Panic</button><button class="tb" onclick="doLogout()">Logout</button></div></div>
+<div class="tright"><button class="tb" onclick="forceSync()" id="sync-btn">↻</button><button class="tb red" onclick="cmd('panic')">⚠ Panic</button><button class="tb" onclick="showGuide()">?</button><button class="tb" onclick="doLogout()">Logout</button></div></div>
 <div class="body">
 <nav class="side"><div class="ni on" data-t="home" onclick="go('home')"><em>◈</em>Home</div><div class="ni" data-t="ctrl" onclick="go('ctrl')"><em>◎</em>Controls</div><div class="ni" data-t="list" onclick="go('list')"><em>≡</em>Playlist & Queue</div></nav>
 <main class="main">
@@ -183,7 +183,10 @@ textarea{width:100%;background:var(--input);border:1px solid var(--bdr);border-r
 </div>
 
 <div class="c"><div class="ch">Session Stats</div><div class="sg" style="margin-bottom:0"><div class="sc p"><div class="sv" id="st-td">—</div><div class="sl">Today</div></div><div class="sc bl"><div class="sv" id="st-tt">—</div><div class="sl">All Time</div></div><div class="sc g"><div class="sv" id="st-tv">—</div><div class="sl">Videos</div></div><div class="sc r"><div class="sv" id="st-tp">—</div><div class="sl">Panics</div></div></div></div>
-<div class="c"><div class="ch">Watch History</div><div id="hist" style="max-height:40vh;overflow-y:auto"><div style="color:var(--dim);font-size:12px">Loading…</div></div></div>
+<div class="c"><div class="ch">Watch Time Trend <span class="dim" style="font-size:9px;font-weight:400">(30 days)</span></div><div id="trend-chart" style="height:120px;display:flex;align-items:flex-end;gap:2px;padding:8px 0"></div></div>
+<div class="c"><div class="ch">Top Videos <span class="dim" style="font-size:9px;font-weight:400">by play count</span></div><div id="top-vids" style="max-height:30vh;overflow-y:auto"><div style="color:var(--dim);font-size:12px">Loading…</div></div></div>
+<div class="c"><div class="ch">Session Patterns</div><div class="sg" style="margin-bottom:0"><div class="sc p"><div class="sv" id="an-avgdur">—</div><div class="sl">Avg Duration</div></div><div class="sc bl"><div class="sv" id="an-avgsess">—</div><div class="sl">Sessions/Week</div></div><div class="sc a"><div class="sv" id="an-skiprate">—</div><div class="sl">Skip Rate</div></div><div class="sc g"><div class="sv" id="an-complete">—</div><div class="sl">Completion %</div></div></div></div>
+<div class="c"><div class="ch">Watch History</div><div id="hist" style="max-height:30vh;overflow-y:auto"><div style="color:var(--dim);font-size:12px">Loading…</div></div></div>
 </div>
 
 <!-- CONTROLS -->
@@ -220,6 +223,9 @@ textarea{width:100%;background:var(--input);border:1px solid var(--bdr);border-r
 <div class="sec"><div class="sec-h">Weekly Schedule</div><div class="tz-info" id="tz-sched"></div><div id="wk-list"></div>
 <div class="rw" style="margin-top:8px"><select id="wk-day" style="background:var(--input);border:1px solid var(--bdr);border-radius:var(--r);color:var(--txt);padding:6px 10px;font-size:12px;outline:none"><option value="mon">Mon</option><option value="tue">Tue</option><option value="wed">Wed</option><option value="thu">Thu</option><option value="fri">Fri</option><option value="sat">Sat</option><option value="sun">Sun</option></select>
 <input type="text" id="wk-time" placeholder="14:30" maxlength="5" style="width:72px;text-align:center"><button class="b bk bsm" onclick="wkAdd()">+ Add</button><button class="b bd bsm" onclick="wkClear()">Clear All</button></div>
+<div id="wk-urls-area" style="display:none;margin-top:8px"><div class="sec-h" style="font-size:10px">Playlist for entry #<span id="wk-edit-idx">1</span> <span class="dim" style="font-size:9px">(leave empty to use default playlist)</span></div>
+<textarea id="wk-urls-ta" rows="4" placeholder="Paste URLs here, one per line...&#10;Leave empty to use the default playlist"></textarea>
+<div class="rw" style="margin-top:6px"><button class="b bs bsm" onclick="wkUrlsSave()">Apply URLs</button><button class="b bg bsm" onclick="wkUrlsCancel()">Cancel</button></div></div>
 <button class="b ba bsm" style="margin-top:8px;width:100%" onclick="wkSave()">💾 Save Weekly Schedule</button></div></div></div>
 
 <!-- PLAYLIST & QUEUE -->
@@ -242,6 +248,44 @@ textarea{width:100%;background:var(--input);border:1px solid var(--bdr);border-r
 <div class="nr"><span class="nf"><strong>Start From</strong>0 = beginning</span><input type="number" id="pl-sf" value="0" min="0"><button class="b bg bsm" onclick="cmd('startfrom',+E('pl-sf').value)">Set</button></div></div></div>
 </main></div>
 <nav class="bnav" id="bnav"><div class="bn on" data-t="home" onclick="go('home')"><i>◈</i>Home</div><div class="bn" data-t="ctrl" onclick="go('ctrl')"><i>◎</i>Controls</div><div class="bn" data-t="list" onclick="go('list')"><i>≡</i>Playlist</div></nav></div>
+<div id="guide-overlay" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.7);overflow-y:auto;padding:20px" onclick="if(event.target===this)hideGuide()">
+<div style="max-width:640px;margin:20px auto;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r2);padding:28px;position:relative">
+<button class="b bg bsm" style="position:absolute;top:12px;right:12px" onclick="hideGuide()">✕ Close</button>
+<div style="font-family:var(--mono);font-size:10px;color:var(--ring3);text-transform:uppercase;letter-spacing:.2em;margin-bottom:6px">VoidCapture</div>
+<h2 style="font-size:20px;font-weight:700;margin-bottom:16px;background:linear-gradient(135deg,#fff 30%,var(--iris));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Controller Guide</h2>
+
+<div style="font-size:13px;color:var(--dim);line-height:1.8">
+<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">◈ Getting Connected</div>
+<p>Open the Controller Session window in the desktop app. You’ll see a <strong style="color:var(--grn)">Tunnel URL</strong>, <strong style="color:var(--grn)">Code</strong>, and <strong style="color:var(--acc)">PIN</strong>. Enter all three on the login screen and click Connect. Only one controller can be connected at a time — logging in kicks any previous session.</p>
+
+<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">◎ Playback Controls</div>
+<p><strong>Skip</strong> — jumps to the next video. <strong>Clear Queue</strong> — removes all waiting videos (current keeps playing). <strong>Panic</strong> — immediately stops everything. <strong>Extend</strong> — adds minutes to the session timer. <strong>Max Time</strong> — sets a hard session limit.</p>
+
+<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">◎ Sliders</div>
+<p><strong>Volume</strong> (0–200) and <strong>Speed</strong> (0.25–1.5×) adjust in real-time during playback. Changes show as a brief notification on the video screen.</p>
+
+<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">🔒 Lock / Unlock</div>
+<p><strong>Lock</strong> disables the panic hotkey on the desktop — the user cannot stop playback until you unlock it. The 3-second emergency hold (Ctrl+Shift+Esc held for 3s) always works as a safety override regardless of lock state.</p>
+
+<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">⚙ Session Options</div>
+<p><strong>Loop</strong> — restart playlist when finished. <strong>Shuffle</strong> — randomize play order. <strong>No Repeat</strong> — skip already-watched URLs. <strong>Show Cursor</strong> — keep mouse visible during playback. <strong>Min Session Lock</strong> — disable panic for N seconds at session start. <strong>Max Videos</strong> — stop after N videos.</p>
+
+<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">✦ Marquee</div>
+<p>Send text that overlays on the playing video. Use the quick phrases or type custom text. Top/Bottom controls the position.</p>
+
+<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">⏱ Schedule</div>
+<p><strong>Start Now</strong> — immediately begins playlist playback. <strong>Schedule at Time</strong> — set a one-time start at HH:MM. <strong>Idle Auto-Start</strong> — begins when the desktop has been idle for N minutes. <strong>Weekly Schedule</strong> — set recurring day+time entries. Each entry can optionally have its own playlist — click the 📋 icon to assign URLs. Leave empty to use the default playlist.</p>
+
+<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">≡ Playlist & Queue</div>
+<p><strong>Queue</strong> — videos waiting to play next (top section). <strong>Playlist</strong> — the master list of URLs. Use <strong>Bulk Add</strong> to paste multiple URLs at once. Use checkboxes for bulk delete. Drag entries to reorder. Click <strong>Play Now</strong> to start the playlist immediately.</p>
+
+<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">↻ Reset</div>
+<p>The <strong>Reset All</strong> button restores every setting to defaults: volume 100, speed 1.0×, no marquee, panic unlocked, loop/shuffle/repeat off.</p>
+
+<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">🛡 Connection & Security</div>
+<p>All traffic is encrypted via Cloudflare HTTPS tunnel. The tunnel URL changes on every app restart. Session codes and PINs are generated fresh and never stored on disk. If you close the browser or lose connection, the session auto-expires within 15 seconds. Only one controller can be connected at a time.</p>
+</div>
+</div></div>
 <div class="toasts" id="toasts"></div>
 
 <script>
@@ -268,7 +312,7 @@ if(!url.startsWith('https://')){fail('URL must start with https://');return}if(c
 btn.disabled=true;btn.innerHTML='<span class="spin"></span> Connecting\u2026';S.u=url;
 try{var res=await api('POST','/auth',{code:code,pin:pin});if(!res.ok){fail(res.error||'Auth failed');return}S.t=res.token;
 var st=await api('GET','/status');_ls=st;_serverTz=st.serverTimezone||null;updateTzDisplay();apply(st);sync(st.pendingOptions||{},st.playlistSettings);renderHist(st.recentHistory||[]);loadWk(st.weeklySchedule);await loadPl();
-E('login').style.display='none';E('app').classList.add('on');startPoll();toast('Connected','ok')}
+E('login').style.display='none';E('app').classList.add('on');startPoll();loadAnalytics();toast('Connected','ok')}
 catch(e){S.u=S.t=null;var m=e.message||'';if(m.includes('Failed to fetch')||m.includes('NetworkError'))fail('Cannot reach tunnel URL.');else if(m.includes('401'))fail('Incorrect code or PIN.');else fail('Failed: '+m)}}
 function doLogout(){disconnect();clearInterval(_rt);_rt=null;S.u=S.t=null;_ls=null;E('app').classList.remove('on');E('login').style.display='';E('f-pin').value=''}
 window.addEventListener('beforeunload',function(){disconnect()});
@@ -276,7 +320,7 @@ window.addEventListener('pagehide',function(){disconnect()});
 
 function updateTzDisplay(){var tz=_userTz||'Unknown';E('tz-disp').textContent=tz;E('tz-sched').textContent='Your timezone: '+tz+(_serverTz?' | App: '+_serverTz:'')}
 
-function go(n){document.querySelectorAll('.ni').forEach(function(i){i.classList.toggle('on',i.dataset.t===n)});document.querySelectorAll('.bn').forEach(function(i){i.classList.toggle('on',i.dataset.t===n)});document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.id==='tab-'+n)});if(n==='list')loadPl()}
+function go(n){if(n==='home')loadAnalytics();document.querySelectorAll('.ni').forEach(function(i){i.classList.toggle('on',i.dataset.t===n)});document.querySelectorAll('.bn').forEach(function(i){i.classList.toggle('on',i.dataset.t===n)});document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.id==='tab-'+n)});if(n==='list')loadPl()}
 function startPoll(){clearInterval(_rt);_rt=setInterval(poll,2500)}
 async function poll(){try{var st=await api('GET','/status');_ls=st;apply(st);sync(st.pendingOptions||{},st.playlistSettings);renderHist(st.recentHistory||[]);renderQ(st.queueItems||[])}catch(e){if(e.message&&(e.message.includes('401')||e.message.includes('expired'))){clearInterval(_rt);_rt=null;S.u=S.t=null;_ls=null;E('app').classList.remove('on');E('login').style.display='';toast('Session ended \u2014 disconnected by app or another controller','err')}}}
 async function forceSync(){var b=E('sync-btn');b.innerHTML='<span class="spin"></span>';b.disabled=true;try{await poll()}catch(e){}b.innerHTML='\u21bb';b.disabled=false;toast('Synced','inf')}
@@ -292,7 +336,7 @@ if(l&&d.sessionStartedAt&&d.sessionMaxMins>0){cw.style.display='';var elapsed=(D
 sv('s-today',d.todayTime||'\u2014');sv('s-total',d.totalTime||'\u2014');sv('s-vids',d.todayVideos!==undefined?d.todayVideos:'\u2014');sv('s-queue',d.queueLength!==undefined?d.queueLength:'\u2014');
 sv('st-td',d.todayTime||'\u2014');sv('st-tt',d.totalTime||'\u2014');sv('st-tv',d.todayVideos!==undefined?d.todayVideos:'\u2014');sv('st-tp',d.todayPanics!==undefined?d.todayPanics:'\u2014');
 sv('q-now',d.currentUrl||'\u2014');sv('q-ct',d.queueLength?'('+d.queueLength+')':'(empty)');
-var o=d.pendingOptions||{};sv('d-sp',o.speed!==undefined?o.speed+'\u00d7':'\u2014');sv('d-vl',o.volume!==undefined?o.volume:'\u2014');sv('d-lp',o.loop!==undefined?(o.loop?'On':'Off'):'\u2014');var mq=o.marqueeText&&o.marqueeText.trim();sv('d-mq',mq?trunc(mq,25):'Off');
+var o=d.pendingOptions||{};sv('d-sp',o.speed!==undefined?o.speed+'\u00d7':'\u2014');sv('d-vl',o.volume!==undefined?o.volume:'\u2014');sv('d-lp',o.loop!==undefined?(o.loop?'On':'Off'):'\u2014');var mq=o.marqueeText&&o.marqueeText.trim();sv('d-mq',mq?trunc(mq,25):'Off');sv('s-queue',d.queueLength!==undefined?d.queueLength:'\u2014');
 var lb=E('lock-b');if(lb){if(d.panicLocked){lb.textContent='\ud83d\udd12 PANIC LOCKED';lb.style.color='var(--acc)'}else{lb.textContent='\ud83d\udd13 Panic hotkey active';lb.style.color='var(--grn)'}}}
 
 function sync(o,ps){if(!o)return;slY('sl-vl','v-vl',o.volume!==undefined?o.volume:100,function(v){return v});slY('sl-sp','v-sp',o.speed!==undefined?Math.round(o.speed*100):100,function(v){return(v/100).toFixed(2)+'\u00d7'});
@@ -333,12 +377,18 @@ function renderHist(h){var el=E('hist');if(!h||!h.length){el.innerHTML='<div sty
 
 // Weekly schedule
 function loadWk(raw){try{_wk=raw?JSON.parse(raw):[]}catch(e){_wk=[]}renderWk()}
-function renderWk(){var el=E('wk-list');if(!_wk.length){el.innerHTML='<div style="color:var(--dim);font-size:12px;padding:6px">No weekly schedules set.</div>';return}
-el.innerHTML='<div class="wk-grid">'+_wk.map(function(s,i){return'<span class="wk-day">'+esc(s.day)+'</span><span style="color:var(--txt);font-family:var(--mono);font-size:13px">'+esc(s.time)+'</span><span class="wk-rm" onclick="wkRm('+i+')">\u2715</span>'}).join('')+'</div>'}
+function renderWk(){var el=E('wk-list');E('wk-urls-area').style.display='none';if(!_wk.length){el.innerHTML='<div style="color:var(--dim);font-size:12px;padding:6px">No weekly schedules set.</div>';return}
+el.innerHTML='<div class="wk-grid">'+_wk.map(function(s,i){var hasUrls=s.urls&&s.urls.length>0;return'<span class="wk-day">'+esc(s.day)+'</span><span style="color:var(--txt);font-family:var(--mono);font-size:13px">'+esc(s.time)+(hasUrls?' <span style="color:var(--iris);font-size:9px">\u2714 '+s.urls.length+' URLs</span>':' <span style="color:var(--mute);font-size:9px">default playlist</span>')+'</span><span style="display:flex;gap:2px"><span class="wk-rm" onclick="wkEditUrls('+i+')" title="Assign playlist">\U0001f4cb</span><span class="wk-rm" onclick="wkRm('+i+')" title="Remove">\u2715</span></span>'}).join('')+'</div>'}
 function wkAdd(){var day=E('wk-day').value,time=E('wk-time').value.trim();if(!/^\d{2}:\d{2}$/.test(time)){toast('Use HH:MM','err');return}_wk.push({day:day,time:time});renderWk();E('wk-time').value=''}
 function wkRm(i){_wk.splice(i,1);renderWk()}
 function wkClear(){_wk=[];renderWk()}
 function wkSave(){cmd('weeklyschedule',JSON.stringify(_wk))}
+var _wkEditIdx=-1;
+function wkEditUrls(i){_wkEditIdx=i;E('wk-edit-idx').textContent=(i+1);var s=_wk[i];E('wk-urls-ta').value=s.urls?s.urls.join('\n'):'';E('wk-urls-area').style.display=''}
+function wkUrlsSave(){if(_wkEditIdx<0)return;var lines=E('wk-urls-ta').value.split('\n').map(function(l){return l.trim()}).filter(function(l){return l.length>0});_wk[_wkEditIdx].urls=lines.length>0?lines:undefined;E('wk-urls-area').style.display='none';_wkEditIdx=-1;renderWk();toast('Playlist assigned \u2014 click Save to persist','inf')}
+function wkUrlsCancel(){E('wk-urls-area').style.display='none';_wkEditIdx=-1}
+function showGuide(){E('guide-overlay').style.display=''}
+function hideGuide(){E('guide-overlay').style.display='none'}
 
 // Quick phrases
 (function(){var p=['Good girl','Keep watching','You have no choice','Submit','Let go','Relax'];E('qp').innerHTML=p.map(function(t){return'<button class="b ba bsm" onclick="setMq(\''+esc(t)+'\')">'+esc(t)+'</button>'}).join('')})();
@@ -353,6 +403,26 @@ function sv(id,v){var e=E(id);if(e)e.textContent=v}
 function trunc(s,n){return s&&s.length>n?s.slice(0,n)+'\u2026':s}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;').replace(/"/g,'&quot;')}
 function toast(msg,type){var c=E('toasts'),el=document.createElement('div');el.className='toast '+(type||'ok');el.textContent=msg;c.appendChild(el);setTimeout(function(){el.style.opacity='0';setTimeout(function(){el.remove()},300)},3000)}
+
+// Analytics
+var _anData=null;
+async function loadAnalytics(){try{_anData=await api('GET','/analytics');renderAnalytics()}catch(e){}}
+function renderAnalytics(){if(!_anData)return;
+// Stats
+var t=_anData.today||{},a=_anData.allTime||{};
+sv('st-td',fmtSec(t.totalSec||0));sv('st-tt',fmtSec(a.totalSec||0));sv('st-tv',a.videos||0);sv('st-tp',a.panics||0);
+// Trend chart (bar chart)
+var trend=_anData.dailyTrend||[];var el=E('trend-chart');if(trend.length>0){var maxSec=Math.max.apply(null,trend.map(function(d){return d.totalSec}))||1;
+el.innerHTML=trend.map(function(d){var pct=Math.max(2,d.totalSec/maxSec*100);var mins=Math.round(d.totalSec/60);
+return'<div title="'+esc(d.date)+': '+mins+'min" style="flex:1;min-width:4px;background:linear-gradient(to top,var(--ring3),var(--iris));border-radius:2px 2px 0 0;height:'+pct+'%;opacity:'+(d.totalSec>0?'1':'0.15')+'"></div>'}).join('')}
+// Top videos
+var tv=_anData.topVideos||[];var tvEl=E('top-vids');
+if(tv.length>0){tvEl.innerHTML=tv.slice(0,20).map(function(v,i){return'<div class="hi"><span style="color:var(--mute);font-family:var(--mono);font-size:10px;width:20px;flex-shrink:0;text-align:right">'+(i+1)+'</span><span class="hu" title="'+esc(v.url)+'">'+esc(trunc(v.url,50))+'</span><span style="color:var(--iris);font-family:var(--mono);font-size:10px;flex-shrink:0">'+v.plays+'x '+v.completionRate+'%</span></div>'}).join('')}else{tvEl.innerHTML='<div style="color:var(--dim);font-size:12px">No data yet.</div>'}
+// Session patterns
+var sess=_anData.sessions||[];if(sess.length>0){var totalDur=sess.reduce(function(s,x){return s+x.durationSec},0);var avgDur=Math.round(totalDur/sess.length);sv('an-avgdur',fmtSec(avgDur));
+var oldest=sess[sess.length-1];var newest=sess[0];if(oldest.startedAt&&newest.startedAt){var days=Math.max(1,(new Date(newest.startedAt)-new Date(oldest.startedAt))/(86400000));sv('an-avgsess',(sess.length/days*7).toFixed(1))}
+var cr=_anData.completionRates||[];if(cr.length>0){var avgRate=cr.reduce(function(s,x){return s+x.rate},0)/cr.length;sv('an-complete',avgRate.toFixed(0)+'%')}
+var totalSkips=tv.reduce(function(s,x){return s+x.skipped},0);var totalPlays=tv.reduce(function(s,x){return s+x.plays},0);if(totalPlays>0)sv('an-skiprate',(totalSkips/totalPlays*100).toFixed(0)+'%')}}
 
 // URL fragment
 (function(){try{var h=window.location.hash.slice(1);if(!h)return;var p={};h.split('&').forEach(function(x){var kv=x.split('=');if(kv.length===2)p[decodeURIComponent(kv[0])]=decodeURIComponent(kv[1])});if(p.T)E('f-url').value=p.T;if(p.C)E('f-code').value=p.C.toUpperCase();history.replaceState(null,'',window.location.pathname)}catch(e){}})();
