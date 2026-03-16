@@ -2,252 +2,219 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src *; script-src 'unsafe-inline'">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>VoidCapture</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--void:#111120;--bg:#14142a;--card:#1a1a32;--card2:#20203c;--hover:#262648;--input:#0e0e1e;
---bdr:#333360;--bdr2:#444478;--ring1:#5a4fc0;--ring2:#6e62d8;--ring3:#8a7ef0;--iris:#d0c6ff;
---acc:#f05672;--grn:#5cd888;--amb:#ffc244;--sky:#6cb4ff;--txt:#f0f0f0;--dim:#8888b8;--mute:#606090;
---font:'Outfit',sans-serif;--mono:'JetBrains Mono',monospace;--r:8px;--r2:12px}
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{height:100%;-webkit-tap-highlight-color:transparent}
-body{height:100%;background:var(--void);color:var(--txt);font-family:var(--font);font-size:14px;line-height:1.5;overflow:hidden}
-::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--void)}::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:3px}
-::selection{background:var(--ring3);color:#fff}
-input,textarea,select,button{font-family:inherit;font-size:inherit}
-
-/* Login */
-#login{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 30% 60%,#1c1040 0%,var(--void) 55%)}
-.lcard{width:min(400px,92vw);padding:36px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r2);box-shadow:0 0 80px rgba(138,126,240,.08),0 12px 48px rgba(0,0,0,.4)}
-.lbrand{font-family:var(--mono);font-size:10px;letter-spacing:.25em;color:var(--ring3);text-transform:uppercase;margin-bottom:8px}
-.ltitle{font-size:24px;font-weight:700;margin-bottom:4px;background:linear-gradient(135deg,#fff 30%,var(--iris));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.lsub{color:var(--dim);font-size:12px;margin-bottom:24px}
-.fld{margin-bottom:14px}.fld label{display:block;font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-bottom:5px}
-.fld input{width:100%;background:var(--input);border:1px solid var(--bdr);border-radius:var(--r);color:var(--txt);padding:11px 14px;font-family:var(--mono);outline:none;transition:border .15s}
-.fld input:focus{border-color:var(--ring3)}.fld input.code{text-transform:uppercase;font-size:22px;letter-spacing:.2em;text-align:center}
-.fld input.pin{font-size:22px;letter-spacing:.15em;text-align:center}.fld .hint{font-size:10px;color:var(--mute);margin-top:4px;font-style:italic}
-.err{background:rgba(240,86,114,.08);border:1px solid rgba(240,86,114,.25);border-radius:var(--r);color:var(--acc);padding:10px 14px;font-size:12px;margin-top:12px;display:none;line-height:1.6}.err.on{display:block}
-
-/* Buttons */
-.b{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:8px 14px;border-radius:var(--r);border:1px solid transparent;cursor:pointer;font-family:var(--font);font-size:12px;font-weight:600;transition:all .12s;white-space:nowrap;user-select:none;line-height:1.2}
-.b:active{transform:scale(.97)}.bp{background:var(--ring3);color:#fff;border-color:var(--ring3);width:100%;padding:13px;font-size:15px;margin-top:8px}.bp:hover{background:var(--ring2)}
-.bg{background:rgba(255,255,255,.03);color:var(--dim);border-color:var(--bdr)}.bg:hover{border-color:var(--txt);color:var(--txt);background:rgba(255,255,255,.06)}
-.bd{background:rgba(240,86,114,.08);color:var(--acc);border-color:rgba(240,86,114,.25)}.bd:hover{background:rgba(240,86,114,.16)}
-.bs{background:rgba(92,216,136,.08);color:var(--grn);border-color:rgba(92,216,136,.25)}.bs:hover{background:rgba(92,216,136,.16)}
-.ba{background:rgba(138,126,240,.08);color:var(--iris);border-color:rgba(138,126,240,.25)}.ba:hover{background:rgba(138,126,240,.16)}
-.bk{background:rgba(108,180,255,.08);color:var(--sky);border-color:rgba(108,180,255,.25)}.bk:hover{background:rgba(108,180,255,.16)}
-.bsm{padding:6px 11px;font-size:11px}
-
-/* App shell */
-#app{display:none;height:100vh;flex-direction:column}#app.on{display:flex}
-.top{display:flex;align-items:center;gap:10px;padding:0 16px;height:50px;min-height:50px;background:var(--bg);border-bottom:1px solid var(--bdr);flex-shrink:0;position:relative;z-index:10}
-.top::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--ring1),var(--acc),var(--ring1));opacity:.35}
-.tlogo{font-family:var(--mono);font-size:13px;color:var(--ring3);font-weight:700}
-.tpill{display:flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;transition:.2s}
-.tpill.live{background:rgba(92,216,136,.08);color:var(--grn);border:1px solid rgba(92,216,136,.18)}.tpill.idle{background:rgba(255,255,255,.03);color:var(--dim);border:1px solid var(--bdr)}
-.tdot{width:7px;height:7px;border-radius:50%;transition:.2s;flex-shrink:0}.tdot.on{background:var(--grn);box-shadow:0 0 10px var(--grn)}.tdot.off{background:var(--mute)}
-.tright{margin-left:auto;display:flex;align-items:center;gap:6px}
-.tb{padding:5px 11px;font-size:11px;background:rgba(255,255,255,.03);border:1px solid var(--bdr);color:var(--dim);border-radius:var(--r);cursor:pointer;transition:.1s}
-.tb:hover{color:var(--txt);border-color:var(--dim)}.tb.red{border-color:rgba(240,86,114,.3);color:rgba(240,86,114,.7)}.tb.red:hover{border-color:var(--acc);color:var(--acc)}
-.body{display:flex;flex:1;overflow:hidden}
-
-/* Sidebar */
-.side{width:180px;min-width:180px;background:var(--card);border-right:1px solid var(--bdr);display:flex;flex-direction:column;padding:10px 0;flex-shrink:0}
-.ni{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;font-size:14px;font-weight:500;color:var(--dim);border-left:3px solid transparent;transition:all .12s;user-select:none}
-.ni:hover{color:var(--txt);background:rgba(255,255,255,.02)}.ni.on{color:var(--txt);border-left-color:var(--ring3);background:rgba(138,126,240,.06)}
-.ni em{font-style:normal;font-size:16px;width:20px;text-align:center;flex-shrink:0}
-.bnav{display:none;position:fixed;bottom:0;left:0;right:0;height:62px;background:var(--card);border-top:1px solid var(--bdr);z-index:100;justify-content:space-around;align-items:center;box-shadow:0 -4px 24px rgba(0,0,0,.35)}
-.bn{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 16px;cursor:pointer;color:var(--mute);font-size:9px;font-weight:600;transition:.1s;border-radius:var(--r)}
-.bn i{font-style:normal;font-size:20px}.bn.on{color:var(--ring3);background:rgba(138,126,240,.08)}
-
-/* Content */
-.main{flex:1;overflow-y:auto;padding:20px;scroll-behavior:smooth}.tab{display:none}.tab.on{display:block}
-
-/* Cards */
-.c{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r2);padding:16px 18px;margin-bottom:12px}
-.ch{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-bottom:14px;display:flex;align-items:center;gap:8px}
-.badge{font-size:9px;padding:2px 7px;border-radius:4px;font-weight:700;font-family:var(--mono)}.badge-g{color:var(--grn);background:rgba(92,216,136,.08);border:1px solid rgba(92,216,136,.18)}
-.sec{border-top:1px solid var(--bdr);padding-top:16px;margin-top:16px}.sec:first-child{border:none;padding-top:0;margin-top:0}
-.sec-h{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:12px}
-
-/* Stats */
-.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
-.sc{background:var(--card2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;position:relative;overflow:hidden}
-.sc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;opacity:.5}
-.sc.p::after{background:var(--ring3)}.sc.g::after{background:var(--grn)}.sc.bl::after{background:var(--sky)}.sc.a::after{background:var(--amb)}.sc.r::after{background:var(--acc)}
-.sv{font-family:var(--mono);font-size:20px;font-weight:700;line-height:1.2}.sl{font-size:9px;color:var(--mute);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
-
-/* Progress bar */
-.prog-wrap{background:var(--input);border-radius:4px;height:6px;margin:8px 0;overflow:hidden;position:relative}
-.prog-bar{height:100%;background:linear-gradient(90deg,var(--ring3),var(--iris));border-radius:4px;transition:width .8s ease;width:0}
-.prog-time{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:2px}
-
-/* Session countdown */
-.countdown{font-family:var(--mono);font-size:13px;color:var(--amb);padding:6px 0}
-
-/* Rows */
-.ir{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(51,51,96,.5);font-size:13px}.ir:last-child{border:none}.ik{color:var(--dim)}.iv{font-family:var(--mono);font-size:12px}
-.sr{display:grid;grid-template-columns:80px 1fr 52px;align-items:center;gap:12px;margin-bottom:12px}
-.nr{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(51,51,96,.4)}.nr:last-child{border:none}
-.nf{flex:1;font-size:13px;color:var(--dim);line-height:1.4}.nf strong{display:block;color:var(--txt);font-weight:500}
-.tr{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(51,51,96,.4)}.tr:last-child{border:none}
-.tl{font-size:13px;color:var(--txt)}
-.ag{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-bottom:10px}
-.rw{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-
-/* Inputs */
-input[type=range]{-webkit-appearance:none;width:100%;height:5px;background:var(--bdr);border-radius:3px;outline:none;cursor:pointer}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--ring3);cursor:pointer;box-shadow:0 0 10px rgba(138,126,240,.4)}
-input[type=range]::-webkit-slider-thumb:active{transform:scale(1.3)}
-.sw{position:relative;width:38px;height:20px;flex-shrink:0}.sw input{opacity:0;width:0;height:0}
-.swt{position:absolute;inset:0;background:var(--bdr2);border-radius:20px;cursor:pointer;transition:.2s}
-.swt::before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
-.sw input:checked+.swt{background:var(--ring3)}.sw input:checked+.swt::before{transform:translateX(18px)}
-input[type=number]{background:var(--input);border:1px solid var(--bdr);border-radius:var(--r);color:var(--txt);padding:7px 10px;font-family:var(--mono);font-size:13px;outline:none;text-align:center;width:70px;-moz-appearance:textfield}
-input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}input[type=number]:focus{border-color:var(--ring3)}
-input[type=text],input[type=password]{background:var(--input);border:1px solid var(--bdr);border-radius:var(--r);color:var(--txt);padding:9px 12px;font-family:var(--mono);font-size:12px;outline:none;transition:border .15s}
-input[type=text]:focus,input[type=password]:focus{border-color:var(--ring3)}
-textarea{width:100%;background:var(--input);border:1px solid var(--bdr);border-radius:var(--r);color:var(--txt);padding:12px;font-family:var(--mono);font-size:12px;line-height:1.7;outline:none;resize:vertical;transition:border .15s}textarea:focus{border-color:var(--ring3)}
-
-/* Queue/Playlist items */
-.qi{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid rgba(51,51,96,.4)}.qi:last-child{border:none}
-.qn{font-family:var(--mono);font-size:10px;color:var(--ring3);width:20px;flex-shrink:0;text-align:right}
-.qu{flex:1;font-family:var(--mono);font-size:11px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.qx{cursor:pointer;color:var(--mute);font-size:16px;padding:0 4px;transition:.1s;flex-shrink:0}.qx:hover{color:var(--acc)}
-.pi{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid rgba(51,51,96,.4);transition:background .08s;cursor:grab}
-.pi:last-child{border:none}.pi:hover{background:rgba(255,255,255,.015)}.pi.dragging{opacity:.4;background:var(--hover)}
-.pi .cb{width:16px;height:16px;accent-color:var(--ring3);cursor:pointer;flex-shrink:0}
-.pn{font-family:var(--mono);font-size:10px;color:var(--mute);width:22px;flex-shrink:0;text-align:right}
-.pu{flex:1;font-family:var(--mono);font-size:11px;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pu.dir{color:var(--iris)}
-.pa{display:flex;gap:3px;flex-shrink:0}
-
-/* History */
-.hi{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid rgba(51,51,96,.4);font-size:12px}.hi:last-child{border:none}
-.hd{color:var(--ring3);font-family:var(--mono);font-size:10px;flex-shrink:0}.hu{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
-
-/* Marquee preview */
-.mp{background:rgba(0,0,0,.4);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;font-family:var(--mono);font-size:15px;color:rgba(255,255,255,.35);min-height:44px;margin:10px 0;word-break:break-all;transition:color .2s}.mp.on{color:#fff;text-shadow:0 0 16px rgba(208,198,255,.3)}
-
-/* Weekly schedule */
-.wk-grid{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center;margin-bottom:10px}
-.wk-day{font-size:12px;font-weight:600;color:var(--txt);text-transform:uppercase;letter-spacing:.05em}
-.wk-time{background:var(--input);border:1px solid var(--bdr);border-radius:var(--r);color:var(--txt);padding:6px 10px;font-family:var(--mono);font-size:13px;outline:none;width:90px;text-align:center}
-.wk-time:focus{border-color:var(--ring3)}
-.wk-rm{cursor:pointer;color:var(--mute);font-size:14px;padding:2px 6px;transition:.1s}.wk-rm:hover{color:var(--acc)}
-
-/* Timezone display */
-.tz-info{font-size:10px;color:var(--mute);font-family:var(--mono);padding:4px 0}
-
-/* Toast */
-.toasts{position:fixed;bottom:70px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none}
-@media(min-width:769px){.toasts{bottom:16px}}
-.toast{padding:10px 16px;border-radius:var(--r);font-size:12px;font-weight:600;max-width:320px;background:var(--card2);border:1px solid var(--bdr);box-shadow:0 6px 24px rgba(0,0,0,.4);animation:tin .2s;transition:opacity .3s;pointer-events:auto}
-.toast.ok{border-left:3px solid var(--grn);color:var(--grn)}.toast.err{border-left:3px solid var(--acc);color:var(--acc)}.toast.inf{border-left:3px solid var(--sky);color:var(--sky)}
-@keyframes tin{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
-.spin{display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.15);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
-
-@media(max-width:768px){.side{display:none!important}.bnav{display:flex!important}.main{padding:14px 12px 76px 12px}.sg{grid-template-columns:repeat(2,1fr)}.ag{grid-template-columns:1fr 1fr}.sr{grid-template-columns:60px 1fr 44px;gap:8px}.top{padding:0 12px}}
-@media(max-width:400px){.sg{grid-template-columns:1fr 1fr}.sv{font-size:16px}.lcard{padding:24px 20px}}
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#08080f;--bg2:#0d0d18;--card:rgba(16,14,30,.65);--card2:rgba(22,18,42,.55);--bdr:rgba(120,80,255,.12);--bdr2:rgba(120,80,255,.25);--txt:#e8e4f0;--dim:#8884a0;--mute:#55526a;--iris:#9b7cff;--ring3:#7c5cfc;--ring2:#6346e0;--glow:rgba(140,100,255,.35);--acc:#ff4466;--grn:#44ee88;--amb:#ffaa44;--sky:#44aaff;--mono:'JetBrains Mono',monospace;--sans:'Outfit',sans-serif;--r:12px;--r2:16px;--blur:20px}
+html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--txt);overflow:hidden}
+body{background:radial-gradient(ellipse at 30% 20%,rgba(100,60,200,.08),transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(60,40,160,.06),transparent 60%),var(--bg)}
+.login-wrap{display:flex;align-items:center;justify-content:center;height:100vh;padding:20px}
+.lcard{background:var(--card);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));border:1px solid var(--bdr2);border-radius:var(--r2);padding:40px 36px;max-width:420px;width:100%;box-shadow:0 0 60px rgba(100,60,255,.08),0 20px 40px rgba(0,0,0,.4);animation:fadeUp .6s ease}
+.lcard h1{font-size:28px;font-weight:700;background:linear-gradient(135deg,#fff 20%,var(--iris) 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;margin-bottom:4px;letter-spacing:-.5px}
+.lcard .sub{text-align:center;font-size:12px;color:var(--mute);margin-bottom:28px;font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase}
+.fin{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+.fin label{font-size:11px;color:var(--dim);font-weight:500;text-transform:uppercase;letter-spacing:.08em;margin-bottom:-6px}
+.fin input{background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;font-family:var(--mono);font-size:14px;color:var(--txt);outline:none;transition:all .25s}
+.fin input:focus{border-color:var(--iris);box-shadow:0 0 20px rgba(140,100,255,.15)}
+.lbtn{width:100%;padding:14px;border:none;border-radius:var(--r);background:linear-gradient(135deg,var(--ring2),var(--iris));color:#fff;font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;transition:all .3s;overflow:hidden}
+.lbtn:hover{transform:translateY(-1px);box-shadow:0 6px 30px rgba(140,100,255,.3)}
+.lbtn:active{transform:translateY(0)}.lbtn:disabled{opacity:.5;cursor:default;transform:none}
+.lerr{color:var(--acc);font-size:12px;text-align:center;min-height:18px;opacity:0;transition:opacity .3s}.lerr.on{opacity:1}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:sp .5s linear infinite}
+.app{display:none;height:100vh;flex-direction:column}.app.on{display:flex}
+.top{display:flex;align-items:center;padding:0 20px;height:56px;background:var(--card);backdrop-filter:blur(var(--blur));border-bottom:1px solid var(--bdr);flex-shrink:0}
+.tlogo{font-family:var(--sans);font-size:16px;font-weight:700;background:linear-gradient(135deg,#fff,var(--iris));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.tpill{display:flex;align-items:center;gap:6px;margin-left:12px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--mono);letter-spacing:.05em;transition:all .3s}
+.tpill.live{background:rgba(68,238,136,.1);color:var(--grn);box-shadow:0 0 12px rgba(68,238,136,.15)}
+.tpill.idle{background:rgba(255,255,255,.04);color:var(--mute)}
+.tdot{width:7px;height:7px;border-radius:50%;transition:all .3s}.tdot.on{background:var(--grn);box-shadow:0 0 8px var(--grn)}.tdot.off{background:var(--mute)}
+.tz-info{font-size:10px;color:var(--mute);font-family:var(--mono);margin-left:auto;padding-right:12px}
+.tright{display:flex;gap:6px;margin-left:auto}
+.tb{background:rgba(255,255,255,.05);border:1px solid var(--bdr);border-radius:8px;color:var(--dim);padding:6px 12px;font-size:13px;cursor:pointer;transition:all .25s;font-family:var(--sans)}.tb:hover{background:rgba(255,255,255,.1);color:var(--txt);border-color:var(--bdr2)}
+.tb.red{color:var(--acc);border-color:rgba(255,68,102,.2)}.tb.red:hover{background:rgba(255,68,102,.1);box-shadow:0 0 15px rgba(255,68,102,.15)}
+.nav{display:flex;border-bottom:1px solid var(--bdr);background:var(--card2);backdrop-filter:blur(10px);padding:0 16px;flex-shrink:0}
+.ni{padding:12px 20px;font-size:13px;font-weight:500;color:var(--mute);cursor:pointer;border-bottom:2px solid transparent;transition:all .25s;position:relative}.ni:hover{color:var(--dim)}.ni.on{color:var(--iris);border-bottom-color:var(--iris)}.ni.on::after{content:'';position:absolute;bottom:-1px;left:20%;right:20%;height:2px;background:var(--iris);box-shadow:0 0 12px var(--glow);border-radius:2px}
+.bnav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--card);backdrop-filter:blur(var(--blur));border-top:1px solid var(--bdr);padding:8px 0 max(8px,env(safe-area-inset-bottom))}
+.bnav .bn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px;font-size:10px;color:var(--mute);cursor:pointer;transition:all .2s}.bnav .bn.on{color:var(--iris)}.bnav .bn .bi{font-size:18px}
+.main{flex:1;overflow-y:auto;padding:20px 24px 80px;scroll-behavior:smooth}.main::-webkit-scrollbar{width:4px}.main::-webkit-scrollbar-track{background:transparent}.main::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:4px}
+.tab{display:none;animation:fadeUp .35s ease}.tab.on{display:block}
+.gc{background:var(--card);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));border:1px solid var(--bdr);border-radius:var(--r2);padding:20px;margin-bottom:16px;transition:all .3s}.gc:hover{border-color:var(--bdr2);box-shadow:0 0 30px rgba(100,60,255,.06)}
+.gc-h{font-size:14px;font-weight:600;color:var(--iris);margin-bottom:14px;display:flex;align-items:center;gap:8px}.gc-h .gi{font-size:16px;opacity:.7}
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.sc{background:var(--card2);backdrop-filter:blur(10px);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;text-align:center;transition:all .3s;position:relative;overflow:hidden}
+.sc::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,var(--glow-c,rgba(140,100,255,.08)),transparent 70%);pointer-events:none}
+.sc.p{--glow-c:rgba(140,100,255,.12)}.sc.g{--glow-c:rgba(68,238,136,.1)}.sc.r{--glow-c:rgba(255,68,102,.1)}.sc.bl{--glow-c:rgba(68,170,255,.1)}.sc.a{--glow-c:rgba(255,170,68,.1)}
+.sc:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,.3)}
+.sv{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--txt);margin-bottom:2px}.sl{font-size:10px;color:var(--mute);text-transform:uppercase;letter-spacing:.1em}
+.prog{margin:12px 0}.prog-track{height:4px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;position:relative}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--ring2),var(--iris));border-radius:4px;transition:width .5s ease;position:relative}.prog-fill::after{content:'';position:absolute;right:0;top:-2px;width:8px;height:8px;background:var(--iris);border-radius:50%;box-shadow:0 0 10px var(--iris)}
+.prog-t{display:flex;justify-content:space-between;margin-top:4px;font-family:var(--mono);font-size:11px;color:var(--dim)}
+.sr{display:grid;grid-template-columns:56px 1fr 50px;align-items:center;gap:10px;margin-bottom:10px}.sr span{font-size:12px}
+input[type=range]{-webkit-appearance:none;width:100%;height:6px;background:rgba(255,255,255,.06);border-radius:6px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--iris);box-shadow:0 0 12px var(--glow);cursor:pointer;transition:all .2s}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);box-shadow:0 0 20px var(--glow)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--iris);box-shadow:0 0 12px var(--glow);cursor:pointer;border:none}
+.sw{position:relative;width:44px;height:24px;display:inline-block;flex-shrink:0}.sw input{opacity:0;width:0;height:0}
+.swt{position:absolute;inset:0;background:rgba(255,255,255,.08);border-radius:24px;cursor:pointer;transition:all .3s;border:1px solid var(--bdr)}
+.swt::after{content:'';position:absolute;left:3px;top:3px;width:16px;height:16px;background:#555;border-radius:50%;transition:all .3s}
+.sw input:checked+.swt{background:rgba(140,100,255,.2);border-color:var(--iris);box-shadow:0 0 15px rgba(140,100,255,.2)}.sw input:checked+.swt::after{transform:translateX(20px);background:var(--iris);box-shadow:0 0 8px var(--iris)}
+.tr{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}.tr:last-child{border-bottom:none}.tl{font-size:13px;color:var(--dim)}
+.b{border:none;border-radius:8px;padding:8px 16px;font-family:var(--sans);font-size:12px;font-weight:500;cursor:pointer;transition:all .25s;display:inline-flex;align-items:center;gap:4px}.b:hover{transform:translateY(-1px)}.b:active{transform:translateY(0)}
+.bg{background:rgba(255,255,255,.06);color:var(--dim);border:1px solid var(--bdr)}.bg:hover{background:rgba(255,255,255,.1);color:var(--txt)}
+.ba{background:linear-gradient(135deg,var(--ring2),var(--iris));color:#fff}.ba:hover{box-shadow:0 4px 20px var(--glow)}
+.bd{background:rgba(255,68,102,.08);color:var(--acc);border:1px solid rgba(255,68,102,.15)}.bd:hover{background:rgba(255,68,102,.15);box-shadow:0 0 15px rgba(255,68,102,.1)}
+.bs{background:rgba(68,238,136,.08);color:var(--grn);border:1px solid rgba(68,238,136,.15)}.bs:hover{background:rgba(68,238,136,.15)}
+.bk{background:rgba(68,170,255,.08);color:var(--sky);border:1px solid rgba(68,170,255,.15)}.bk:hover{background:rgba(68,170,255,.15)}
+.bsm{padding:5px 10px;font-size:11px}.ag{display:flex;gap:8px;flex-wrap:wrap}.rw{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sec{margin-bottom:16px}.sec-h{font-size:11px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.mp{background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;font-family:var(--mono);font-size:13px;color:rgba(255,255,255,.3);min-height:40px;word-break:break-all;transition:all .3s}.mp.on{color:var(--txt);border-color:var(--bdr2);box-shadow:0 0 20px rgba(140,100,255,.06)}
+.ir{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:12px}.ik{color:var(--mute)}.iv{color:var(--iris);font-family:var(--mono)}
+input[type=text],input[type=number],textarea,select{background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:var(--r);padding:8px 12px;font-family:var(--mono);font-size:13px;color:var(--txt);outline:none;transition:all .25s}
+input[type=text]:focus,input[type=number]:focus,textarea:focus,select:focus{border-color:var(--iris);box-shadow:0 0 16px rgba(140,100,255,.12)}
+textarea{width:100%;resize:vertical;min-height:60px}select{cursor:pointer}
+.nr{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}.nr input[type=number]{width:70px;text-align:center}
+.nf{flex:1;min-width:120px;font-size:12px;color:var(--dim)}.nf strong{display:block;color:var(--txt);font-size:13px;margin-bottom:1px}
+#live-b{padding:6px 12px;background:rgba(68,238,136,.06);border:1px solid rgba(68,238,136,.12);border-radius:var(--r);margin-bottom:12px;font-size:11px;color:var(--grn);font-family:var(--mono);text-align:center;animation:pulse 2s infinite}
+.pi{display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.03);font-size:12px;transition:all .2s}.pi:hover{background:rgba(255,255,255,.03)}.pi.dragging{opacity:.4}
+.pn{color:var(--mute);font-family:var(--mono);font-size:10px;min-width:22px;text-align:right}
+.pu{color:var(--dim);font-family:var(--mono);font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pu.dir{color:var(--iris)}
+.pa{display:flex;gap:3px;flex-shrink:0}.cb{accent-color:var(--iris)}
+.qi{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.03);font-size:12px;list-style:none}
+.qn{color:var(--mute);font-family:var(--mono);font-size:10px;min-width:18px}.qu{color:var(--dim);font-family:var(--mono);font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qx{color:var(--acc);cursor:pointer;font-size:14px;padding:2px 4px}
+.hi{display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.02);font-size:11px}
+.hd{color:var(--mute);font-family:var(--mono);font-size:10px;flex-shrink:0}.hu{color:var(--dim);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.wk-grid{display:grid;grid-template-columns:60px 1fr auto;gap:6px 10px;align-items:center}
+.wk-day{font-size:11px;font-weight:600;color:var(--txt);text-transform:uppercase;letter-spacing:.05em}
+.wk-rm{color:var(--mute);cursor:pointer;padding:2px 4px;transition:color .2s;font-size:13px}.wk-rm:hover{color:var(--acc)}
+.toasts{position:fixed;top:64px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{padding:10px 18px;border-radius:var(--r);font-size:12px;font-weight:500;backdrop-filter:blur(12px);animation:fadeUp .3s ease;transition:opacity .3s;pointer-events:auto;border:1px solid}
+.toast.ok{background:rgba(68,238,136,.1);color:var(--grn);border-color:rgba(68,238,136,.2)}
+.toast.err{background:rgba(255,68,102,.1);color:var(--acc);border-color:rgba(255,68,102,.2)}
+.toast.inf{background:rgba(140,100,255,.1);color:var(--iris);border-color:rgba(140,100,255,.2)}
+@keyframes fadeUp{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+@keyframes sp{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+@media(max-width:768px){.top{padding:0 12px;height:50px}.nav{display:none!important}.bnav{display:flex!important}.main{padding:14px 12px 85px}.sg{grid-template-columns:repeat(2,1fr)}.sr{grid-template-columns:48px 1fr 40px;gap:6px}.gc{padding:16px}.lcard{padding:28px 24px}.tz-info{display:none}}
+@media(max-width:400px){.sg{grid-template-columns:1fr 1fr}.sv{font-size:18px}}
+#guide-overlay{display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);overflow-y:auto;padding:20px}
+#guide-overlay .g-inner{max-width:640px;margin:20px auto;background:var(--card);backdrop-filter:blur(var(--blur));border:1px solid var(--bdr2);border-radius:var(--r2);padding:28px;position:relative;animation:fadeUp .3s ease}
+#guide-overlay h2{font-size:20px;font-weight:700;background:linear-gradient(135deg,#fff 30%,var(--iris));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:16px}
+#guide-overlay .gs{color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px}
+#guide-overlay p{font-size:13px;color:var(--dim);line-height:1.8;margin-bottom:8px}
 </style>
 </head>
 <body>
-<div id="login"><div class="lcard"><div class="lbrand">VoidCapture</div><h1 class="ltitle">Controller</h1><p class="lsub">Enter the details from VoidCapture → Controller Session</p>
-<div class="fld"><label>Tunnel URL</label><input type="text" id="f-url" placeholder="https://xxxx.trycloudflare.com" autocomplete="off" spellcheck="false"><div class="hint">HTTPS address from the Controller Session window</div></div>
-<div class="fld"><label>Session Code</label><input type="text" id="f-code" class="code" placeholder="A3K9M2" maxlength="6" autocomplete="off" spellcheck="false"></div>
-<div class="fld"><label>PIN</label><input type="password" id="f-pin" class="pin" placeholder="000000" maxlength="6" autocomplete="off" inputmode="numeric"></div>
-<button class="b bp" id="lbtn" onclick="doLogin()">Connect</button><div class="err" id="lerr"></div></div></div>
 
-<div id="app">
-<div class="top"><span class="tlogo">⊙ VC</span><div class="tpill idle" id="pill"><div class="tdot off" id="dot"></div><span id="stxt">Idle</span></div>
-<span id="tz-disp" class="tz-info" style="margin-left:6px"></span>
-<div class="tright"><button class="tb" onclick="forceSync()" id="sync-btn">↻</button><button class="tb red" onclick="cmd('panic')">⚠ Panic</button><button class="tb" onclick="showGuide()">?</button><button class="tb" onclick="doLogout()">Logout</button></div></div>
-<div class="body">
-<nav class="side"><div class="ni on" data-t="home" onclick="go('home')"><em>◈</em>Home</div><div class="ni" data-t="ctrl" onclick="go('ctrl')"><em>◎</em>Controls</div><div class="ni" data-t="list" onclick="go('list')"><em>≡</em>Playlist & Queue</div></nav>
-<main class="main">
+<!-- LOGIN -->
+<div class="login-wrap" id="login">
+<div class="lcard">
+<h1>VoidCapture</h1>
+<div class="sub">Remote Controller</div>
+<div class="fin">
+<label>Tunnel URL</label><input type="text" id="f-url" placeholder="https://xxxx.trycloudflare.com" autocomplete="off" spellcheck="false">
+<label>Session Code</label><input type="text" id="f-code" placeholder="ABC123" maxlength="6" autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.2em">
+<label>PIN</label><input type="password" id="f-pin" placeholder="------" maxlength="6" autocomplete="off" inputmode="numeric">
+</div>
+<button class="lbtn" id="lbtn" onclick="doLogin()">Connect</button>
+<div class="lerr" id="lerr"></div>
+</div></div>
+
+<!-- APP -->
+<div class="app" id="app">
+<div class="top">
+<span class="tlogo">VoidCapture</span>
+<span class="tpill idle" id="pill"><span class="tdot off" id="dot"></span><span id="stxt">Idle</span></span>
+<span class="tz-info" id="tz-disp"></span>
+<div class="tright"><button class="tb" onclick="forceSync()" id="sync-btn">&#x21bb;</button><button class="tb red" onclick="cmd('panic')">&#x26a0; Panic</button><button class="tb" onclick="showGuide()">?</button><button class="tb" onclick="doLogout()">Logout</button></div>
+</div>
+<div class="nav">
+<div class="ni on" data-t="home" onclick="go('home')">&#x25c8; Home</div>
+<div class="ni" data-t="ctrl" onclick="go('ctrl')">&#x2699; Controls</div>
+<div class="ni" data-t="list" onclick="go('list')">&#x2261; Playlist &amp; Queue</div>
+</div>
+<div class="bnav">
+<div class="bn on" data-t="home" onclick="go('home')"><span class="bi">&#x25c8;</span>Home</div>
+<div class="bn" data-t="ctrl" onclick="go('ctrl')"><span class="bi">&#x2699;</span>Controls</div>
+<div class="bn" data-t="list" onclick="go('list')"><span class="bi">&#x2261;</span>Playlist</div>
+</div>
+<div class="main">
 
 <!-- HOME -->
 <div class="tab on" id="tab-home">
-<div class="sg"><div class="sc p"><div class="sv" id="s-today">—</div><div class="sl">Today</div></div><div class="sc bl"><div class="sv" id="s-total">—</div><div class="sl">All Time</div></div><div class="sc g"><div class="sv" id="s-vids">—</div><div class="sl">Videos</div></div><div class="sc a"><div class="sv" id="s-queue">—</div><div class="sl">Queued</div></div></div>
-<div class="c"><div class="ch">Now Playing <span class="badge badge-g" id="live-b" style="display:none">LIVE</span></div>
-<div class="ir"><span class="ik">Status</span><span class="iv" id="d-st">Idle</span></div>
-<div class="prog-wrap"><div class="prog-bar" id="prog-bar"></div></div>
-<div class="prog-time"><span id="prog-cur">0:00</span><span id="prog-len">0:00</span></div>
-<div class="ir"><span class="ik">Speed</span><span class="iv" id="d-sp">—</span></div>
-<div class="ir"><span class="ik">Volume</span><span class="iv" id="d-vl">—</span></div>
-<div class="ir"><span class="ik">Loop</span><span class="iv" id="d-lp">—</span></div>
-<div class="ir"><span class="ik">Marquee</span><span class="iv" id="d-mq">Off</span></div>
-<div id="countdown-wrap" style="display:none"><div class="ir"><span class="ik">Session Timer</span><span class="countdown" id="countdown">—</span></div></div>
-</div>
-
-<div class="c"><div class="ch">Session Stats</div><div class="sg" style="margin-bottom:0"><div class="sc p"><div class="sv" id="st-td">—</div><div class="sl">Today</div></div><div class="sc bl"><div class="sv" id="st-tt">—</div><div class="sl">All Time</div></div><div class="sc g"><div class="sv" id="st-tv">—</div><div class="sl">Videos</div></div><div class="sc r"><div class="sv" id="st-tp">—</div><div class="sl">Panics</div></div></div></div>
-<div class="c"><div class="ch">Watch Time Trend <span class="dim" style="font-size:9px;font-weight:400">(30 days)</span></div><div id="trend-chart" style="height:120px;display:flex;align-items:flex-end;gap:2px;padding:8px 0"></div></div>
-<div class="c"><div class="ch">Top Videos <span class="dim" style="font-size:9px;font-weight:400">by play count</span></div><div id="top-vids" style="max-height:30vh;overflow-y:auto"><div style="color:var(--dim);font-size:12px">Loading…</div></div></div>
-<div class="c"><div class="ch">Session Patterns</div><div class="sg" style="margin-bottom:0"><div class="sc p"><div class="sv" id="an-avgdur">—</div><div class="sl">Avg Duration</div></div><div class="sc bl"><div class="sv" id="an-avgsess">—</div><div class="sl">Sessions/Week</div></div><div class="sc a"><div class="sv" id="an-skiprate">—</div><div class="sl">Skip Rate</div></div><div class="sc g"><div class="sv" id="an-complete">—</div><div class="sl">Completion %</div></div></div></div>
-<div class="c"><div class="ch">Watch History</div><div id="hist" style="max-height:30vh;overflow-y:auto"><div style="color:var(--dim);font-size:12px">Loading…</div></div></div>
+<div class="sg"><div class="sc p"><div class="sv" id="s-today">&#x2014;</div><div class="sl">Today</div></div><div class="sc bl"><div class="sv" id="s-total">&#x2014;</div><div class="sl">All Time</div></div><div class="sc g"><div class="sv" id="s-vids">&#x2014;</div><div class="sl">Videos</div></div><div class="sc a"><div class="sv" id="s-queue">&#x2014;</div><div class="sl">Queue</div></div></div>
+<div class="gc"><div class="gc-h"><span class="gi">&#x25b6;</span> Now Playing</div><div id="live-b" style="display:none">Session active</div><div class="mp" id="d-st">Idle</div>
+<div class="prog"><div class="prog-track"><div class="prog-fill" id="prog-bar" style="width:0%"></div></div><div class="prog-t"><span id="prog-cur">0:00</span><span id="prog-len">--:--</span></div></div>
+<div id="countdown-wrap" style="display:none"><div id="countdown" style="font-family:var(--mono);font-size:13px;color:var(--amb);text-align:center;padding:4px 0"></div></div>
+<div class="ir"><span class="ik">Speed</span><span class="iv" id="d-sp">&#x2014;</span></div><div class="ir"><span class="ik">Volume</span><span class="iv" id="d-vl">&#x2014;</span></div><div class="ir"><span class="ik">Loop</span><span class="iv" id="d-lp">&#x2014;</span></div><div class="ir"><span class="ik">Marquee</span><span class="iv" id="d-mq">&#x2014;</span></div></div>
+<div class="gc"><div class="gc-h"><span class="gi">&#x2191;</span> Watch Time Trend <span style="font-size:10px;color:var(--mute);font-weight:400;margin-left:auto">30 days</span></div><div id="trend-chart" style="height:100px;display:flex;align-items:flex-end;gap:2px;padding:6px 0"></div></div>
+<div class="gc"><div class="gc-h"><span class="gi">&#x2606;</span> Top Videos</div><div id="top-vids" style="max-height:200px;overflow-y:auto"><div style="color:var(--dim);font-size:12px">Loading&#x2026;</div></div></div>
+<div class="gc"><div class="gc-h"><span class="gi">&#x29bf;</span> Session Patterns</div><div class="sg" style="margin-bottom:0"><div class="sc p"><div class="sv" id="an-avgdur">&#x2014;</div><div class="sl">Avg Duration</div></div><div class="sc bl"><div class="sv" id="an-avgsess">&#x2014;</div><div class="sl">Sessions/Week</div></div><div class="sc a"><div class="sv" id="an-skiprate">&#x2014;</div><div class="sl">Skip Rate</div></div><div class="sc g"><div class="sv" id="an-complete">&#x2014;</div><div class="sl">Completion %</div></div></div></div>
+<div class="gc"><div class="gc-h"><span class="gi">&#x231b;</span> Session Stats</div><div class="sg" style="margin-bottom:0"><div class="sc p"><div class="sv" id="st-td">&#x2014;</div><div class="sl">Today</div></div><div class="sc bl"><div class="sv" id="st-tt">&#x2014;</div><div class="sl">All Time</div></div><div class="sc g"><div class="sv" id="st-tv">&#x2014;</div><div class="sl">Videos</div></div><div class="sc r"><div class="sv" id="st-tp">&#x2014;</div><div class="sl">Panics</div></div></div></div>
+<div class="gc"><div class="gc-h"><span class="gi">&#x23f3;</span> Watch History</div><div id="hist" style="max-height:250px;overflow-y:auto"><div style="color:var(--dim);font-size:12px">Loading&#x2026;</div></div></div>
 </div>
 
 <!-- CONTROLS -->
 <div class="tab" id="tab-ctrl">
-<div class="c"><div class="ch">Live Sliders <span class="badge badge-g">INSTANT</span></div>
+<div class="gc"><div class="gc-h"><span class="gi">&#x266b;</span> Live Sliders</div>
 <div class="sr"><span style="color:var(--dim)">Volume</span><input type="range" id="sl-vl" min="0" max="200" value="100" oninput="slS('vl',this.value)" onchange="cmd('volume',+this.value,1)"><span class="iv" style="color:var(--iris)" id="v-vl">100</span></div>
-<div class="sr"><span style="color:var(--dim)">Speed</span><input type="range" id="sl-sp" min="25" max="150" value="100" oninput="slS('sp',this.value)" onchange="cmd('speed',+(this.value/100).toFixed(2),1)"><span class="iv" style="color:var(--iris)" id="v-sp">1.00×</span></div>
-</div>
-<div class="c"><div class="ch">Playback</div>
-<div class="sec"><div class="ag"><button class="b bg bsm" onclick="cmd('skip')">⏭ Skip</button><button class="b bg bsm" onclick="cmd('clearqueue')">✕ Clear Queue</button><button class="b bd bsm" onclick="cmd('panic')">⚠ Panic</button></div>
-<div class="nr"><span class="nf"><strong>Extend Session</strong>Add minutes</span><input type="number" id="ext-v" value="15" min="0"><span class="dim" style="font-size:11px">min</span><button class="b bg bsm" onclick="cmd('extend',+E('ext-v').value)">Add</button></div>
-<div class="nr"><span class="nf"><strong>Max Time</strong>0 = no limit</span><input type="number" id="maxt-v" value="60" min="0"><span class="dim" style="font-size:11px">min</span><button class="b bg bsm" onclick="cmd('maxtime',+E('maxt-v').value)">Set</button></div></div>
-<div class="sec"><div class="sec-h">Lock / Unlock</div><div id="lock-b" style="margin-bottom:8px;font-size:13px;color:var(--grn)">🔓 Panic hotkey active</div><div class="rw"><button class="b bd bsm" onclick="cmdLock(1)">🔒 Lock</button><button class="b bs bsm" onclick="cmdLock(0)">🔓 Unlock</button></div></div>
-<div class="sec"><div class="sec-h">Reset</div><button class="b ba" style="width:100%" onclick="if(confirm('Reset ALL settings to defaults?\nVolume, speed, loop, shuffle, marquee, lock — everything.'))cmd('reset')">⟳ Reset All Settings to Defaults</button></div>
-<div class="sec"><div class="sec-h">Play From Playlist</div><button class="b bs" style="width:100%" onclick="cmdPlayNow()">▶ Start Playing Playlist Now</button></div></div>
-<div class="c"><div class="ch">Session Options</div>
-<div class="sec"><div class="sec-h">Behaviour</div>
+<div class="sr"><span style="color:var(--dim)">Speed</span><input type="range" id="sl-sp" min="25" max="150" value="100" oninput="slS('sp',this.value)" onchange="cmd('speed',+(this.value/100).toFixed(2),1)"><span class="iv" style="color:var(--iris)" id="v-sp">1.00&#xd7;</span></div></div>
+<div class="gc"><div class="gc-h"><span class="gi">&#x23ef;</span> Playback</div><div class="ag" style="margin-bottom:12px"><button class="b bg" onclick="cmd('skip')">&#x23ed; Skip</button><button class="b bg" onclick="cmd('clearqueue')">&#x2715; Clear Queue</button><button class="b bd" onclick="cmd('panic')">&#x26a0; Panic</button></div>
+<div class="nr"><span class="nf"><strong>Extend Session</strong>Add minutes</span><input type="number" id="ext-v" value="15" min="0"><span style="color:var(--mute);font-size:11px">min</span><button class="b bg bsm" onclick="cmd('extend',+E('ext-v').value)">Add</button></div>
+<div class="nr"><span class="nf"><strong>Max Time</strong>0 = no limit</span><input type="number" id="maxt-v" value="60" min="0"><span style="color:var(--mute);font-size:11px">min</span><button class="b bg bsm" onclick="cmd('maxtime',+E('maxt-v').value)">Set</button></div></div>
+<div class="gc"><div class="gc-h"><span class="gi">&#x1f512;</span> Lock / Unlock</div><div id="lock-b" style="margin-bottom:10px;font-size:13px;color:var(--grn)">&#x1f513; Panic hotkey active</div><div class="rw"><button class="b bd bsm" onclick="cmdLock(1)">&#x1f512; Lock</button><button class="b bs bsm" onclick="cmdLock(0)">&#x1f513; Unlock</button></div></div>
+<div class="gc"><div class="gc-h"><span class="gi">&#x25b6;</span> Play From Playlist</div><button class="b ba" style="width:100%" onclick="cmdPlayNow()">Start Playing Playlist Now</button></div>
+<div class="gc"><div class="gc-h"><span class="gi">&#x2699;</span> Session Options</div>
 <div class="tr"><div class="tl">Loop Playlist</div><label class="sw"><input type="checkbox" id="tog-loop" onchange="cmd('loop',this.checked)"><span class="swt"></span></label></div>
 <div class="tr"><div class="tl">Shuffle</div><label class="sw"><input type="checkbox" id="tog-shuf" onchange="cmd('shuffle',this.checked)"><span class="swt"></span></label></div>
 <div class="tr"><div class="tl">No Repeat</div><label class="sw"><input type="checkbox" id="tog-norep" onchange="cmd('norepeat',this.checked)"><span class="swt"></span></label></div>
-<div class="tr"><div class="tl">Show Cursor</div><label class="sw"><input type="checkbox" id="tog-cur" onchange="cmd('cursorshow',this.checked)"><span class="swt"></span></label></div></div>
-<div class="sec"><div class="sec-h">Limits</div>
-<div class="nr"><span class="nf"><strong>Min Session Lock</strong>Panic disabled for N sec</span><input type="number" id="ms-v" value="0" min="0"><span class="dim" style="font-size:11px">sec</span><button class="b bg bsm" onclick="cmd('minsession',+E('ms-v').value)">Set</button></div>
+<div class="tr"><div class="tl">Show Cursor</div><label class="sw"><input type="checkbox" id="tog-cur" onchange="cmd('cursorshow',this.checked)"><span class="swt"></span></label></div>
+<div class="sec" style="margin-top:12px">
+<div class="nr"><span class="nf"><strong>Min Session Lock</strong>Panic disabled for N sec</span><input type="number" id="ms-v" value="0" min="0"><span style="color:var(--mute);font-size:11px">sec</span><button class="b bg bsm" onclick="cmd('minsession',+E('ms-v').value)">Set</button></div>
 <div class="nr"><span class="nf"><strong>Max Videos</strong>0 = unlimited</span><input type="number" id="mv-v" value="0" min="0"><button class="b bg bsm" onclick="cmd('maxvideos',+E('mv-v').value)">Set</button></div>
 <div class="nr"><span class="nf"><strong>Start From</strong>Skip first N</span><input type="number" id="sf-v" value="0" min="0"><button class="b bg bsm" onclick="cmd('startfrom',+E('sf-v').value)">Set</button></div></div></div>
-<div class="c"><div class="ch">On-Screen Text <span class="badge badge-g">LIVE</span></div><div class="mp" id="mq-p">No marquee active</div><textarea id="mq-t" rows="2" placeholder="Type text to display…"></textarea>
-<div class="rw" style="margin:10px 0"><button class="b ba bsm" onclick="cmdMq()">▶ Send</button><button class="b bd bsm" onclick="cmd('marqueeoff')">✕ Off</button><button class="b bg bsm" onclick="cmd('marqueetop')">↑ Top</button><button class="b bg bsm" onclick="cmd('marqueebottom')">↓ Bottom</button></div>
-<div style="display:flex;flex-wrap:wrap;gap:6px" id="qp"></div></div>
-<div class="c"><div class="ch">Schedule</div>
-<div class="sec"><div class="rw" style="margin-bottom:12px"><button class="b bs" onclick="cmd('autostartnow')">▶ Start Now</button><button class="b bg bsm" onclick="cmd('cancelschedule')">✕ Cancel</button></div></div>
-<div class="sec"><div class="nr"><span class="nf"><strong>Start at Time</strong>HH:MM (24h)</span><input type="text" id="sch-t" placeholder="14:30" maxlength="5" style="width:72px;text-align:center"><button class="b bk bsm" onclick="cmdSch()">Set</button></div>
-<div class="nr"><span class="nf"><strong>Idle Auto-Start</strong>After N min (0=off)</span><input type="number" id="idle-v" value="0" min="0"><span class="dim" style="font-size:11px">min</span><button class="b bk bsm" onclick="cmd('idlestart',+E('idle-v').value)">Set</button></div>
-<div class="nr"><span class="nf"><strong>Delay Start</strong>N min</span><input type="number" id="del-v" value="0" min="0"><span class="dim" style="font-size:11px">min</span><button class="b bg bsm" onclick="cmd('delay',+E('del-v').value)">Set</button></div></div>
+<div class="gc"><div class="gc-h"><span class="gi">&#x2726;</span> Marquee</div><div class="mp" id="mq-p">No marquee active</div>
+<div class="rw" style="margin:10px 0"><input type="text" id="mq-t" placeholder="Type text to display&#x2026;" style="flex:1"><button class="b ba bsm" onclick="cmdMq()">&#x25b6; Send</button><button class="b bd bsm" onclick="cmd('marqueeoff')">&#x2715; Off</button><button class="b bg bsm" onclick="cmd('marqueetop')">&#x2191;</button><button class="b bg bsm" onclick="cmd('marqueebottom')">&#x2193;</button></div>
+<div class="ag" id="qp"></div></div>
+<div class="gc"><div class="gc-h"><span class="gi">&#x23f1;</span> Schedule</div>
+<div class="sec"><div class="rw" style="margin-bottom:12px"><button class="b bs" onclick="cmd('autostartnow')">&#x25b6; Start Now</button><button class="b bg bsm" onclick="cmd('cancelschedule')">&#x2715; Cancel</button></div>
+<div class="nr"><span class="nf"><strong>Start at Time</strong>HH:MM</span><input type="text" id="sch-t" placeholder="14:30" maxlength="5" style="width:72px;text-align:center"><button class="b bk bsm" onclick="cmdSch()">Set</button></div>
+<div class="nr"><span class="nf"><strong>Idle Auto-Start</strong>After N min (0=off)</span><input type="number" id="idle-v" value="0" min="0"><span style="color:var(--mute);font-size:11px">min</span><button class="b bk bsm" onclick="cmd('idlestart',+E('idle-v').value)">Set</button></div>
+<div class="nr"><span class="nf"><strong>Delay Start</strong>N min</span><input type="number" id="del-v" value="0" min="0"><span style="color:var(--mute);font-size:11px">min</span><button class="b bg bsm" onclick="cmd('delay',+E('del-v').value)">Set</button></div></div>
 <div class="sec"><div class="sec-h">Weekly Schedule</div><div class="tz-info" id="tz-sched"></div><div id="wk-list"></div>
-<div class="rw" style="margin-top:8px"><select id="wk-day" style="background:var(--input);border:1px solid var(--bdr);border-radius:var(--r);color:var(--txt);padding:6px 10px;font-size:12px;outline:none"><option value="mon">Mon</option><option value="tue">Tue</option><option value="wed">Wed</option><option value="thu">Thu</option><option value="fri">Fri</option><option value="sat">Sat</option><option value="sun">Sun</option></select>
+<div class="rw" style="margin-top:8px"><select id="wk-day"><option value="mon">Mon</option><option value="tue">Tue</option><option value="wed">Wed</option><option value="thu">Thu</option><option value="fri">Fri</option><option value="sat">Sat</option><option value="sun">Sun</option></select>
 <input type="text" id="wk-time" placeholder="14:30" maxlength="5" style="width:72px;text-align:center"><button class="b bk bsm" onclick="wkAdd()">+ Add</button><button class="b bd bsm" onclick="wkClear()">Clear All</button></div>
-<div id="wk-urls-area" style="display:none;margin-top:8px"><div class="sec-h" style="font-size:10px">Playlist for entry #<span id="wk-edit-idx">1</span> <span class="dim" style="font-size:9px">(leave empty to use default playlist)</span></div>
-<textarea id="wk-urls-ta" rows="4" placeholder="Paste URLs here, one per line...&#10;Leave empty to use the default playlist"></textarea>
+<div id="wk-urls-area" style="display:none;margin-top:8px"><div class="sec-h" style="font-size:10px">Playlist for entry #<span id="wk-edit-idx">1</span> <span style="color:var(--mute);font-size:9px">(leave empty for default)</span></div>
+<textarea id="wk-urls-ta" rows="4" placeholder="Paste URLs, one per line&#x2026;"></textarea>
 <div class="rw" style="margin-top:6px"><button class="b bs bsm" onclick="wkUrlsSave()">Apply URLs</button><button class="b bg bsm" onclick="wkUrlsCancel()">Cancel</button></div></div>
-<button class="b ba bsm" style="margin-top:8px;width:100%" onclick="wkSave()">💾 Save Weekly Schedule</button></div></div></div>
+<button class="b ba bsm" style="margin-top:8px;width:100%" onclick="wkSave()">&#x1f4be; Save Weekly Schedule</button></div></div>
+<div class="gc"><div class="gc-h"><span class="gi">&#x21bb;</span> Reset</div><button class="b bd" style="width:100%" onclick="if(confirm('Reset ALL settings to defaults?\nVolume, speed, loop, shuffle, marquee, lock &#x2014; everything.'))cmd('reset')">&#x27f3; Reset All Settings to Defaults</button></div>
+</div>
 
 <!-- PLAYLIST & QUEUE -->
 <div class="tab" id="tab-list">
-<div class="c"><div class="ch">Now Playing</div><div id="q-now" style="font-family:var(--mono);font-size:12px;color:var(--dim);word-break:break-all;min-height:18px">—</div></div>
-<div class="c"><div class="ch">Queue <span id="q-ct" class="dim" style="font-family:var(--mono);font-size:9px;font-weight:400"></span></div>
-<ul id="q-list" style="list-style:none;max-height:25vh;overflow-y:auto"><li style="color:var(--dim);font-size:12px;padding:8px">Empty</li></ul>
-<div class="rw" style="margin-top:10px"><button class="b bg bsm" onclick="cmd('skip')">⏭ Skip</button><button class="b bd bsm" onclick="cmd('clearqueue')">✕ Clear Queue</button></div>
-<div class="rw" style="margin-top:8px"><input type="text" id="url-q" placeholder="https://… add to queue" style="flex:1"><button class="b bg bsm" onclick="qAdd('url-q')">+ Queue</button></div></div>
-<div class="c"><div class="ch">Playlist <span id="pl-ct" class="dim" style="font-family:var(--mono);font-size:9px;font-weight:400"></span></div>
-<div id="pl-list" style="max-height:30vh;overflow-y:auto"><div style="color:var(--dim);font-size:12px;padding:8px">Loading…</div></div>
-<div class="rw" style="margin:8px 0"><button class="b bd bsm" id="bulk-del-btn" onclick="plBulkDel()" style="display:none">🗑 Delete Selected (<span id="sel-ct">0</span>)</button></div>
-<div class="rw" style="margin-bottom:8px"><input type="text" id="pl-add" placeholder="https://… or #DIRECTIVE" style="flex:1"><button class="b bs bsm" onclick="plA()">+ Add</button><button class="b bk bsm" onclick="plP()">+ Prepend</button></div>
-<div class="rw" style="margin-bottom:8px"><button class="b ba bsm" onclick="toggleBulk()">📋 Bulk Add URLs</button><button class="b bg bsm" onclick="loadPl()">↻ Reload</button><button class="b bd bsm" onclick="plC()">✕ Clear</button><span id="pl-st" style="font-size:11px;margin-left:4px"></span></div>
-<div id="bulk-area" style="display:none;margin-top:8px"><textarea id="bulk-ta" rows="6" placeholder="Paste URLs here, one per line…"></textarea><div class="rw" style="margin-top:6px"><button class="b bs bsm" onclick="plBulkAdd()">+ Add All</button><button class="b bg bsm" onclick="toggleBulk()">Cancel</button><span id="bulk-ct" class="dim" style="font-size:11px"></span></div></div></div>
-<div class="c" style="background:var(--bg)"><div class="ch">Playlist Settings</div>
+<div class="gc"><div class="gc-h"><span class="gi">&#x25b6;</span> Now Playing</div><div class="mp" id="q-now">&#x2014;</div>
+<div class="rw" style="margin-top:10px"><button class="b bg bsm" onclick="cmd('skip')">&#x23ed; Skip</button><button class="b bd bsm" onclick="cmd('clearqueue')">&#x2715; Clear Queue</button></div></div>
+<div class="gc"><div class="gc-h"><span class="gi">&#x2630;</span> Queue <span id="q-ct" style="color:var(--mute);font-weight:400;font-size:11px">(empty)</span></div>
+<ul id="q-list" style="list-style:none;max-height:200px;overflow-y:auto"><li style="color:var(--dim);font-size:12px;padding:8px">Empty</li></ul>
+<div class="rw" style="margin-top:10px"><input type="text" id="url-q" placeholder="https://&#x2026; add to queue" style="flex:1"><button class="b bg bsm" onclick="qAdd('url-q')">+ Queue</button></div></div>
+<div class="gc"><div class="gc-h"><span class="gi">&#x2261;</span> Playlist <span id="pl-ct" style="color:var(--mute);font-weight:400;font-size:11px">0 items</span></div>
+<div id="pl-st" style="font-size:11px;color:var(--grn);min-height:16px;margin-bottom:6px"></div>
+<div class="rw" style="margin-bottom:10px"><button class="b bg bsm" onclick="loadPl()">&#x21bb; Reload</button><button class="b bd bsm" onclick="plC()">&#x2715; Clear All</button><button class="b bk bsm" onclick="toggleBulk()">&#x1f4cb; Bulk Add</button><span id="sel-ct" style="color:var(--mute);font-size:11px;margin-left:auto">0</span><button class="b bd bsm" id="bulk-del-btn" style="display:none" onclick="plBulkDel()">Delete Selected</button></div>
+<div id="bulk-area" style="display:none;margin-bottom:12px"><textarea id="bulk-ta" rows="5" placeholder="Paste URLs, one per line&#x2026;"></textarea>
+<div class="rw" style="margin-top:6px"><span id="bulk-ct" style="color:var(--mute);font-size:11px"></span><button class="b ba bsm" onclick="plBulkAdd()">Add All</button><button class="b bg bsm" onclick="toggleBulk()">Cancel</button></div></div>
+<div id="pl-list" style="max-height:350px;overflow-y:auto"><div style="color:var(--dim);font-size:12px;padding:8px">Loading&#x2026;</div></div>
+<div class="rw" style="margin-top:12px"><input type="text" id="pl-add" placeholder="https://&#x2026;" style="flex:1"><button class="b bs bsm" onclick="plA()">+ Append</button><button class="b bk bsm" onclick="plP()">+ Prepend</button></div></div>
+<div class="gc"><div class="gc-h"><span class="gi">&#x2699;</span> Playlist Settings</div>
 <div class="tr"><div class="tl">Shuffle</div><label class="sw"><input type="checkbox" id="pl-shuf" onchange="cmd('shuffle',this.checked)"><span class="swt"></span></label></div>
 <div class="tr"><div class="tl">No Repeat</div><label class="sw"><input type="checkbox" id="pl-norep" onchange="cmd('norepeat',this.checked)"><span class="swt"></span></label></div>
 <div class="nr"><span class="nf"><strong>Max Videos</strong>0 = unlimited</span><input type="number" id="pl-mv" value="0" min="0"><button class="b bg bsm" onclick="cmd('maxvideos',+E('pl-mv').value)">Set</button></div>
-<div class="nr"><span class="nf"><strong>Start From</strong>0 = beginning</span><input type="number" id="pl-sf" value="0" min="0"><button class="b bg bsm" onclick="cmd('startfrom',+E('pl-sf').value)">Set</button></div></div></div>
-</main></div>
-<nav class="bnav" id="bnav"><div class="bn on" data-t="home" onclick="go('home')"><i>◈</i>Home</div><div class="bn" data-t="ctrl" onclick="go('ctrl')"><i>◎</i>Controls</div><div class="bn" data-t="list" onclick="go('list')"><i>≡</i>Playlist</div></nav></div>
+<div class="nr"><span class="nf"><strong>Start From</strong>0 = beginning</span><input type="number" id="pl-sf" value="0" min="0"><button class="b bg bsm" onclick="cmd('startfrom',+E('pl-sf').value)">Set</button></div></div>
+</div>
+
+</div></div>
 <div id="guide-overlay" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.7);overflow-y:auto;padding:20px" onclick="if(event.target===this)hideGuide()">
 <div style="max-width:640px;margin:20px auto;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r2);padding:28px;position:relative">
 <button class="b bg bsm" style="position:absolute;top:12px;right:12px" onclick="hideGuide()">✕ Close</button>
@@ -433,4 +400,4 @@ E('f-pin').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()})
 E('bulk-ta').addEventListener('input',function(){var ct=this.value.split('\n').filter(function(l){return l.trim().length>0}).length;E('bulk-ct').textContent=ct>0?ct+' URL'+(ct>1?'s':''):''});
 </script>
 </body>
-</html>
+</html></body></html>
