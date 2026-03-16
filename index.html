@@ -292,7 +292,7 @@ textarea{width:100%;background:var(--input);border:1px solid var(--bdr);border-r
 var E=function(id){return document.getElementById(id)},S={u:null,t:null},_rt=null,_ls=null,_wk=[],_selMode=false;
 
 // Timezone
-var _userTz=Intl.DateTimeFormat().resolvedOptions().timeZone,_serverTz=null;
+var _userTz=Intl.DateTimeFormat().resolvedOptions().timeZone;
 function fmtLocal(iso){try{return new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',timeZone:_userTz})}catch(e){return iso}}
 function fmtSec(s){s=Math.max(0,Math.floor(s));var m=Math.floor(s/60),sec=s%60;return m+':'+(sec<10?'0':'')+sec}
 
@@ -311,14 +311,14 @@ function fail(m){err.textContent=m;err.classList.add('on');btn.disabled=false;bt
 if(!url.startsWith('https://')){fail('URL must start with https://');return}if(code.length!==6){fail('Code must be 6 characters');return}if(!/^\d{6}$/.test(pin)){fail('PIN must be 6 digits');return}
 btn.disabled=true;btn.innerHTML='<span class="spin"></span> Connecting\u2026';S.u=url;
 try{var res=await api('POST','/auth',{code:code,pin:pin});if(!res.ok){fail(res.error||'Auth failed');return}S.t=res.token;
-var st=await api('GET','/status');_ls=st;_serverTz=st.serverTimezone||null;updateTzDisplay();apply(st);sync(st.pendingOptions||{},st.playlistSettings);renderHist(st.recentHistory||[]);loadWk(st.weeklySchedule);await loadPl();
+var st=await api('GET','/status');_ls=st;updateTzDisplay();apply(st);sync(st.pendingOptions||{},st.playlistSettings);renderHist(st.recentHistory||[]);loadWk(st.weeklySchedule);await loadPl();
 E('login').style.display='none';E('app').classList.add('on');startPoll();loadAnalytics();toast('Connected','ok')}
 catch(e){S.u=S.t=null;var m=e.message||'';if(m.includes('Failed to fetch')||m.includes('NetworkError'))fail('Cannot reach tunnel URL.');else if(m.includes('401'))fail('Incorrect code or PIN.');else fail('Failed: '+m)}}
 function doLogout(){disconnect();clearInterval(_rt);_rt=null;S.u=S.t=null;_ls=null;E('app').classList.remove('on');E('login').style.display='';E('f-pin').value=''}
 window.addEventListener('beforeunload',function(){disconnect()});
 window.addEventListener('pagehide',function(){disconnect()});
 
-function updateTzDisplay(){var tz=_userTz||'Unknown';E('tz-disp').textContent=tz;E('tz-sched').textContent='Your timezone: '+tz+(_serverTz?' | App: '+_serverTz:'')}
+function updateTzDisplay(){var tz=_userTz||'Unknown';E('tz-disp').textContent=tz;E('tz-sched').textContent='Your timezone: '+tz}
 
 function go(n){if(n==='home')loadAnalytics();document.querySelectorAll('.ni').forEach(function(i){i.classList.toggle('on',i.dataset.t===n)});document.querySelectorAll('.bn').forEach(function(i){i.classList.toggle('on',i.dataset.t===n)});document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.id==='tab-'+n)});if(n==='list')loadPl()}
 function startPoll(){clearInterval(_rt);_rt=setInterval(poll,2500)}
