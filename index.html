@@ -4,400 +4,823 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>VoidCapture</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#08080f;--bg2:#0d0d18;--card:rgba(16,14,30,.65);--card2:rgba(22,18,42,.55);--bdr:rgba(120,80,255,.12);--bdr2:rgba(120,80,255,.25);--txt:#e8e4f0;--dim:#8884a0;--mute:#55526a;--iris:#9b7cff;--ring3:#7c5cfc;--ring2:#6346e0;--glow:rgba(140,100,255,.35);--acc:#ff4466;--grn:#44ee88;--amb:#ffaa44;--sky:#44aaff;--mono:'JetBrains Mono',monospace;--sans:'Outfit',sans-serif;--r:12px;--r2:16px;--blur:20px}
-html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--txt);overflow:hidden}
-body{background:radial-gradient(ellipse at 30% 20%,rgba(100,60,200,.08),transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(60,40,160,.06),transparent 60%),var(--bg)}
-.login-wrap{display:flex;align-items:center;justify-content:center;height:100vh;padding:20px}
-.lcard{background:var(--card);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));border:1px solid var(--bdr2);border-radius:var(--r2);padding:40px 36px;max-width:420px;width:100%;box-shadow:0 0 60px rgba(100,60,255,.08),0 20px 40px rgba(0,0,0,.4);animation:fadeUp .6s ease}
-.lcard h1{font-size:28px;font-weight:700;background:linear-gradient(135deg,#fff 20%,var(--iris) 80%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;margin-bottom:4px;letter-spacing:-.5px}
-.lcard .sub{text-align:center;font-size:12px;color:var(--mute);margin-bottom:28px;font-family:var(--mono);letter-spacing:.1em;text-transform:uppercase}
-.fin{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
-.fin label{font-size:11px;color:var(--dim);font-weight:500;text-transform:uppercase;letter-spacing:.08em;margin-bottom:-6px}
-.fin input{background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;font-family:var(--mono);font-size:14px;color:var(--txt);outline:none;transition:all .25s}
-.fin input:focus{border-color:var(--iris);box-shadow:0 0 20px rgba(140,100,255,.15)}
-.lbtn{width:100%;padding:14px;border:none;border-radius:var(--r);background:linear-gradient(135deg,var(--ring2),var(--iris));color:#fff;font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;transition:all .3s;overflow:hidden}
-.lbtn:hover{transform:translateY(-1px);box-shadow:0 6px 30px rgba(140,100,255,.3)}
-.lbtn:active{transform:translateY(0)}.lbtn:disabled{opacity:.5;cursor:default;transform:none}
-.lerr{color:var(--acc);font-size:12px;text-align:center;min-height:18px;opacity:0;transition:opacity .3s}.lerr.on{opacity:1}
+:root{
+--bg:#06060c;--bg2:#0a0a14;--card:rgba(14,12,28,.72);--card2:rgba(20,16,38,.6);
+--bdr:rgba(130,90,255,.1);--bdr2:rgba(130,90,255,.22);--bdrH:rgba(130,90,255,.35);
+--txt:#ede8f6;--txt2:#c8c0e0;--dim:#7a7498;--mute:#4e4968;
+--iris:#a07cff;--v1:#7c5cfc;--v2:#6346e0;--v3:#4e30c4;--glow:rgba(140,100,255,.3);--glowS:rgba(140,100,255,.12);
+--red:#ff3d5a;--grn:#3de8a0;--amb:#ffb740;--sky:#40b0ff;
+--mono:'JetBrains Mono',monospace;--sans:'Sora',sans-serif;
+--r:10px;--r2:14px;--r3:20px;--blur:24px;
+}
+html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--txt);overflow:hidden;-webkit-font-smoothing:antialiased}
+
+/* Animated BG */
+body::before{content:'';position:fixed;inset:0;background:
+  radial-gradient(ellipse 60% 50% at 20% 10%,rgba(100,70,220,.06),transparent),
+  radial-gradient(ellipse 50% 60% at 80% 90%,rgba(60,40,180,.04),transparent),
+  radial-gradient(circle at 50% 50%,rgba(80,50,200,.02),transparent 70%);
+  pointer-events:none;z-index:0}
+
+/* Glass */
+.glass{background:var(--card);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));border:1px solid var(--bdr);border-radius:var(--r2);transition:border-color .3s,box-shadow .3s}
+.glass:hover{border-color:var(--bdr2);box-shadow:0 0 40px var(--glowS)}
+
+/* Login */
+#login-wrap{display:flex;align-items:center;justify-content:center;height:100vh;padding:20px;position:relative;z-index:1}
+.login-card{padding:44px 40px;max-width:400px;width:100%;box-shadow:0 0 80px rgba(100,60,255,.06),0 24px 48px rgba(0,0,0,.5);animation:rise .7s cubic-bezier(.16,1,.3,1)}
+.login-card h1{font-size:32px;font-weight:700;background:linear-gradient(135deg,#fff 10%,var(--iris) 90%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;letter-spacing:-.8px}
+.login-card .tag{text-align:center;font-size:11px;color:var(--mute);font-family:var(--mono);letter-spacing:.15em;text-transform:uppercase;margin:4px 0 32px}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.field label{font-size:10px;color:var(--dim);font-weight:500;text-transform:uppercase;letter-spacing:.1em}
+.field input{background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;font-family:var(--mono);font-size:14px;color:var(--txt);outline:none;transition:all .3s}
+.field input:focus{border-color:var(--iris);box-shadow:0 0 24px var(--glowS),inset 0 0 12px rgba(140,100,255,.04)}
+.btn-primary{width:100%;padding:14px;border:none;border-radius:var(--r);background:linear-gradient(135deg,var(--v2),var(--iris));color:#fff;font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;transition:all .3s;margin-top:8px}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--glow)}
+.btn-primary:active{transform:translateY(0)}.btn-primary:disabled{opacity:.45;cursor:default;transform:none}
+.login-err{color:var(--red);font-size:12px;text-align:center;min-height:20px;margin-top:8px;opacity:0;transition:opacity .3s}.login-err.show{opacity:1}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:sp .5s linear infinite}
-.app{display:none;height:100vh;flex-direction:column}.app.on{display:flex}
-.top{display:flex;align-items:center;padding:0 20px;height:56px;background:var(--card);backdrop-filter:blur(var(--blur));border-bottom:1px solid var(--bdr);flex-shrink:0}
-.tlogo{font-family:var(--sans);font-size:16px;font-weight:700;background:linear-gradient(135deg,#fff,var(--iris));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.tpill{display:flex;align-items:center;gap:6px;margin-left:12px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--mono);letter-spacing:.05em;transition:all .3s}
-.tpill.live{background:rgba(68,238,136,.1);color:var(--grn);box-shadow:0 0 12px rgba(68,238,136,.15)}
-.tpill.idle{background:rgba(255,255,255,.04);color:var(--mute)}
-.tdot{width:7px;height:7px;border-radius:50%;transition:all .3s}.tdot.on{background:var(--grn);box-shadow:0 0 8px var(--grn)}.tdot.off{background:var(--mute)}
-.tz-info{font-size:10px;color:var(--mute);font-family:var(--mono);margin-left:auto;padding-right:12px}
-.tright{display:flex;gap:6px;margin-left:auto}
-.tb{background:rgba(255,255,255,.05);border:1px solid var(--bdr);border-radius:8px;color:var(--dim);padding:6px 12px;font-size:13px;cursor:pointer;transition:all .25s;font-family:var(--sans)}.tb:hover{background:rgba(255,255,255,.1);color:var(--txt);border-color:var(--bdr2)}
-.tb.red{color:var(--acc);border-color:rgba(255,68,102,.2)}.tb.red:hover{background:rgba(255,68,102,.1);box-shadow:0 0 15px rgba(255,68,102,.15)}
-.nav{display:flex;border-bottom:1px solid var(--bdr);background:var(--card2);backdrop-filter:blur(10px);padding:0 16px;flex-shrink:0}
-.ni{padding:12px 20px;font-size:13px;font-weight:500;color:var(--mute);cursor:pointer;border-bottom:2px solid transparent;transition:all .25s;position:relative}.ni:hover{color:var(--dim)}.ni.on{color:var(--iris);border-bottom-color:var(--iris)}.ni.on::after{content:'';position:absolute;bottom:-1px;left:20%;right:20%;height:2px;background:var(--iris);box-shadow:0 0 12px var(--glow);border-radius:2px}
-.bnav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--card);backdrop-filter:blur(var(--blur));border-top:1px solid var(--bdr);padding:8px 0 max(8px,env(safe-area-inset-bottom))}
-.bnav .bn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px;font-size:10px;color:var(--mute);cursor:pointer;transition:all .2s}.bnav .bn.on{color:var(--iris)}.bnav .bn .bi{font-size:18px}
-.main{flex:1;overflow-y:auto;padding:20px 24px 80px;scroll-behavior:smooth}.main::-webkit-scrollbar{width:4px}.main::-webkit-scrollbar-track{background:transparent}.main::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:4px}
-.tab{display:none;animation:fadeUp .35s ease}.tab.on{display:block}
-.gc{background:var(--card);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));border:1px solid var(--bdr);border-radius:var(--r2);padding:20px;margin-bottom:16px;transition:all .3s}.gc:hover{border-color:var(--bdr2);box-shadow:0 0 30px rgba(100,60,255,.06)}
-.gc-h{font-size:14px;font-weight:600;color:var(--iris);margin-bottom:14px;display:flex;align-items:center;gap:8px}.gc-h .gi{font-size:16px;opacity:.7}
-.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
-.sc{background:var(--card2);backdrop-filter:blur(10px);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;text-align:center;transition:all .3s;position:relative;overflow:hidden}
-.sc::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,var(--glow-c,rgba(140,100,255,.08)),transparent 70%);pointer-events:none}
-.sc.p{--glow-c:rgba(140,100,255,.12)}.sc.g{--glow-c:rgba(68,238,136,.1)}.sc.r{--glow-c:rgba(255,68,102,.1)}.sc.bl{--glow-c:rgba(68,170,255,.1)}.sc.a{--glow-c:rgba(255,170,68,.1)}
-.sc:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(0,0,0,.3)}
-.sv{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--txt);margin-bottom:2px}.sl{font-size:10px;color:var(--mute);text-transform:uppercase;letter-spacing:.1em}
-.prog{margin:12px 0}.prog-track{height:4px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;position:relative}
-.prog-fill{height:100%;background:linear-gradient(90deg,var(--ring2),var(--iris));border-radius:4px;transition:width .5s ease;position:relative}.prog-fill::after{content:'';position:absolute;right:0;top:-2px;width:8px;height:8px;background:var(--iris);border-radius:50%;box-shadow:0 0 10px var(--iris)}
-.prog-t{display:flex;justify-content:space-between;margin-top:4px;font-family:var(--mono);font-size:11px;color:var(--dim)}
-.sr{display:grid;grid-template-columns:56px 1fr 50px;align-items:center;gap:10px;margin-bottom:10px}.sr span{font-size:12px}
-input[type=range]{-webkit-appearance:none;width:100%;height:6px;background:rgba(255,255,255,.06);border-radius:6px;outline:none;cursor:pointer}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--iris);box-shadow:0 0 12px var(--glow);cursor:pointer;transition:all .2s}
-input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.15);box-shadow:0 0 20px var(--glow)}
-input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--iris);box-shadow:0 0 12px var(--glow);cursor:pointer;border:none}
-.sw{position:relative;width:44px;height:24px;display:inline-block;flex-shrink:0}.sw input{opacity:0;width:0;height:0}
-.swt{position:absolute;inset:0;background:rgba(255,255,255,.08);border-radius:24px;cursor:pointer;transition:all .3s;border:1px solid var(--bdr)}
-.swt::after{content:'';position:absolute;left:3px;top:3px;width:16px;height:16px;background:#555;border-radius:50%;transition:all .3s}
-.sw input:checked+.swt{background:rgba(140,100,255,.2);border-color:var(--iris);box-shadow:0 0 15px rgba(140,100,255,.2)}.sw input:checked+.swt::after{transform:translateX(20px);background:var(--iris);box-shadow:0 0 8px var(--iris)}
-.tr{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}.tr:last-child{border-bottom:none}.tl{font-size:13px;color:var(--dim)}
-.b{border:none;border-radius:8px;padding:8px 16px;font-family:var(--sans);font-size:12px;font-weight:500;cursor:pointer;transition:all .25s;display:inline-flex;align-items:center;gap:4px}.b:hover{transform:translateY(-1px)}.b:active{transform:translateY(0)}
-.bg{background:rgba(255,255,255,.06);color:var(--dim);border:1px solid var(--bdr)}.bg:hover{background:rgba(255,255,255,.1);color:var(--txt)}
-.ba{background:linear-gradient(135deg,var(--ring2),var(--iris));color:#fff}.ba:hover{box-shadow:0 4px 20px var(--glow)}
-.bd{background:rgba(255,68,102,.08);color:var(--acc);border:1px solid rgba(255,68,102,.15)}.bd:hover{background:rgba(255,68,102,.15);box-shadow:0 0 15px rgba(255,68,102,.1)}
-.bs{background:rgba(68,238,136,.08);color:var(--grn);border:1px solid rgba(68,238,136,.15)}.bs:hover{background:rgba(68,238,136,.15)}
-.bk{background:rgba(68,170,255,.08);color:var(--sky);border:1px solid rgba(68,170,255,.15)}.bk:hover{background:rgba(68,170,255,.15)}
-.bsm{padding:5px 10px;font-size:11px}.ag{display:flex;gap:8px;flex-wrap:wrap}.rw{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.sec{margin-bottom:16px}.sec-h{font-size:11px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
-.mp{background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;font-family:var(--mono);font-size:13px;color:rgba(255,255,255,.3);min-height:40px;word-break:break-all;transition:all .3s}.mp.on{color:var(--txt);border-color:var(--bdr2);box-shadow:0 0 20px rgba(140,100,255,.06)}
-.ir{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:12px}.ik{color:var(--mute)}.iv{color:var(--iris);font-family:var(--mono)}
-input[type=text],input[type=number],textarea,select{background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:var(--r);padding:8px 12px;font-family:var(--mono);font-size:13px;color:var(--txt);outline:none;transition:all .25s}
-input[type=text]:focus,input[type=number]:focus,textarea:focus,select:focus{border-color:var(--iris);box-shadow:0 0 16px rgba(140,100,255,.12)}
-textarea{width:100%;resize:vertical;min-height:60px}select{cursor:pointer}
-.nr{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}.nr input[type=number]{width:70px;text-align:center}
-.nf{flex:1;min-width:120px;font-size:12px;color:var(--dim)}.nf strong{display:block;color:var(--txt);font-size:13px;margin-bottom:1px}
-#live-b{padding:6px 12px;background:rgba(68,238,136,.06);border:1px solid rgba(68,238,136,.12);border-radius:var(--r);margin-bottom:12px;font-size:11px;color:var(--grn);font-family:var(--mono);text-align:center;animation:pulse 2s infinite}
-.pi{display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.03);font-size:12px;transition:all .2s}.pi:hover{background:rgba(255,255,255,.03)}.pi.dragging{opacity:.4}
-.pn{color:var(--mute);font-family:var(--mono);font-size:10px;min-width:22px;text-align:right}
-.pu{color:var(--dim);font-family:var(--mono);font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pu.dir{color:var(--iris)}
-.pa{display:flex;gap:3px;flex-shrink:0}.cb{accent-color:var(--iris)}
-.qi{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.03);font-size:12px;list-style:none}
-.qn{color:var(--mute);font-family:var(--mono);font-size:10px;min-width:18px}.qu{color:var(--dim);font-family:var(--mono);font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.qx{color:var(--acc);cursor:pointer;font-size:14px;padding:2px 4px}
-.hi{display:flex;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.02);font-size:11px}
-.hd{color:var(--mute);font-family:var(--mono);font-size:10px;flex-shrink:0}.hu{color:var(--dim);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
-.wk-grid{display:grid;grid-template-columns:60px 1fr auto;gap:6px 10px;align-items:center}
-.wk-day{font-size:11px;font-weight:600;color:var(--txt);text-transform:uppercase;letter-spacing:.05em}
-.wk-rm{color:var(--mute);cursor:pointer;padding:2px 4px;transition:color .2s;font-size:13px}.wk-rm:hover{color:var(--acc)}
-.toasts{position:fixed;top:64px;right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.toast{padding:10px 18px;border-radius:var(--r);font-size:12px;font-weight:500;backdrop-filter:blur(12px);animation:fadeUp .3s ease;transition:opacity .3s;pointer-events:auto;border:1px solid}
-.toast.ok{background:rgba(68,238,136,.1);color:var(--grn);border-color:rgba(68,238,136,.2)}
-.toast.err{background:rgba(255,68,102,.1);color:var(--acc);border-color:rgba(255,68,102,.2)}
-.toast.inf{background:rgba(140,100,255,.1);color:var(--iris);border-color:rgba(140,100,255,.2)}
-@keyframes fadeUp{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+
+/* App */
+#app-wrap{display:none;height:100vh;flex-direction:column;position:relative;z-index:1}
+#app-wrap.on{display:flex}
+
+/* Top bar */
+.topbar{display:flex;align-items:center;height:54px;padding:0 16px;background:var(--card);backdrop-filter:blur(var(--blur));border-bottom:1px solid var(--bdr);flex-shrink:0;z-index:10}
+.topbar .logo{font-size:15px;font-weight:700;background:linear-gradient(135deg,#fff,var(--iris));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.3px}
+.pill{display:inline-flex;align-items:center;gap:5px;margin-left:10px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;font-family:var(--mono);letter-spacing:.06em;transition:all .4s}
+.pill.live{background:rgba(61,232,160,.08);color:var(--grn);box-shadow:0 0 14px rgba(61,232,160,.12)}
+.pill.idle{background:rgba(255,255,255,.03);color:var(--mute)}
+.pill .dot{width:6px;height:6px;border-radius:50%;transition:all .4s}
+.pill.live .dot{background:var(--grn);box-shadow:0 0 8px var(--grn)}
+.pill.idle .dot{background:var(--mute)}
+.tz{font-size:9px;color:var(--mute);font-family:var(--mono);margin-left:auto;padding:0 10px}
+.top-actions{display:flex;gap:5px;margin-left:auto}
+.tbtn{background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;color:var(--dim);padding:5px 11px;font-size:12px;cursor:pointer;transition:all .25s;font-family:var(--sans);font-weight:500}
+.tbtn:hover{background:rgba(255,255,255,.08);color:var(--txt);border-color:var(--bdr2)}
+.tbtn.danger{color:var(--red);border-color:rgba(255,61,90,.15)}.tbtn.danger:hover{background:rgba(255,61,90,.08);box-shadow:0 0 16px rgba(255,61,90,.1)}
+
+/* Nav tabs */
+.nav-bar{display:flex;border-bottom:1px solid var(--bdr);background:rgba(10,10,20,.5);backdrop-filter:blur(12px);padding:0 12px;flex-shrink:0}
+.nav-item{padding:11px 18px;font-size:12px;font-weight:500;color:var(--mute);cursor:pointer;border-bottom:2px solid transparent;transition:all .25s;letter-spacing:.02em}
+.nav-item:hover{color:var(--dim)}
+.nav-item.active{color:var(--iris);border-color:var(--iris)}
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:50;background:var(--card);backdrop-filter:blur(var(--blur));border-top:1px solid var(--bdr);padding:6px 0 max(6px,env(safe-area-inset-bottom))}
+.mob-nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px;font-size:9px;color:var(--mute);cursor:pointer;transition:all .2s;background:none;border:none;font-family:var(--sans)}
+.mob-nav button.active{color:var(--iris)}
+.mob-nav button .icon{font-size:17px}
+
+/* Scrollable content */
+.content{flex:1;overflow-y:auto;padding:16px 20px 90px;position:relative}
+.content::-webkit-scrollbar{width:3px}.content::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:4px}
+.tab-pane{display:none;animation:rise .4s cubic-bezier(.16,1,.3,1)}.tab-pane.active{display:block}
+
+/* Cards */
+.card{padding:18px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:600;color:var(--iris);margin-bottom:12px;display:flex;align-items:center;gap:7px;letter-spacing:-.2px}
+.card-title .ci{font-size:15px;opacity:.6}
+
+/* Stat grid */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.stat-card{text-align:center;padding:14px 8px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:25%;right:25%;height:1px;background:var(--accent,var(--iris));box-shadow:0 0 12px var(--accent,var(--iris));opacity:.4}
+.stat-card .val{font-family:var(--mono);font-size:20px;font-weight:700;margin-bottom:1px}
+.stat-card .lbl{font-size:9px;color:var(--mute);text-transform:uppercase;letter-spacing:.12em}
+.stat-card.purple{--accent:var(--iris)}.stat-card.green{--accent:var(--grn)}.stat-card.red{--accent:var(--red)}.stat-card.blue{--accent:var(--sky)}.stat-card.amber{--accent:var(--amb)}
+
+/* Progress ring */
+.ring-wrap{display:flex;align-items:center;justify-content:center;padding:16px 0}
+.ring-container{position:relative;width:160px;height:160px}
+.ring-container svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:rgba(255,255,255,.04);stroke-width:6}
+.ring-fill{fill:none;stroke:url(#ringGrad);stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .8s ease}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.ring-time{font-family:var(--mono);font-size:24px;font-weight:700}
+.ring-label{font-size:10px;color:var(--dim);margin-top:2px}
+.ring-url{font-size:9px;color:var(--mute);font-family:var(--mono);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:6px}
+.ring-pulse{position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--iris);opacity:0;animation:ringPulse 2.5s infinite}
+@keyframes ringPulse{0%{opacity:.3;transform:scale(.98)}50%{opacity:0;transform:scale(1.04)}100%{opacity:0;transform:scale(1.04)}}
+
+/* Sliders */
+.slider-row{display:grid;grid-template-columns:50px 1fr 46px;align-items:center;gap:8px;margin-bottom:8px}
+.slider-row .label{font-size:11px;color:var(--dim);font-weight:500}
+.slider-row .val{font-size:12px;color:var(--iris);font-family:var(--mono);text-align:right}
+input[type=range]{-webkit-appearance:none;width:100%;height:5px;background:rgba(255,255,255,.05);border-radius:5px;outline:none;cursor:pointer;transition:background .2s}
+input[type=range]:hover{background:rgba(255,255,255,.08)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--iris);box-shadow:0 0 14px var(--glow);cursor:pointer;transition:all .2s}
+input[type=range]::-webkit-slider-thumb:hover{box-shadow:0 0 24px var(--glow);transform:scale(1.1)}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--iris);box-shadow:0 0 14px var(--glow);border:none;cursor:pointer}
+
+/* Remote buttons */
+.remote{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.remote .rbtn{padding:16px 8px;border:1px solid var(--bdr);border-radius:var(--r2);background:var(--card2);color:var(--txt2);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:all .3s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px}
+.remote .rbtn:hover{border-color:var(--bdr2);transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.3)}
+.remote .rbtn:active{transform:translateY(0)}
+.remote .rbtn .ri{font-size:22px}
+.remote .rbtn.accent{background:linear-gradient(135deg,rgba(255,61,90,.1),rgba(255,61,90,.05));border-color:rgba(255,61,90,.2);color:var(--red)}
+.remote .rbtn.accent:hover{box-shadow:0 0 24px rgba(255,61,90,.12)}
+
+/* Toggle */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-label{font-size:12px;color:var(--dim)}
+.switch{position:relative;width:42px;height:22px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.switch span{position:absolute;inset:0;background:rgba(255,255,255,.06);border-radius:22px;cursor:pointer;transition:all .3s;border:1px solid var(--bdr)}
+.switch span::after{content:'';position:absolute;left:2px;top:2px;width:16px;height:16px;background:#444;border-radius:50%;transition:all .3s}
+.switch input:checked+span{background:rgba(160,124,255,.15);border-color:var(--iris);box-shadow:0 0 12px var(--glowS)}
+.switch input:checked+span::after{transform:translateX(20px);background:var(--iris);box-shadow:0 0 8px var(--iris)}
+
+/* Buttons */
+.btn{border:none;border-radius:8px;padding:7px 14px;font-family:var(--sans);font-size:11px;font-weight:500;cursor:pointer;transition:all .25s;display:inline-flex;align-items:center;gap:4px}
+.btn:hover{transform:translateY(-1px)}.btn:active{transform:translateY(0)}
+.btn-g{background:rgba(255,255,255,.05);color:var(--dim);border:1px solid var(--bdr)}.btn-g:hover{background:rgba(255,255,255,.08);color:var(--txt)}
+.btn-p{background:linear-gradient(135deg,var(--v2),var(--iris));color:#fff}.btn-p:hover{box-shadow:0 4px 20px var(--glow)}
+.btn-d{background:rgba(255,61,90,.06);color:var(--red);border:1px solid rgba(255,61,90,.12)}.btn-d:hover{background:rgba(255,61,90,.12)}
+.btn-s{background:rgba(61,232,160,.06);color:var(--grn);border:1px solid rgba(61,232,160,.12)}.btn-s:hover{background:rgba(61,232,160,.12)}
+.btn-b{background:rgba(64,176,255,.06);color:var(--sky);border:1px solid rgba(64,176,255,.12)}.btn-b:hover{background:rgba(64,176,255,.12)}
+
+/* Inputs */
+input[type=text],input[type=number],input[type=password],textarea,select{background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:var(--r);padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--txt);outline:none;transition:all .25s}
+input:focus,textarea:focus,select:focus{border-color:var(--iris);box-shadow:0 0 18px var(--glowS)}
+textarea{width:100%;resize:vertical;min-height:60px}
+
+/* Number row */
+.num-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap}
+.num-row input[type=number]{width:65px;text-align:center}
+.num-row .info{flex:1;min-width:100px;font-size:11px;color:var(--dim)}.num-row .info strong{display:block;color:var(--txt2);font-size:12px;margin-bottom:1px}
+
+/* Marquee preview */
+.mq-preview{background:rgba(255,255,255,.02);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 14px;font-family:var(--mono);font-size:12px;color:var(--mute);min-height:38px;word-break:break-all;transition:all .3s;margin-bottom:10px}
+.mq-preview.on{color:var(--txt);border-color:var(--bdr2);box-shadow:0 0 16px var(--glowS)}
+
+/* Weekly grid */
+.wk-grid-visual{display:grid;grid-template-columns:40px repeat(24,1fr);gap:1px;margin:10px 0}
+.wk-grid-visual .day-label{font-size:9px;color:var(--dim);font-family:var(--mono);display:flex;align-items:center;padding-right:4px;font-weight:600}
+.wk-grid-visual .hour-label{font-size:7px;color:var(--mute);font-family:var(--mono);text-align:center;padding:2px 0}
+.wk-cell{width:100%;aspect-ratio:1;border-radius:2px;background:rgba(255,255,255,.02);cursor:pointer;transition:all .2s;border:1px solid transparent;min-height:12px}
+.wk-cell:hover{background:rgba(140,100,255,.12);border-color:var(--bdr2)}
+.wk-cell.active{background:rgba(140,100,255,.25);border-color:var(--iris);box-shadow:0 0 8px var(--glowS)}
+
+/* Chart container */
+.chart-wrap{position:relative;height:140px;margin:4px 0}
+.chart-wrap canvas{width:100%!important}
+
+/* Heatmap */
+.heatmap{display:grid;grid-template-columns:30px repeat(24,1fr);gap:1px;margin:8px 0}
+.hm-label{font-size:8px;color:var(--mute);font-family:var(--mono);display:flex;align-items:center}
+.hm-cell{aspect-ratio:1.2;border-radius:2px;min-height:10px;transition:all .2s}
+.hm-hour{font-size:7px;color:var(--mute);font-family:var(--mono);text-align:center}
+
+/* Playlist items */
+.pl-item{display:flex;align-items:center;gap:5px;padding:5px 6px;border-bottom:1px solid rgba(255,255,255,.02);font-size:11px;transition:background .2s}
+.pl-item:hover{background:rgba(255,255,255,.02)}
+.pl-num{color:var(--mute);font-family:var(--mono);font-size:9px;min-width:20px;text-align:right}
+.pl-url{color:var(--dim);font-family:var(--mono);font-size:10px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pl-url.dir{color:var(--iris)}
+.pl-actions{display:flex;gap:2px;flex-shrink:0}
+
+/* Queue */
+.q-item{display:flex;align-items:center;gap:6px;padding:5px 6px;border-bottom:1px solid rgba(255,255,255,.02);font-size:11px;list-style:none}
+.q-num{color:var(--mute);font-family:var(--mono);font-size:9px;min-width:16px}
+.q-url{color:var(--dim);font-family:var(--mono);font-size:10px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.q-rm{color:var(--red);cursor:pointer;font-size:13px;padding:2px}
+
+/* History */
+.hist-item{display:flex;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.015);font-size:10px}
+.hist-time{color:var(--mute);font-family:var(--mono);font-size:9px;flex-shrink:0}
+.hist-url{color:var(--dim);font-family:var(--mono);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Top videos */
+.tv-item{display:flex;gap:6px;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.02)}
+.tv-rank{color:var(--mute);font-family:var(--mono);font-size:9px;width:18px;text-align:right;flex-shrink:0}
+.tv-url{font-family:var(--mono);font-size:10px;color:var(--dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tv-stats{font-family:var(--mono);font-size:9px;color:var(--iris);flex-shrink:0}
+
+/* Floating panic */
+.fab-panic{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#ff1a3a,#cc0022);border:2px solid rgba(255,61,90,.3);color:#fff;font-size:22px;cursor:pointer;z-index:999;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(255,61,90,.25),0 0 40px rgba(255,61,90,.08);transition:all .3s}
+.fab-panic:hover{transform:scale(1.08);box-shadow:0 6px 32px rgba(255,61,90,.35),0 0 60px rgba(255,61,90,.12)}
+.fab-panic:active{transform:scale(.95)}
+
+/* Section titles */
+.sec-title{font-size:10px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.12em;margin:12px 0 6px}
+
+/* Toast */
+.toasts{position:fixed;top:60px;right:14px;z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.toast{padding:9px 16px;border-radius:var(--r);font-size:11px;font-weight:500;backdrop-filter:blur(12px);animation:rise .3s ease;transition:opacity .3s;pointer-events:auto;border:1px solid}
+.toast-ok{background:rgba(61,232,160,.08);color:var(--grn);border-color:rgba(61,232,160,.15)}
+.toast-err{background:rgba(255,61,90,.08);color:var(--red);border-color:rgba(255,61,90,.15)}
+.toast-inf{background:rgba(160,124,255,.08);color:var(--iris);border-color:rgba(160,124,255,.15)}
+
+/* Info row */
+.info-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.02);font-size:11px}
+.info-row .k{color:var(--mute)}.info-row .v{color:var(--iris);font-family:var(--mono)}
+
+/* Row + group helpers */
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.group{display:flex;gap:6px;flex-wrap:wrap}
+
+/* Animations */
+@keyframes rise{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
 @keyframes sp{to{transform:rotate(360deg)}}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-@media(max-width:768px){.top{padding:0 12px;height:50px}.nav{display:none!important}.bnav{display:flex!important}.main{padding:14px 12px 85px}.sg{grid-template-columns:repeat(2,1fr)}.sr{grid-template-columns:48px 1fr 40px;gap:6px}.gc{padding:16px}.lcard{padding:28px 24px}.tz-info{display:none}}
-@media(max-width:400px){.sg{grid-template-columns:1fr 1fr}.sv{font-size:18px}}
-#guide-overlay{display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);overflow-y:auto;padding:20px}
-#guide-overlay .g-inner{max-width:640px;margin:20px auto;background:var(--card);backdrop-filter:blur(var(--blur));border:1px solid var(--bdr2);border-radius:var(--r2);padding:28px;position:relative;animation:fadeUp .3s ease}
-#guide-overlay h2{font-size:20px;font-weight:700;background:linear-gradient(135deg,#fff 30%,var(--iris));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:16px}
-#guide-overlay .gs{color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px}
-#guide-overlay p{font-size:13px;color:var(--dim);line-height:1.8;margin-bottom:8px}
+
+/* Guide */
+.guide-overlay{position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);overflow-y:auto;padding:20px;display:none}
+.guide-overlay.open{display:block}
+.guide-inner{max-width:600px;margin:20px auto;padding:28px;animation:rise .3s}
+.guide-inner h2{font-size:20px;font-weight:700;background:linear-gradient(135deg,#fff 30%,var(--iris));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:16px}
+.guide-inner .gs{color:var(--txt);font-weight:600;font-size:13px;margin:16px 0 6px;border-bottom:1px solid var(--bdr);padding-bottom:4px}
+.guide-inner p{font-size:12px;color:var(--dim);line-height:1.7;margin-bottom:6px}
+
+/* Responsive */
+@media(max-width:768px){
+  .nav-bar{display:none!important}
+  .mob-nav{display:flex!important}
+  .content{padding:14px 12px 88px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .remote{grid-template-columns:1fr 1fr 1fr}
+  .tz{display:none}
+  .ring-container{width:140px;height:140px}
+  .ring-time{font-size:20px}
+  .wk-grid-visual .hour-label{font-size:0} /* hide hour labels on mobile, too cramped */
+  .fab-panic{bottom:80px;right:16px;width:50px;height:50px;font-size:20px}
+  .chart-wrap{height:110px}
+}
+@media(max-width:400px){.stats-grid{grid-template-columns:1fr 1fr}.stat-card .val{font-size:16px}}
 </style>
 </head>
 <body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback,useMemo}=React;
 
-<!-- LOGIN -->
-<div class="login-wrap" id="login">
-<div class="lcard">
-<h1>VoidCapture</h1>
-<div class="sub">Remote Controller</div>
-<div class="fin">
-<label>Tunnel URL</label><input type="text" id="f-url" placeholder="https://xxxx.trycloudflare.com" autocomplete="off" spellcheck="false">
-<label>Session Code</label><input type="text" id="f-code" placeholder="ABC123" maxlength="6" autocomplete="off" spellcheck="false" style="text-transform:uppercase;letter-spacing:.2em">
-<label>PIN</label><input type="password" id="f-pin" placeholder="------" maxlength="6" autocomplete="off" inputmode="numeric">
-</div>
-<button class="lbtn" id="lbtn" onclick="doLogin()">Connect</button>
-<div class="lerr" id="lerr"></div>
-</div></div>
+/* ─── API Layer ─── */
+let S={u:null,t:null};
+const api=async(m,p,b)=>{
+  const o={method:m,headers:{'Content-Type':'application/json'}};
+  if(S.t)o.headers['Authorization']='Bearer '+S.t;
+  if(b!==undefined)o.body=JSON.stringify(b);
+  const r=await fetch(S.u+p,o);
+  if(!r.ok){const e=await r.json().catch(()=>({error:'HTTP '+r.status}));throw new Error(e.error||e.message||'HTTP '+r.status)}
+  return r.json();
+};
+const cmd=async(n,v)=>{
+  const b={cmd:n};if(v!==undefined)b.value=v;
+  const r=await api('POST','/command',b);
+  if(!r.success)throw new Error(r.message||'failed');
+  return r;
+};
 
-<!-- APP -->
-<div class="app" id="app">
-<div class="top">
-<span class="tlogo">VoidCapture</span>
-<span class="tpill idle" id="pill"><span class="tdot off" id="dot"></span><span id="stxt">Idle</span></span>
-<span class="tz-info" id="tz-disp"></span>
-<div class="tright"><button class="tb" onclick="forceSync()" id="sync-btn">&#x21bb;</button><button class="tb red" onclick="cmd('panic')">&#x26a0; Panic</button><button class="tb" onclick="showGuide()">?</button><button class="tb" onclick="doLogout()">Logout</button></div>
-</div>
-<div class="nav">
-<div class="ni on" data-t="home" onclick="go('home')">&#x25c8; Home</div>
-<div class="ni" data-t="ctrl" onclick="go('ctrl')">&#x2699; Controls</div>
-<div class="ni" data-t="list" onclick="go('list')">&#x2261; Playlist &amp; Queue</div>
-</div>
-<div class="bnav">
-<div class="bn on" data-t="home" onclick="go('home')"><span class="bi">&#x25c8;</span>Home</div>
-<div class="bn" data-t="ctrl" onclick="go('ctrl')"><span class="bi">&#x2699;</span>Controls</div>
-<div class="bn" data-t="list" onclick="go('list')"><span class="bi">&#x2261;</span>Playlist</div>
-</div>
-<div class="main">
+/* ─── Utils ─── */
+const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
+const fmtSec=s=>{s=Math.max(0,Math.floor(s));const m=Math.floor(s/60),sec=s%60;return m+':'+(sec<10?'0':'')+sec};
+const fmtLocal=iso=>{try{return new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',timeZone:tz})}catch(e){return iso}};
+const trunc=(s,n)=>s&&s.length>n?s.slice(0,n)+'\u2026':s;
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-<!-- HOME -->
-<div class="tab on" id="tab-home">
-<div class="sg"><div class="sc p"><div class="sv" id="s-today">&#x2014;</div><div class="sl">Today</div></div><div class="sc bl"><div class="sv" id="s-total">&#x2014;</div><div class="sl">All Time</div></div><div class="sc g"><div class="sv" id="s-vids">&#x2014;</div><div class="sl">Videos</div></div><div class="sc a"><div class="sv" id="s-queue">&#x2014;</div><div class="sl">Queue</div></div></div>
-<div class="gc"><div class="gc-h"><span class="gi">&#x25b6;</span> Now Playing</div><div id="live-b" style="display:none">Session active</div><div class="mp" id="d-st">Idle</div>
-<div class="prog"><div class="prog-track"><div class="prog-fill" id="prog-bar" style="width:0%"></div></div><div class="prog-t"><span id="prog-cur">0:00</span><span id="prog-len">--:--</span></div></div>
-<div id="countdown-wrap" style="display:none"><div id="countdown" style="font-family:var(--mono);font-size:13px;color:var(--amb);text-align:center;padding:4px 0"></div></div>
-<div class="ir"><span class="ik">Speed</span><span class="iv" id="d-sp">&#x2014;</span></div><div class="ir"><span class="ik">Volume</span><span class="iv" id="d-vl">&#x2014;</span></div><div class="ir"><span class="ik">Loop</span><span class="iv" id="d-lp">&#x2014;</span></div><div class="ir"><span class="ik">Marquee</span><span class="iv" id="d-mq">&#x2014;</span></div></div>
-<div class="gc"><div class="gc-h"><span class="gi">&#x2191;</span> Watch Time Trend <span style="font-size:10px;color:var(--mute);font-weight:400;margin-left:auto">30 days</span></div><div id="trend-chart" style="height:100px;display:flex;align-items:flex-end;gap:2px;padding:6px 0"></div></div>
-<div class="gc"><div class="gc-h"><span class="gi">&#x2606;</span> Top Videos</div><div id="top-vids" style="max-height:200px;overflow-y:auto"><div style="color:var(--dim);font-size:12px">Loading&#x2026;</div></div></div>
-<div class="gc"><div class="gc-h"><span class="gi">&#x29bf;</span> Session Patterns</div><div class="sg" style="margin-bottom:0"><div class="sc p"><div class="sv" id="an-avgdur">&#x2014;</div><div class="sl">Avg Duration</div></div><div class="sc bl"><div class="sv" id="an-avgsess">&#x2014;</div><div class="sl">Sessions/Week</div></div><div class="sc a"><div class="sv" id="an-skiprate">&#x2014;</div><div class="sl">Skip Rate</div></div><div class="sc g"><div class="sv" id="an-complete">&#x2014;</div><div class="sl">Completion %</div></div></div></div>
-<div class="gc"><div class="gc-h"><span class="gi">&#x231b;</span> Session Stats</div><div class="sg" style="margin-bottom:0"><div class="sc p"><div class="sv" id="st-td">&#x2014;</div><div class="sl">Today</div></div><div class="sc bl"><div class="sv" id="st-tt">&#x2014;</div><div class="sl">All Time</div></div><div class="sc g"><div class="sv" id="st-tv">&#x2014;</div><div class="sl">Videos</div></div><div class="sc r"><div class="sv" id="st-tp">&#x2014;</div><div class="sl">Panics</div></div></div></div>
-<div class="gc"><div class="gc-h"><span class="gi">&#x23f3;</span> Watch History</div><div id="hist" style="max-height:250px;overflow-y:auto"><div style="color:var(--dim);font-size:12px">Loading&#x2026;</div></div></div>
-</div>
+/* ─── Toast System ─── */
+let toastId=0;
+function ToastContainer(){
+  const [toasts,setToasts]=useState([]);
+  window._addToast=(msg,type='ok')=>{
+    const id=++toastId;
+    setToasts(t=>[...t,{id,msg,type}]);
+    setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),3000);
+  };
+  return <div className="toasts">{toasts.map(t=><div key={t.id} className={`toast toast-${t.type}`}>{t.msg}</div>)}</div>;
+}
+const toast=(m,t)=>window._addToast?.(m,t);
 
-<!-- CONTROLS -->
-<div class="tab" id="tab-ctrl">
-<div class="gc"><div class="gc-h"><span class="gi">&#x266b;</span> Live Sliders</div>
-<div class="sr"><span style="color:var(--dim)">Volume</span><input type="range" id="sl-vl" min="0" max="200" value="100" oninput="slS('vl',this.value)" onchange="cmd('volume',+this.value,1)"><span class="iv" style="color:var(--iris)" id="v-vl">100</span></div>
-<div class="sr"><span style="color:var(--dim)">Speed</span><input type="range" id="sl-sp" min="25" max="150" value="100" oninput="slS('sp',this.value)" onchange="cmd('speed',+(this.value/100).toFixed(2),1)"><span class="iv" style="color:var(--iris)" id="v-sp">1.00&#xd7;</span></div></div>
-<div class="gc"><div class="gc-h"><span class="gi">&#x23ef;</span> Playback</div><div class="ag" style="margin-bottom:12px"><button class="b bg" onclick="cmd('skip')">&#x23ed; Skip</button><button class="b bg" onclick="cmd('clearqueue')">&#x2715; Clear Queue</button><button class="b bd" onclick="cmd('panic')">&#x26a0; Panic</button></div>
-<div class="nr"><span class="nf"><strong>Extend Session</strong>Add minutes</span><input type="number" id="ext-v" value="15" min="0"><span style="color:var(--mute);font-size:11px">min</span><button class="b bg bsm" onclick="cmd('extend',+E('ext-v').value)">Add</button></div>
-<div class="nr"><span class="nf"><strong>Max Time</strong>0 = no limit</span><input type="number" id="maxt-v" value="60" min="0"><span style="color:var(--mute);font-size:11px">min</span><button class="b bg bsm" onclick="cmd('maxtime',+E('maxt-v').value)">Set</button></div></div>
-<div class="gc"><div class="gc-h"><span class="gi">&#x1f512;</span> Lock / Unlock</div><div id="lock-b" style="margin-bottom:10px;font-size:13px;color:var(--grn)">&#x1f513; Panic hotkey active</div><div class="rw"><button class="b bd bsm" onclick="cmdLock(1)">&#x1f512; Lock</button><button class="b bs bsm" onclick="cmdLock(0)">&#x1f513; Unlock</button></div></div>
-<div class="gc"><div class="gc-h"><span class="gi">&#x25b6;</span> Play From Playlist</div><button class="b ba" style="width:100%" onclick="cmdPlayNow()">Start Playing Playlist Now</button></div>
-<div class="gc"><div class="gc-h"><span class="gi">&#x2699;</span> Session Options</div>
-<div class="tr"><div class="tl">Loop Playlist</div><label class="sw"><input type="checkbox" id="tog-loop" onchange="cmd('loop',this.checked)"><span class="swt"></span></label></div>
-<div class="tr"><div class="tl">Shuffle</div><label class="sw"><input type="checkbox" id="tog-shuf" onchange="cmd('shuffle',this.checked)"><span class="swt"></span></label></div>
-<div class="tr"><div class="tl">No Repeat</div><label class="sw"><input type="checkbox" id="tog-norep" onchange="cmd('norepeat',this.checked)"><span class="swt"></span></label></div>
-<div class="tr"><div class="tl">Show Cursor</div><label class="sw"><input type="checkbox" id="tog-cur" onchange="cmd('cursorshow',this.checked)"><span class="swt"></span></label></div>
-<div class="sec" style="margin-top:12px">
-<div class="nr"><span class="nf"><strong>Min Session Lock</strong>Panic disabled for N sec</span><input type="number" id="ms-v" value="0" min="0"><span style="color:var(--mute);font-size:11px">sec</span><button class="b bg bsm" onclick="cmd('minsession',+E('ms-v').value)">Set</button></div>
-<div class="nr"><span class="nf"><strong>Max Videos</strong>0 = unlimited</span><input type="number" id="mv-v" value="0" min="0"><button class="b bg bsm" onclick="cmd('maxvideos',+E('mv-v').value)">Set</button></div>
-<div class="nr"><span class="nf"><strong>Start From</strong>Skip first N</span><input type="number" id="sf-v" value="0" min="0"><button class="b bg bsm" onclick="cmd('startfrom',+E('sf-v').value)">Set</button></div></div></div>
-<div class="gc"><div class="gc-h"><span class="gi">&#x2726;</span> Marquee</div><div class="mp" id="mq-p">No marquee active</div>
-<div class="rw" style="margin:10px 0"><input type="text" id="mq-t" placeholder="Type text to display&#x2026;" style="flex:1"><button class="b ba bsm" onclick="cmdMq()">&#x25b6; Send</button><button class="b bd bsm" onclick="cmd('marqueeoff')">&#x2715; Off</button><button class="b bg bsm" onclick="cmd('marqueetop')">&#x2191;</button><button class="b bg bsm" onclick="cmd('marqueebottom')">&#x2193;</button></div>
-<div class="ag" id="qp"></div></div>
-<div class="gc"><div class="gc-h"><span class="gi">&#x23f1;</span> Schedule</div>
-<div class="sec"><div class="rw" style="margin-bottom:12px"><button class="b bs" onclick="cmd('autostartnow')">&#x25b6; Start Now</button><button class="b bg bsm" onclick="cmd('cancelschedule')">&#x2715; Cancel</button></div>
-<div class="nr"><span class="nf"><strong>Start at Time</strong>HH:MM</span><input type="text" id="sch-t" placeholder="14:30" maxlength="5" style="width:72px;text-align:center"><button class="b bk bsm" onclick="cmdSch()">Set</button></div>
-<div class="nr"><span class="nf"><strong>Idle Auto-Start</strong>After N min (0=off)</span><input type="number" id="idle-v" value="0" min="0"><span style="color:var(--mute);font-size:11px">min</span><button class="b bk bsm" onclick="cmd('idlestart',+E('idle-v').value)">Set</button></div>
-<div class="nr"><span class="nf"><strong>Delay Start</strong>N min</span><input type="number" id="del-v" value="0" min="0"><span style="color:var(--mute);font-size:11px">min</span><button class="b bg bsm" onclick="cmd('delay',+E('del-v').value)">Set</button></div></div>
-<div class="sec"><div class="sec-h">Weekly Schedule</div><div class="tz-info" id="tz-sched"></div><div id="wk-list"></div>
-<div class="rw" style="margin-top:8px"><select id="wk-day"><option value="mon">Mon</option><option value="tue">Tue</option><option value="wed">Wed</option><option value="thu">Thu</option><option value="fri">Fri</option><option value="sat">Sat</option><option value="sun">Sun</option></select>
-<input type="text" id="wk-time" placeholder="14:30" maxlength="5" style="width:72px;text-align:center"><button class="b bk bsm" onclick="wkAdd()">+ Add</button><button class="b bd bsm" onclick="wkClear()">Clear All</button></div>
-<div id="wk-urls-area" style="display:none;margin-top:8px"><div class="sec-h" style="font-size:10px">Playlist for entry #<span id="wk-edit-idx">1</span> <span style="color:var(--mute);font-size:9px">(leave empty for default)</span></div>
-<textarea id="wk-urls-ta" rows="4" placeholder="Paste URLs, one per line&#x2026;"></textarea>
-<div class="rw" style="margin-top:6px"><button class="b bs bsm" onclick="wkUrlsSave()">Apply URLs</button><button class="b bg bsm" onclick="wkUrlsCancel()">Cancel</button></div></div>
-<button class="b ba bsm" style="margin-top:8px;width:100%" onclick="wkSave()">&#x1f4be; Save Weekly Schedule</button></div></div>
-<div class="gc"><div class="gc-h"><span class="gi">&#x21bb;</span> Reset</div><button class="b bd" style="width:100%" onclick="if(confirm('Reset ALL settings to defaults?\nVolume, speed, loop, shuffle, marquee, lock &#x2014; everything.'))cmd('reset')">&#x27f3; Reset All Settings to Defaults</button></div>
-</div>
+/* ─── Login Screen ─── */
+function LoginScreen({onLogin}){
+  const [url,setUrl]=useState('');
+  const [code,setCode]=useState('');
+  const [pin,setPin]=useState('');
+  const [err,setErr]=useState('');
+  const [busy,setBusy]=useState(false);
+  const codeRef=useRef(),pinRef=useRef();
 
-<!-- PLAYLIST & QUEUE -->
-<div class="tab" id="tab-list">
-<div class="gc"><div class="gc-h"><span class="gi">&#x25b6;</span> Now Playing</div><div class="mp" id="q-now">&#x2014;</div>
-<div class="rw" style="margin-top:10px"><button class="b bg bsm" onclick="cmd('skip')">&#x23ed; Skip</button><button class="b bd bsm" onclick="cmd('clearqueue')">&#x2715; Clear Queue</button></div></div>
-<div class="gc"><div class="gc-h"><span class="gi">&#x2630;</span> Queue <span id="q-ct" style="color:var(--mute);font-weight:400;font-size:11px">(empty)</span></div>
-<ul id="q-list" style="list-style:none;max-height:200px;overflow-y:auto"><li style="color:var(--dim);font-size:12px;padding:8px">Empty</li></ul>
-<div class="rw" style="margin-top:10px"><input type="text" id="url-q" placeholder="https://&#x2026; add to queue" style="flex:1"><button class="b bg bsm" onclick="qAdd('url-q')">+ Queue</button></div></div>
-<div class="gc"><div class="gc-h"><span class="gi">&#x2261;</span> Playlist <span id="pl-ct" style="color:var(--mute);font-weight:400;font-size:11px">0 items</span></div>
-<div id="pl-st" style="font-size:11px;color:var(--grn);min-height:16px;margin-bottom:6px"></div>
-<div class="rw" style="margin-bottom:10px"><button class="b bg bsm" onclick="loadPl()">&#x21bb; Reload</button><button class="b bd bsm" onclick="plC()">&#x2715; Clear All</button><button class="b bk bsm" onclick="toggleBulk()">&#x1f4cb; Bulk Add</button><span id="sel-ct" style="color:var(--mute);font-size:11px;margin-left:auto">0</span><button class="b bd bsm" id="bulk-del-btn" style="display:none" onclick="plBulkDel()">Delete Selected</button></div>
-<div id="bulk-area" style="display:none;margin-bottom:12px"><textarea id="bulk-ta" rows="5" placeholder="Paste URLs, one per line&#x2026;"></textarea>
-<div class="rw" style="margin-top:6px"><span id="bulk-ct" style="color:var(--mute);font-size:11px"></span><button class="b ba bsm" onclick="plBulkAdd()">Add All</button><button class="b bg bsm" onclick="toggleBulk()">Cancel</button></div></div>
-<div id="pl-list" style="max-height:350px;overflow-y:auto"><div style="color:var(--dim);font-size:12px;padding:8px">Loading&#x2026;</div></div>
-<div class="rw" style="margin-top:12px"><input type="text" id="pl-add" placeholder="https://&#x2026;" style="flex:1"><button class="b bs bsm" onclick="plA()">+ Append</button><button class="b bk bsm" onclick="plP()">+ Prepend</button></div></div>
-<div class="gc"><div class="gc-h"><span class="gi">&#x2699;</span> Playlist Settings</div>
-<div class="tr"><div class="tl">Shuffle</div><label class="sw"><input type="checkbox" id="pl-shuf" onchange="cmd('shuffle',this.checked)"><span class="swt"></span></label></div>
-<div class="tr"><div class="tl">No Repeat</div><label class="sw"><input type="checkbox" id="pl-norep" onchange="cmd('norepeat',this.checked)"><span class="swt"></span></label></div>
-<div class="nr"><span class="nf"><strong>Max Videos</strong>0 = unlimited</span><input type="number" id="pl-mv" value="0" min="0"><button class="b bg bsm" onclick="cmd('maxvideos',+E('pl-mv').value)">Set</button></div>
-<div class="nr"><span class="nf"><strong>Start From</strong>0 = beginning</span><input type="number" id="pl-sf" value="0" min="0"><button class="b bg bsm" onclick="cmd('startfrom',+E('pl-sf').value)">Set</button></div></div>
-</div>
+  useEffect(()=>{
+    try{const h=window.location.hash.slice(1);if(!h)return;const p={};h.split('&').forEach(x=>{const[k,v]=x.split('=');if(k&&v)p[decodeURIComponent(k)]=decodeURIComponent(v)});
+    if(p.T)setUrl(p.T);if(p.C)setCode(p.C.toUpperCase());history.replaceState(null,'',window.location.pathname)}catch(e){}
+  },[]);
 
-</div></div>
-<div id="guide-overlay" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.7);overflow-y:auto;padding:20px" onclick="if(event.target===this)hideGuide()">
-<div style="max-width:640px;margin:20px auto;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r2);padding:28px;position:relative">
-<button class="b bg bsm" style="position:absolute;top:12px;right:12px" onclick="hideGuide()">✕ Close</button>
-<div style="font-family:var(--mono);font-size:10px;color:var(--ring3);text-transform:uppercase;letter-spacing:.2em;margin-bottom:6px">VoidCapture</div>
-<h2 style="font-size:20px;font-weight:700;margin-bottom:16px;background:linear-gradient(135deg,#fff 30%,var(--iris));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Controller Guide</h2>
+  const submit=async()=>{
+    setErr('');
+    if(!url.startsWith('https://')){setErr('URL must start with https://');return}
+    if(code.length!==6){setErr('Code must be 6 characters');return}
+    if(!/^\d{6}$/.test(pin)){setErr('PIN must be 6 digits');return}
+    setBusy(true);S.u=url.replace(/\/+$/,'');
+    try{
+      const res=await api('POST','/auth',{code,pin});
+      if(!res.ok){setErr(res.error||'Auth failed');setBusy(false);return}
+      S.t=res.token;onLogin();
+    }catch(e){
+      S.u=S.t=null;const m=e.message||'';
+      if(m.includes('Failed to fetch')||m.includes('NetworkError'))setErr('Cannot reach tunnel URL.');
+      else if(m.includes('401'))setErr('Incorrect code or PIN.');
+      else setErr('Failed: '+m);setBusy(false);
+    }
+  };
 
-<div style="font-size:13px;color:var(--dim);line-height:1.8">
-<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">◈ Getting Connected</div>
-<p>Open the Controller Session window in the desktop app. You’ll see a <strong style="color:var(--grn)">Tunnel URL</strong>, <strong style="color:var(--grn)">Code</strong>, and <strong style="color:var(--acc)">PIN</strong>. Enter all three on the login screen and click Connect. Only one controller can be connected at a time — logging in kicks any previous session.</p>
+  return <div id="login-wrap">
+    <div className="login-card glass">
+      <h1>VoidCapture</h1>
+      <div className="tag">Remote Controller</div>
+      <div className="field"><label>Tunnel URL</label><input type="text" value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://xxxx.trycloudflare.com" onKeyDown={e=>e.key==='Enter'&&codeRef.current?.focus()} autoComplete="off" spellCheck="false"/></div>
+      <div className="field"><label>Session Code</label><input ref={codeRef} type="text" value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="ABC123" maxLength={6} style={{textTransform:'uppercase',letterSpacing:'.2em'}} onKeyDown={e=>e.key==='Enter'&&pinRef.current?.focus()} autoComplete="off"/></div>
+      <div className="field"><label>PIN</label><input ref={pinRef} type="password" value={pin} onChange={e=>setPin(e.target.value)} placeholder="\u2022\u2022\u2022\u2022\u2022\u2022" maxLength={6} inputMode="numeric" onKeyDown={e=>e.key==='Enter'&&submit()} autoComplete="off"/></div>
+      <button className="btn-primary" onClick={submit} disabled={busy}>{busy?<><span className="spin"/> Connecting\u2026</>:'Connect'}</button>
+      <div className={`login-err ${err?'show':''}`}>{err}</div>
+    </div>
+  </div>;
+}
 
-<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">◎ Playback Controls</div>
-<p><strong>Skip</strong> — jumps to the next video. <strong>Clear Queue</strong> — removes all waiting videos (current keeps playing). <strong>Panic</strong> — immediately stops everything. <strong>Extend</strong> — adds minutes to the session timer. <strong>Max Time</strong> — sets a hard session limit.</p>
+/* ─── Progress Ring ─── */
+function ProgressRing({progress=0,time='0:00',total='--:--',url,playing}){
+  const r=68,c=2*Math.PI*r;
+  const offset=c-(progress*c);
+  return <div className="ring-wrap">
+    <div className="ring-container">
+      {playing&&<div className="ring-pulse"/>}
+      <svg viewBox="0 0 160 160">
+        <defs><linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="var(--v2)"/><stop offset="100%" stopColor="var(--iris)"/></linearGradient></defs>
+        <circle className="ring-bg" cx="80" cy="80" r={r}/>
+        <circle className="ring-fill" cx="80" cy="80" r={r} strokeDasharray={c} strokeDashoffset={offset}/>
+      </svg>
+      <div className="ring-center">
+        <div className="ring-time">{time}</div>
+        <div className="ring-label">{playing?'of '+total:'Idle'}</div>
+        {url&&<div className="ring-url" title={url}>{trunc(url,20)}</div>}
+      </div>
+    </div>
+  </div>;
+}
 
-<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">◎ Sliders</div>
-<p><strong>Volume</strong> (0–200) and <strong>Speed</strong> (0.25–1.5×) adjust in real-time during playback. Changes show as a brief notification on the video screen.</p>
+/* ─── Trend Chart ─── */
+function TrendChart({data}){
+  const canvasRef=useRef();
+  const chartRef=useRef();
+  useEffect(()=>{
+    if(!canvasRef.current||!data?.length)return;
+    if(chartRef.current)chartRef.current.destroy();
+    const ctx=canvasRef.current.getContext('2d');
+    const grad=ctx.createLinearGradient(0,0,0,140);
+    grad.addColorStop(0,'rgba(160,124,255,.3)');grad.addColorStop(1,'rgba(160,124,255,.01)');
+    chartRef.current=new Chart(ctx,{type:'line',data:{
+      labels:data.map(d=>d.date?.slice(5)||''),
+      datasets:[{data:data.map(d=>Math.round((d.totalSec||0)/60)),fill:true,backgroundColor:grad,
+        borderColor:'rgba(160,124,255,.8)',borderWidth:2,tension:.4,pointRadius:0,pointHitRadius:8,
+        pointHoverRadius:4,pointHoverBackgroundColor:'#a07cff'}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:c=>c.raw+' min'},backgroundColor:'rgba(14,12,28,.9)',titleColor:'#a07cff',bodyColor:'#ede8f6',borderColor:'rgba(130,90,255,.3)',borderWidth:1}},
+        scales:{x:{ticks:{color:'#4e4968',font:{size:8,family:'JetBrains Mono'},maxRotation:0,maxTicksLimit:8},grid:{display:false},border:{display:false}},
+          y:{ticks:{color:'#4e4968',font:{size:8,family:'JetBrains Mono'},callback:v=>v+'m'},grid:{color:'rgba(255,255,255,.02)'},border:{display:false},beginAtZero:true}},
+        interaction:{intersect:false,mode:'index'}}});
+    return ()=>{if(chartRef.current)chartRef.current.destroy()};
+  },[data]);
+  return <div className="chart-wrap"><canvas ref={canvasRef}/></div>;
+}
 
-<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">🔒 Lock / Unlock</div>
-<p><strong>Lock</strong> disables the panic hotkey on the desktop — the user cannot stop playback until you unlock it. The 3-second emergency hold (Ctrl+Shift+Esc held for 3s) always works as a safety override regardless of lock state.</p>
+/* ─── Heatmap ─── */
+function SessionHeatmap({data}){
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const max=Math.max(1,...Object.values(data||{}));
+  return <div className="heatmap">
+    <div/>{Array.from({length:24},(_, i)=><div key={i} className="hm-hour">{i%3===0?i:''}</div>)}
+    {days.map((d,di)=><React.Fragment key={d}>
+      <div className="hm-label">{d}</div>
+      {Array.from({length:24},(_,h)=>{
+        const v=data?.[`${di}-${h}`]||0;const pct=v/max;
+        const bg=pct>0?`rgba(160,124,255,${.08+pct*.5})`:'rgba(255,255,255,.015)';
+        const shadow=pct>.5?`0 0 6px rgba(140,100,255,${pct*.3})`:'none';
+        return <div key={h} className="hm-cell" style={{background:bg,boxShadow:shadow}} title={`${d} ${h}:00 \u2014 ${Math.round(v/60)}min`}/>;
+      })}
+    </React.Fragment>)}
+  </div>;
+}
 
-<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">⚙ Session Options</div>
-<p><strong>Loop</strong> — restart playlist when finished. <strong>Shuffle</strong> — randomize play order. <strong>No Repeat</strong> — skip already-watched URLs. <strong>Show Cursor</strong> — keep mouse visible during playback. <strong>Min Session Lock</strong> — disable panic for N seconds at session start. <strong>Max Videos</strong> — stop after N videos.</p>
+/* ─── Weekly Visual Grid ─── */
+function WeeklyGrid({schedule,onUpdate}){
+  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const dayKeys=['mon','tue','wed','thu','fri','sat','sun'];
+  const activeSet=useMemo(()=>{
+    const s=new Set();
+    (schedule||[]).forEach(e=>s.add(`${e.day}-${e.time}`));
+    return s;
+  },[schedule]);
 
-<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">✦ Marquee</div>
-<p>Send text that overlays on the playing video. Use the quick phrases or type custom text. Top/Bottom controls the position.</p>
+  const toggle=(dayIdx,hour)=>{
+    const day=dayKeys[dayIdx];
+    const time=String(hour).padStart(2,'0')+':00';
+    const key=`${day}-${time}`;
+    let next=[...(schedule||[])];
+    if(activeSet.has(key))next=next.filter(e=>!(e.day===day&&e.time===time));
+    else next.push({day,time});
+    onUpdate(next);
+  };
 
-<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">⏱ Schedule</div>
-<p><strong>Start Now</strong> — immediately begins playlist playback. <strong>Schedule at Time</strong> — set a one-time start at HH:MM. <strong>Idle Auto-Start</strong> — begins when the desktop has been idle for N minutes. <strong>Weekly Schedule</strong> — set recurring day+time entries. Each entry can optionally have its own playlist — click the 📋 icon to assign URLs. Leave empty to use the default playlist.</p>
+  return <div className="wk-grid-visual">
+    <div/>{Array.from({length:24},(_,i)=><div key={i} className="hour-label">{i}</div>)}
+    {days.map((d,di)=><React.Fragment key={d}>
+      <div className="day-label">{d}</div>
+      {Array.from({length:24},(_,h)=>{
+        const key=`${dayKeys[di]}-${String(h).padStart(2,'0')}:00`;
+        return <div key={h} className={`wk-cell${activeSet.has(key)?' active':''}`} onClick={()=>toggle(di,h)} title={`${d} ${h}:00`}/>;
+      })}
+    </React.Fragment>)}
+  </div>;
+}
 
-<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">≡ Playlist & Queue</div>
-<p><strong>Queue</strong> — videos waiting to play next (top section). <strong>Playlist</strong> — the master list of URLs. Use <strong>Bulk Add</strong> to paste multiple URLs at once. Use checkboxes for bulk delete. Drag entries to reorder. Click <strong>Play Now</strong> to start the playlist immediately.</p>
+/* ─── Main App ─── */
+function App(){
+  const [authed,setAuthed]=useState(false);
+  const [tab,setTab]=useState('home');
+  const [status,setStatus]=useState(null);
+  const [analytics,setAnalytics]=useState(null);
+  const [playlist,setPlaylist]=useState([]);
+  const [plSettings,setPlSettings]=useState({});
+  const [weekSched,setWeekSched]=useState([]);
+  const [guide,setGuide]=useState(false);
+  const pollRef=useRef();
 
-<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">↻ Reset</div>
-<p>The <strong>Reset All</strong> button restores every setting to defaults: volume 100, speed 1.0×, no marquee, panic unlocked, loop/shuffle/repeat off.</p>
+  // Poll
+  const poll=useCallback(async()=>{
+    try{
+      const st=await api('GET','/status');
+      setStatus(st);
+      if(st.weeklySchedule)try{setWeekSched(JSON.parse(st.weeklySchedule))}catch(e){}
+      if(st.playlistSettings)setPlSettings(st.playlistSettings);
+    }catch(e){
+      if(e.message?.includes('401')||e.message?.includes('expired')){
+        clearInterval(pollRef.current);S.u=S.t=null;setAuthed(false);
+        toast('Session ended \u2014 disconnected','err');
+      }
+    }
+  },[]);
 
-<div style="color:var(--txt);font-weight:600;font-size:14px;margin:18px 0 8px;border-bottom:1px solid var(--bdr);padding-bottom:6px">🛡 Connection & Security</div>
-<p>All traffic is encrypted via Cloudflare HTTPS tunnel. The tunnel URL changes on every app restart. Session codes and PINs are generated fresh and never stored on disk. If you close the browser or lose connection, the session auto-expires within 15 seconds. Only one controller can be connected at a time.</p>
-</div>
-</div></div>
-<div class="toasts" id="toasts"></div>
+  const loadAnalytics=useCallback(async()=>{
+    try{const d=await api('GET','/analytics');setAnalytics(d)}catch(e){}
+  },[]);
 
-<script>
-var E=function(id){return document.getElementById(id)},S={u:null,t:null},_rt=null,_ls=null,_wk=[],_selMode=false;
+  const loadPl=useCallback(async()=>{
+    try{const r=await api('GET','/playlist');setPlaylist(r.entries||[]);setPlSettings({shuffle:r.shuffle,noRepeat:r.noRepeat,maxVideos:r.maxVideos,startFrom:r.startFrom})}catch(e){}
+  },[]);
 
-// Timezone
-var _userTz=Intl.DateTimeFormat().resolvedOptions().timeZone;
-function fmtLocal(iso){try{return new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',timeZone:_userTz})}catch(e){return iso}}
-function fmtSec(s){s=Math.max(0,Math.floor(s));var m=Math.floor(s/60),sec=s%60;return m+':'+(sec<10?'0':'')+sec}
+  const onLogin=useCallback(async()=>{
+    setAuthed(true);await poll();loadAnalytics();loadPl();
+    pollRef.current=setInterval(poll,2500);
+    toast('Connected','ok');
+  },[poll,loadAnalytics,loadPl]);
 
-async function api(m,p,b){var o={method:m,headers:{'Content-Type':'application/json'}};if(S.t)o.headers['Authorization']='Bearer '+S.t;if(b!==undefined)o.body=JSON.stringify(b);var r=await fetch(S.u+p,o);if(!r.ok){var e=await r.json().catch(function(){return{error:'HTTP '+r.status}});throw new Error(e.error||e.message||'HTTP '+r.status)}return r.json()}
-async function cmd(n,v,si){try{var b={cmd:n};if(v!==undefined)b.value=v;var r=await api('POST','/command',b);if(!r.success)throw new Error(r.message||'failed');if(!si)toast('\u2713 '+n,'ok');setTimeout(poll,250)}catch(e){if(!si)toast(e.message,'err')}}
-function qAdd(id){var u=E(id).value.trim();if(!u||!u.startsWith('http')){toast('Enter a valid URL','err');return}cmd('appendurl',u);E(id).value=''}
-function cmdPlayNow(){if(!confirm('Clear queue and start playlist?'))return;cmd('playnow')}
-function cmdLock(l){if(l&&!confirm('Lock panic hotkey?'))return;cmd(l?'lock':'unlock')}
-function cmdMq(){var t=E('mq-t').value.trim();if(!t){toast('Enter text','err');return}E('mq-p').textContent=t;E('mq-p').classList.add('on');cmd('marquee',t)}
-function cmdSch(){var t=E('sch-t').value.trim();if(!/^\d{2}:\d{2}$/.test(t)){toast('Use HH:MM','err');return}cmd('schedule',t)}
+  const logout=()=>{
+    try{fetch(S.u+'/disconnect',{method:'POST',headers:{'Authorization':'Bearer '+S.t},keepalive:true}).catch(()=>{})}catch(e){}
+    clearInterval(pollRef.current);S.u=S.t=null;setAuthed(false);
+  };
 
-// Disconnect on logout + browser close
-function disconnect(){if(!S.t||!S.u)return;var body=JSON.stringify({token:S.t});try{var blob=new Blob([body],{type:'text/plain'});navigator.sendBeacon(S.u+'/disconnect',blob)}catch(e){try{fetch(S.u+'/disconnect',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+S.t},body:body,keepalive:true}).catch(function(){})}catch(e2){}}}
-async function doLogin(){var url=E('f-url').value.trim().replace(/\/+$/,''),code=E('f-code').value.trim().toUpperCase(),pin=E('f-pin').value.trim(),btn=E('lbtn'),err=E('lerr');err.classList.remove('on');
-function fail(m){err.textContent=m;err.classList.add('on');btn.disabled=false;btn.innerHTML='Connect'}
-if(!url.startsWith('https://')){fail('URL must start with https://');return}if(code.length!==6){fail('Code must be 6 characters');return}if(!/^\d{6}$/.test(pin)){fail('PIN must be 6 digits');return}
-btn.disabled=true;btn.innerHTML='<span class="spin"></span> Connecting\u2026';S.u=url;
-try{var res=await api('POST','/auth',{code:code,pin:pin});if(!res.ok){fail(res.error||'Auth failed');return}S.t=res.token;
-var st=await api('GET','/status');_ls=st;updateTzDisplay();apply(st);sync(st.pendingOptions||{},st.playlistSettings);renderHist(st.recentHistory||[]);loadWk(st.weeklySchedule);await loadPl();
-E('login').style.display='none';E('app').classList.add('on');startPoll();loadAnalytics();toast('Connected','ok')}
-catch(e){S.u=S.t=null;var m=e.message||'';if(m.includes('Failed to fetch')||m.includes('NetworkError'))fail('Cannot reach tunnel URL.');else if(m.includes('401'))fail('Incorrect code or PIN.');else fail('Failed: '+m)}}
-function doLogout(){disconnect();clearInterval(_rt);_rt=null;S.u=S.t=null;_ls=null;E('app').classList.remove('on');E('login').style.display='';E('f-pin').value=''}
-window.addEventListener('beforeunload',function(){disconnect()});
-window.addEventListener('pagehide',function(){disconnect()});
+  useEffect(()=>{
+    window.addEventListener('beforeunload',()=>{if(S.t)try{fetch(S.u+'/disconnect',{method:'POST',headers:{'Authorization':'Bearer '+S.t},keepalive:true})}catch(e){}});
+  },[]);
 
-function updateTzDisplay(){var tz=_userTz||'Unknown';E('tz-disp').textContent=tz;E('tz-sched').textContent='Your timezone: '+tz}
+  useEffect(()=>{if(tab==='home')loadAnalytics();if(tab==='list')loadPl();},[tab]);
 
-function go(n){if(n==='home')loadAnalytics();document.querySelectorAll('.ni').forEach(function(i){i.classList.toggle('on',i.dataset.t===n)});document.querySelectorAll('.bn').forEach(function(i){i.classList.toggle('on',i.dataset.t===n)});document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.id==='tab-'+n)});if(n==='list')loadPl()}
-function startPoll(){clearInterval(_rt);_rt=setInterval(poll,2500)}
-async function poll(){try{var st=await api('GET','/status');_ls=st;apply(st);sync(st.pendingOptions||{},st.playlistSettings);renderHist(st.recentHistory||[]);renderQ(st.queueItems||[])}catch(e){if(e.message&&(e.message.includes('401')||e.message.includes('expired'))){clearInterval(_rt);_rt=null;S.u=S.t=null;_ls=null;E('app').classList.remove('on');E('login').style.display='';toast('Session ended \u2014 disconnected by app or another controller','err')}}}
-async function forceSync(){var b=E('sync-btn');b.innerHTML='<span class="spin"></span>';b.disabled=true;try{await poll()}catch(e){}b.innerHTML='\u21bb';b.disabled=false;toast('Synced','inf')}
+  const doCmd=async(n,v,silent)=>{
+    try{await cmd(n,v);if(!silent)toast('\u2713 '+n,'ok');setTimeout(poll,300)}catch(e){toast(e.message,'err')}
+  };
 
-function apply(d){if(!d)return;var l=!!d.playing;E('pill').className='tpill '+(l?'live':'idle');E('dot').className='tdot '+(l?'on':'off');E('stxt').textContent=l?'Playing':'Idle';E('live-b').style.display=l?'':'none';
-sv('d-st',l?(d.currentUrl?trunc(d.currentUrl,45):'Playing'):'Idle');
-// Progress bar
-var pos=d.videoPosition||0,cur=d.videoTimeSec||0,len=d.videoLengthSec||0;
-E('prog-bar').style.width=(pos*100)+'%';E('prog-cur').textContent=fmtSec(cur);E('prog-len').textContent=len>0?fmtSec(len):'--:--';
-// Session countdown
-var cw=E('countdown-wrap'),cd=E('countdown');
-if(l&&d.sessionStartedAt&&d.sessionMaxMins>0){cw.style.display='';var elapsed=(Date.now()-new Date(d.sessionStartedAt).getTime())/1000;var remain=d.sessionMaxMins*60-elapsed;cd.textContent=remain>0?fmtSec(remain)+' remaining':'Expired';cd.style.color=remain<60?'var(--acc)':'var(--amb)'}else{cw.style.display='none'}
-sv('s-today',d.todayTime||'\u2014');sv('s-total',d.totalTime||'\u2014');sv('s-vids',d.todayVideos!==undefined?d.todayVideos:'\u2014');sv('s-queue',d.queueLength!==undefined?d.queueLength:'\u2014');
-sv('st-td',d.todayTime||'\u2014');sv('st-tt',d.totalTime||'\u2014');sv('st-tv',d.todayVideos!==undefined?d.todayVideos:'\u2014');sv('st-tp',d.todayPanics!==undefined?d.todayPanics:'\u2014');
-sv('q-now',d.currentUrl||'\u2014');sv('q-ct',d.queueLength?'('+d.queueLength+')':'(empty)');
-var o=d.pendingOptions||{};sv('d-sp',o.speed!==undefined?o.speed+'\u00d7':'\u2014');sv('d-vl',o.volume!==undefined?o.volume:'\u2014');sv('d-lp',o.loop!==undefined?(o.loop?'On':'Off'):'\u2014');var mq=o.marqueeText&&o.marqueeText.trim();sv('d-mq',mq?trunc(mq,25):'Off');sv('s-queue',d.queueLength!==undefined?d.queueLength:'\u2014');
-var lb=E('lock-b');if(lb){if(d.panicLocked){lb.textContent='\ud83d\udd12 PANIC LOCKED';lb.style.color='var(--acc)'}else{lb.textContent='\ud83d\udd13 Panic hotkey active';lb.style.color='var(--grn)'}}}
+  const plOp=async(action,data)=>{
+    try{await api('POST','/playlist',{action,...data});loadPl();toast('\u2713 '+action,'ok')}catch(e){toast(e.message,'err')}
+  };
 
-function sync(o,ps){if(!o)return;slY('sl-vl','v-vl',o.volume!==undefined?o.volume:100,function(v){return v});slY('sl-sp','v-sp',o.speed!==undefined?Math.round(o.speed*100):100,function(v){return(v/100).toFixed(2)+'\u00d7'});
-tg('tog-loop',o.loop);tg('tog-cur',o.cursorShow);var mq=o.marqueeText&&o.marqueeText.trim();if(o.marqueeText!==undefined){var p=E('mq-p');p.textContent=mq||'No marquee active';p.classList.toggle('on',!!mq)}
-if(ps){tg('tog-shuf',ps.shuffle);tg('pl-shuf',ps.shuffle);tg('tog-norep',ps.noRepeat);tg('pl-norep',ps.noRepeat);nv('mv-v',ps.maxVideos||0);nv('pl-mv',ps.maxVideos||0);nv('sf-v',ps.startFrom||0);nv('pl-sf',ps.startFrom||0)}}
+  // Extract state
+  const st=status||{};
+  const o=st.pendingOptions||{};
+  const playing=!!st.playing;
+  const pos=st.videoPosition||0;
+  const curSec=st.videoTimeSec||0;
+  const lenSec=st.videoLengthSec||0;
+  const an=analytics||{};
 
-// Playlist
-async function loadPl(){plSt('Loading\u2026',0);try{var r=await api('GET','/playlist');renderPl(r.entries||[]);if(r.shuffle!==undefined){tg('tog-shuf',r.shuffle);tg('pl-shuf',r.shuffle)}if(r.noRepeat!==undefined){tg('tog-norep',r.noRepeat);tg('pl-norep',r.noRepeat)}if(r.maxVideos!==undefined){nv('mv-v',r.maxVideos||0);nv('pl-mv',r.maxVideos||0)}if(r.startFrom!==undefined){nv('sf-v',r.startFrom||0);nv('pl-sf',r.startFrom||0)}plSt('',0)}catch(e){plSt('Failed: '+e.message,1)}}
+  if(!authed)return <><LoginScreen onLogin={onLogin}/><ToastContainer/></>;
 
-var _dragFrom=-1;
-function renderPl(ent){sv('pl-ct',ent.length+' items');var l=E('pl-list');if(!ent.length){l.innerHTML='<div style="color:var(--dim);font-size:12px;padding:8px">Empty \u2014 add URLs below.</div>';return}
-l.innerHTML=ent.map(function(e,i){var d=e.startsWith('#');return'<div class="pi" draggable="true" data-idx="'+i+'" ondragstart="dragS(event,'+i+')" ondragover="dragO(event)" ondrop="dragD(event,'+i+')" ondragend="dragE(event)"><input type="checkbox" class="cb plcb" data-i="'+i+'" onchange="updateSel()"><span class="pn">'+(i+1)+'</span><span class="pu'+(d?' dir':'')+'" title="'+esc(e)+'">'+esc(trunc(e,55))+'</span><span class="pa"><button class="b bg bsm" style="padding:2px 6px;font-size:10px" onclick="plM('+i+',-1)">\u2191</button><button class="b bg bsm" style="padding:2px 6px;font-size:10px" onclick="plM('+i+',1)">\u2193</button><button class="b bd bsm" style="padding:2px 6px;font-size:10px" onclick="plR('+i+')">\u2715</button></span></div>'}).join('')}
+  return <>
+    <div id="app-wrap" className="on">
+      {/* Top bar */}
+      <div className="topbar">
+        <span className="logo">VoidCapture</span>
+        <span className={`pill ${playing?'live':'idle'}`}><span className="dot"/>{playing?'Playing':'Idle'}</span>
+        <span className="tz">{tz}</span>
+        <div className="top-actions">
+          <button className="tbtn" onClick={()=>{poll();toast('Synced','inf')}}>{'\u21bb'}</button>
+          <button className="tbtn danger" onClick={()=>doCmd('panic')}>{'\u26a0'} Panic</button>
+          <button className="tbtn" onClick={()=>setGuide(true)}>?</button>
+          <button className="tbtn" onClick={logout}>Logout</button>
+        </div>
+      </div>
 
-// Drag and drop
-function dragS(e,i){_dragFrom=i;e.dataTransfer.effectAllowed='move';e.target.closest('.pi').classList.add('dragging')}
-function dragO(e){e.preventDefault();e.dataTransfer.dropEffect='move'}
-function dragD(e,to){e.preventDefault();if(_dragFrom>=0&&_dragFrom!==to)plOp('moveto',{from:_dragFrom,to:to});_dragFrom=-1}
-function dragE(e){_dragFrom=-1;document.querySelectorAll('.pi.dragging').forEach(function(el){el.classList.remove('dragging')})}
+      {/* Desktop nav */}
+      <div className="nav-bar">
+        {[['home','\u25c8 Home'],['ctrl','\u2699 Controls'],['list','\u2261 Playlist & Queue']].map(([k,l])=>
+          <div key={k} className={`nav-item ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</div>)}
+      </div>
 
-// Selection
-function updateSel(){var cbs=document.querySelectorAll('.plcb:checked');var ct=cbs.length;E('sel-ct').textContent=ct;E('bulk-del-btn').style.display=ct>0?'':'none'}
-function plBulkDel(){var cbs=document.querySelectorAll('.plcb:checked');var indices=[];cbs.forEach(function(cb){indices.push(parseInt(cb.dataset.i))});if(!indices.length)return;if(!confirm('Delete '+indices.length+' selected items?'))return;plOp('bulkremove',{indices:indices})}
+      {/* Mobile nav */}
+      <div className="mob-nav">
+        {[['home','\u25c8','Home'],['ctrl','\u2699','Controls'],['list','\u2261','Playlist']].map(([k,i,l])=>
+          <button key={k} className={tab===k?'active':''} onClick={()=>setTab(k)}><span className="icon">{i}</span>{l}</button>)}
+      </div>
 
-// Bulk add
-function toggleBulk(){var a=E('bulk-area');a.style.display=a.style.display==='none'?'':'none';E('bulk-ta').value='';E('bulk-ct').textContent=''}
-function plBulkAdd(){var text=E('bulk-ta').value.trim();var lines=text.split('\n').map(function(l){return l.trim()}).filter(function(l){return l.length>0});if(!lines.length){toast('Paste URLs first','err');return}
-plOp('bulkappend',{entries:lines});toggleBulk();toast('Adding '+lines.length+' URLs','inf')}
+      <div className="content">
+        {/* ═══ HOME ═══ */}
+        <div className={`tab-pane ${tab==='home'?'active':''}`}>
+          <div className="stats-grid">
+            <div className="stat-card glass purple"><div className="val">{st.todayTime||'\u2014'}</div><div className="lbl">Today</div></div>
+            <div className="stat-card glass blue"><div className="val">{st.totalTime||'\u2014'}</div><div className="lbl">All Time</div></div>
+            <div className="stat-card glass green"><div className="val">{st.todayVideos??'\u2014'}</div><div className="lbl">Videos</div></div>
+            <div className="stat-card glass amber"><div className="val">{st.queueLength??'\u2014'}</div><div className="lbl">Queue</div></div>
+          </div>
 
-async function plOp(a,o){try{await api('POST','/playlist',Object.assign({action:a},o||{}));await loadPl();if(a!=='moveup'&&a!=='movedown'&&a!=='moveto')toast('\u2713 '+a,'ok')}catch(e){toast(e.message,'err')}}
-function plA(){var u=E('pl-add').value.trim();if(!u){toast('Enter a URL','err');return}plOp('append',{entry:u});E('pl-add').value=''}
-function plP(){var u=E('pl-add').value.trim();if(!u){toast('Enter a URL','err');return}plOp('prepend',{entry:u});E('pl-add').value=''}
-function plR(i){if(confirm('Remove item '+(i+1)+'?'))plOp('remove',{index:i})}
-function plM(i,d){plOp(d<0?'moveup':'movedown',{index:i})}
-function plC(){if(confirm('Clear entire playlist?'))plOp('clear')}
-function plSt(m,e){var el=E('pl-st');el.textContent=m;el.style.color=e?'var(--acc)':'var(--grn)'}
-function renderQ(items){var l=E('q-list');if(!items||!items.length){l.innerHTML='<li style="color:var(--dim);font-size:12px;padding:8px">Empty</li>';return}l.innerHTML=items.slice(0,50).map(function(u,i){return'<li class="qi"><span class="qn">'+(i+1)+'</span><span class="qu" title="'+esc(u)+'">'+esc(trunc(u,55))+'</span><span class="qx" onclick="cmd(\'removequeue\','+i+')">\u00d7</span></li>'}).join('')}
-function renderHist(h){var el=E('hist');if(!h||!h.length){el.innerHTML='<div style="color:var(--dim);font-size:12px">No history yet.</div>';return}el.innerHTML=h.slice(0,100).map(function(e){return'<div class="hi"><span class="hd">'+fmtLocal(e.lastWatched)+'</span><span class="hu" title="'+esc(e.url)+'">'+esc(trunc(e.url,60))+'</span></div>'}).join('')}
+          <div className="card glass">
+            <div className="card-title"><span className="ci">{'\u25b6'}</span> Now Playing</div>
+            <ProgressRing progress={pos} time={fmtSec(curSec)} total={lenSec>0?fmtSec(lenSec):'--:--'} url={st.currentUrl} playing={playing}/>
+            {st.sessionStartedAt&&o.maxTime>0&&playing&&(()=>{
+              const elapsed=(Date.now()-new Date(st.sessionStartedAt).getTime())/1000;
+              const remain=o.maxTime*60-elapsed;
+              return <div style={{textAlign:'center',fontFamily:'var(--mono)',fontSize:12,color:remain<60?'var(--red)':'var(--amb)',padding:'4px 0'}}>{remain>0?fmtSec(remain)+' remaining':'Expired'}</div>
+            })()}
+            <div className="info-row"><span className="k">Speed</span><span className="v">{o.speed!==undefined?o.speed+'\u00d7':'\u2014'}</span></div>
+            <div className="info-row"><span className="k">Volume</span><span className="v">{o.volume??'\u2014'}</span></div>
+            <div className="info-row"><span className="k">Loop</span><span className="v">{o.loop!==undefined?(o.loop?'On':'Off'):'\u2014'}</span></div>
+            <div className="info-row"><span className="k">Marquee</span><span className="v">{o.marqueeText?.trim()||'Off'}</span></div>
+          </div>
 
-// Weekly schedule
-function loadWk(raw){try{_wk=raw?JSON.parse(raw):[]}catch(e){_wk=[]}renderWk()}
-function renderWk(){var el=E('wk-list');E('wk-urls-area').style.display='none';if(!_wk.length){el.innerHTML='<div style="color:var(--dim);font-size:12px;padding:6px">No weekly schedules set.</div>';return}
-el.innerHTML='<div class="wk-grid">'+_wk.map(function(s,i){var hasUrls=s.urls&&s.urls.length>0;return'<span class="wk-day">'+esc(s.day)+'</span><span style="color:var(--txt);font-family:var(--mono);font-size:13px">'+esc(s.time)+(hasUrls?' <span style="color:var(--iris);font-size:9px">\u2714 '+s.urls.length+' URLs</span>':' <span style="color:var(--mute);font-size:9px">default playlist</span>')+'</span><span style="display:flex;gap:2px"><span class="wk-rm" onclick="wkEditUrls('+i+')" title="Assign playlist">\U0001f4cb</span><span class="wk-rm" onclick="wkRm('+i+')" title="Remove">\u2715</span></span>'}).join('')+'</div>'}
-function wkAdd(){var day=E('wk-day').value,time=E('wk-time').value.trim();if(!/^\d{2}:\d{2}$/.test(time)){toast('Use HH:MM','err');return}_wk.push({day:day,time:time});renderWk();E('wk-time').value=''}
-function wkRm(i){_wk.splice(i,1);renderWk()}
-function wkClear(){_wk=[];renderWk()}
-function wkSave(){cmd('weeklyschedule',JSON.stringify(_wk))}
-var _wkEditIdx=-1;
-function wkEditUrls(i){_wkEditIdx=i;E('wk-edit-idx').textContent=(i+1);var s=_wk[i];E('wk-urls-ta').value=s.urls?s.urls.join('\n'):'';E('wk-urls-area').style.display=''}
-function wkUrlsSave(){if(_wkEditIdx<0)return;var lines=E('wk-urls-ta').value.split('\n').map(function(l){return l.trim()}).filter(function(l){return l.length>0});_wk[_wkEditIdx].urls=lines.length>0?lines:undefined;E('wk-urls-area').style.display='none';_wkEditIdx=-1;renderWk();toast('Playlist assigned \u2014 click Save to persist','inf')}
-function wkUrlsCancel(){E('wk-urls-area').style.display='none';_wkEditIdx=-1}
-function showGuide(){E('guide-overlay').style.display=''}
-function hideGuide(){E('guide-overlay').style.display='none'}
+          <div className="card glass">
+            <div className="card-title"><span className="ci">{'\u2191'}</span> Watch Time Trend</div>
+            <TrendChart data={an.dailyTrend}/>
+          </div>
 
-// Quick phrases
-(function(){var p=['Good girl','Keep watching','You have no choice','Submit','Let go','Relax'];E('qp').innerHTML=p.map(function(t){return'<button class="b ba bsm" onclick="setMq(\''+esc(t)+'\')">'+esc(t)+'</button>'}).join('')})();
-function setMq(t){E('mq-t').value=t;cmdMq()}
+          <div className="card glass">
+            <div className="card-title"><span className="ci">{'\u29bf'}</span> Session Heatmap</div>
+            <SessionHeatmap data={an.heatmap}/>
+          </div>
 
-// Helpers
-function slS(n,v){v=parseInt(v);var e=E('v-'+n);if(n==='sp')e.textContent=(v/100).toFixed(2)+'\u00d7';else e.textContent=v}
-function slY(si,vi,val,fmt){var s=E(si),v=E(vi);if(!s||!v||s.matches(':active'))return;s.value=val;v.textContent=fmt(val)}
-function tg(id,val){var e=E(id);if(e&&!e.matches(':focus')&&val!==undefined)e.checked=!!val}
-function nv(id,val){var e=E(id);if(e&&!e.matches(':focus'))e.value=val}
-function sv(id,v){var e=E(id);if(e)e.textContent=v}
-function trunc(s,n){return s&&s.length>n?s.slice(0,n)+'\u2026':s}
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;').replace(/"/g,'&quot;')}
-function toast(msg,type){var c=E('toasts'),el=document.createElement('div');el.className='toast '+(type||'ok');el.textContent=msg;c.appendChild(el);setTimeout(function(){el.style.opacity='0';setTimeout(function(){el.remove()},300)},3000)}
+          <div className="card glass">
+            <div className="card-title"><span className="ci">{'\u2606'}</span> Session Patterns</div>
+            <div className="stats-grid">
+              {(()=>{const sess=an.sessions||[];const avgDur=sess.length?Math.round(sess.reduce((s,x)=>s+x.durationSec,0)/sess.length):0;
+                const cr=an.completionRates||[];const avgCr=cr.length?Math.round(cr.reduce((s,x)=>s+x.rate,0)/cr.length):0;
+                const tv=an.topVideos||[];const totalSkips=tv.reduce((s,x)=>s+(x.skipped||0),0);const totalPlays=tv.reduce((s,x)=>s+(x.plays||0),0);
+                const skipRate=totalPlays>0?Math.round(totalSkips/totalPlays*100):0;
+                let sessWk='\u2014';if(sess.length>=2){const o=new Date(sess[sess.length-1].startedAt),n=new Date(sess[0].startedAt);const days=Math.max(1,(n-o)/864e5);sessWk=(sess.length/days*7).toFixed(1)}
+                return <>
+                  <div className="stat-card glass purple"><div className="val">{fmtSec(avgDur)}</div><div className="lbl">Avg Duration</div></div>
+                  <div className="stat-card glass blue"><div className="val">{sessWk}</div><div className="lbl">Sessions/Wk</div></div>
+                  <div className="stat-card glass amber"><div className="val">{skipRate}%</div><div className="lbl">Skip Rate</div></div>
+                  <div className="stat-card glass green"><div className="val">{avgCr}%</div><div className="lbl">Completion</div></div>
+                </>;
+              })()}
+            </div>
+          </div>
 
-// Analytics
-var _anData=null;
-async function loadAnalytics(){try{_anData=await api('GET','/analytics');renderAnalytics()}catch(e){}}
-function renderAnalytics(){if(!_anData)return;
-// Stats
-var t=_anData.today||{},a=_anData.allTime||{};
-sv('st-td',fmtSec(t.totalSec||0));sv('st-tt',fmtSec(a.totalSec||0));sv('st-tv',a.videos||0);sv('st-tp',a.panics||0);
-// Trend chart (bar chart)
-var trend=_anData.dailyTrend||[];var el=E('trend-chart');if(trend.length>0){var maxSec=Math.max.apply(null,trend.map(function(d){return d.totalSec}))||1;
-el.innerHTML=trend.map(function(d){var pct=Math.max(2,d.totalSec/maxSec*100);var mins=Math.round(d.totalSec/60);
-return'<div title="'+esc(d.date)+': '+mins+'min" style="flex:1;min-width:4px;background:linear-gradient(to top,var(--ring3),var(--iris));border-radius:2px 2px 0 0;height:'+pct+'%;opacity:'+(d.totalSec>0?'1':'0.15')+'"></div>'}).join('')}
-// Top videos
-var tv=_anData.topVideos||[];var tvEl=E('top-vids');
-if(tv.length>0){tvEl.innerHTML=tv.slice(0,20).map(function(v,i){return'<div class="hi"><span style="color:var(--mute);font-family:var(--mono);font-size:10px;width:20px;flex-shrink:0;text-align:right">'+(i+1)+'</span><span class="hu" title="'+esc(v.url)+'">'+esc(trunc(v.url,50))+'</span><span style="color:var(--iris);font-family:var(--mono);font-size:10px;flex-shrink:0">'+v.plays+'x '+v.completionRate+'%</span></div>'}).join('')}else{tvEl.innerHTML='<div style="color:var(--dim);font-size:12px">No data yet.</div>'}
-// Session patterns
-var sess=_anData.sessions||[];if(sess.length>0){var totalDur=sess.reduce(function(s,x){return s+x.durationSec},0);var avgDur=Math.round(totalDur/sess.length);sv('an-avgdur',fmtSec(avgDur));
-var oldest=sess[sess.length-1];var newest=sess[0];if(oldest.startedAt&&newest.startedAt){var days=Math.max(1,(new Date(newest.startedAt)-new Date(oldest.startedAt))/(86400000));sv('an-avgsess',(sess.length/days*7).toFixed(1))}
-var cr=_anData.completionRates||[];if(cr.length>0){var avgRate=cr.reduce(function(s,x){return s+x.rate},0)/cr.length;sv('an-complete',avgRate.toFixed(0)+'%')}
-var totalSkips=tv.reduce(function(s,x){return s+x.skipped},0);var totalPlays=tv.reduce(function(s,x){return s+x.plays},0);if(totalPlays>0)sv('an-skiprate',(totalSkips/totalPlays*100).toFixed(0)+'%')}}
+          <div className="card glass">
+            <div className="card-title"><span className="ci">{'\u2606'}</span> Top Videos</div>
+            <div style={{maxHeight:200,overflowY:'auto'}}>
+              {(an.topVideos||[]).slice(0,20).map((v,i)=>
+                <div key={i} className="tv-item"><span className="tv-rank">{i+1}</span><span className="tv-url" title={v.url}>{trunc(v.url,50)}</span><span className="tv-stats">{v.plays}x {v.completionRate}%</span></div>
+              )}
+              {!(an.topVideos?.length)&&<div style={{color:'var(--dim)',fontSize:11}}>No data yet.</div>}
+            </div>
+          </div>
 
-// URL fragment
-(function(){try{var h=window.location.hash.slice(1);if(!h)return;var p={};h.split('&').forEach(function(x){var kv=x.split('=');if(kv.length===2)p[decodeURIComponent(kv[0])]=decodeURIComponent(kv[1])});if(p.T)E('f-url').value=p.T;if(p.C)E('f-code').value=p.C.toUpperCase();history.replaceState(null,'',window.location.pathname)}catch(e){}})();
-E('f-url').addEventListener('keydown',function(e){if(e.key==='Enter')E('f-code').focus()});
-E('f-code').addEventListener('keydown',function(e){if(e.key==='Enter')E('f-pin').focus()});
-E('f-pin').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
-// Bulk add line counter
-E('bulk-ta').addEventListener('input',function(){var ct=this.value.split('\n').filter(function(l){return l.trim().length>0}).length;E('bulk-ct').textContent=ct>0?ct+' URL'+(ct>1?'s':''):''});
+          <div className="card glass">
+            <div className="card-title"><span className="ci">{'\u23f3'}</span> Watch History</div>
+            <div style={{maxHeight:200,overflowY:'auto'}}>
+              {(st.recentHistory||[]).slice(0,100).map((h,i)=>
+                <div key={i} className="hist-item"><span className="hist-time">{fmtLocal(h.lastWatched)}</span><span className="hist-url" title={h.url}>{trunc(h.url,55)}</span></div>
+              )}
+              {!(st.recentHistory?.length)&&<div style={{color:'var(--dim)',fontSize:11}}>No history yet.</div>}
+            </div>
+          </div>
+        </div>
+
+        {/* ═══ CONTROLS ═══ */}
+        <div className={`tab-pane ${tab==='ctrl'?'active':''}`}>
+          <div className="card glass">
+            <div className="card-title"><span className="ci">{'\u23ef'}</span> Remote</div>
+            <div className="remote">
+              <button className="rbtn" onClick={()=>doCmd('skip')}><span className="ri">{'\u23ed'}</span>Skip</button>
+              <button className="rbtn" onClick={()=>doCmd('clearqueue')}><span className="ri">{'\u2715'}</span>Clear Queue</button>
+              <button className="rbtn accent" onClick={()=>doCmd('panic')}><span className="ri">{'\u26a0'}</span>Panic</button>
+            </div>
+          </div>
+
+          <div className="card glass">
+            <div className="card-title"><span className="ci">{'\u266b'}</span> Sliders</div>
+            <SliderRow label="Volume" min={0} max={200} value={o.volume??100} onChange={v=>doCmd('volume',v,true)} format={v=>v}/>
+            <SliderRow label="Speed" min={25} max={150} value={o.speed?Math.round(o.speed*100):100} onChange={v=>doCmd('speed',+(v/100).toFixed(2),true)} format={v=>(v/100).toFixed(2)+'\u00d7'}/>
+          </div>
+
+          <div className="card glass">
+            <div className="card-title"><span className="ci">{'\ud83d\udd12'}</span> Lock / Unlock</div>
+            <div style={{marginBottom:10,fontSize:13,color:st.panicLocked?'var(--red)':'var(--grn)',fontFamily:'var(--mono)'}}>
+              {st.panicLocked?'\ud83d\udd12 PANIC LOCKED':'\ud83d\udd13 Panic hotkey active'}
+            </div>
+            <div className="row">
+              <button className="btn btn-d" onClick={()=>{if(confirm('Lock panic hotkey?'))doCmd('lock')}}>{'\ud83d\udd12'} Lock</button>
+              <button className="btn btn-s" onClick={()=>doCmd('unlock')}>{'\ud83d\udd13'} Unlock</button>
+            </div>
+          </div>
+
+          <div className="card glass">
+            <div className="card-title"><span className="ci">{'\u25b6'}</span> Play From Playlist</div>
+            <button className="btn btn-p" style={{width:'100%'}} onClick={()=>{if(confirm('Clear queue and start playlist?'))doCmd('playnow')}}>Start Playing Playlist Now</button>
+          </div>
+
+          <div className="card glass">
+            <div className="card-title"><span className="ci">{'\u2699'}</span> Session Options</div>
+            <ToggleRow label="Loop Playlist" checked={o.loop} onChange={v=>doCmd('loop',v)}/>
+            <ToggleRow label="Shuffle" checked={plSettings.shuffle} onChange={v=>doCmd('shuffle',v)}/>
+            <ToggleRow label="No Repeat" checked={plSettings.noRepeat} onChange={v=>doCmd('norepeat',v)}/>
+            <ToggleRow label="Show Cursor" checked={o.cursorShow} onChange={v=>doCmd('cursorshow',v)}/>
+            <div style={{marginTop:12}}>
+              <NumRow label="Min Session Lock" unit="sec" defVal={o.minSession||0} onSet={v=>doCmd('minsession',v)} info="Panic disabled for N sec"/>
+              <NumRow label="Max Time" unit="min" defVal={o.maxTime||0} onSet={v=>doCmd('maxtime',v)} info="0 = no limit"/>
+              <NumRow label="Extend" unit="min" defVal={15} onSet={v=>doCmd('extend',v)} info="Add minutes"/>
+              <NumRow label="Max Videos" defVal={plSettings.maxVideos||0} onSet={v=>doCmd('maxvideos',v)} info="0 = unlimited"/>
+              <NumRow label="Start From" defVal={plSettings.startFrom||0} onSet={v=>doCmd('startfrom',v)} info="Skip first N"/>
+            </div>
+          </div>
+
+          <MarqueeCard marquee={o.marqueeText} doCmd={doCmd}/>
+
+          <ScheduleCard weekSched={weekSched} setWeekSched={setWeekSched} doCmd={doCmd}/>
+
+          <div className="card glass">
+            <div className="card-title"><span className="ci">{'\u21bb'}</span> Reset</div>
+            <button className="btn btn-d" style={{width:'100%'}} onClick={()=>{if(confirm('Reset ALL settings to defaults?'))doCmd('reset')}}>{'\u27f3'} Reset All Settings to Defaults</button>
+          </div>
+        </div>
+
+        {/* ═══ PLAYLIST ═══ */}
+        <div className={`tab-pane ${tab==='list'?'active':''}`}>
+          <div className="card glass">
+            <div className="card-title"><span className="ci">{'\u25b6'}</span> Now Playing</div>
+            <div className="mq-preview" style={{color:st.currentUrl?'var(--txt)':'var(--mute)'}}>{st.currentUrl||'\u2014'}</div>
+            <div className="row"><button className="btn btn-g" onClick={()=>doCmd('skip')}>{'\u23ed'} Skip</button><button className="btn btn-d" onClick={()=>doCmd('clearqueue')}>{'\u2715'} Clear Queue</button></div>
+          </div>
+
+          <QueueCard items={st.queueItems} doCmd={doCmd}/>
+          <PlaylistCard playlist={playlist} plOp={plOp} loadPl={loadPl}/>
+
+          <div className="card glass">
+            <div className="card-title"><span className="ci">{'\u2699'}</span> Playlist Settings</div>
+            <ToggleRow label="Shuffle" checked={plSettings.shuffle} onChange={v=>doCmd('shuffle',v)}/>
+            <ToggleRow label="No Repeat" checked={plSettings.noRepeat} onChange={v=>doCmd('norepeat',v)}/>
+            <NumRow label="Max Videos" defVal={plSettings.maxVideos||0} onSet={v=>doCmd('maxvideos',v)} info="0 = unlimited"/>
+            <NumRow label="Start From" defVal={plSettings.startFrom||0} onSet={v=>doCmd('startfrom',v)} info="0 = beginning"/>
+          </div>
+        </div>
+      </div>
+
+      {/* Floating Panic */}
+      <button className="fab-panic" onClick={()=>doCmd('panic')} title="Panic Stop">{'\u26a0'}</button>
+    </div>
+
+    {/* Guide */}
+    <div className={`guide-overlay ${guide?'open':''}`} onClick={e=>{if(e.target===e.currentTarget)setGuide(false)}}>
+      <div className="guide-inner glass">
+        <button className="btn btn-g" style={{position:'absolute',top:12,right:12}} onClick={()=>setGuide(false)}>{'\u2715'} Close</button>
+        <div style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--iris)',textTransform:'uppercase',letterSpacing:'.2em',marginBottom:4}}>VoidCapture</div>
+        <h2>Controller Guide</h2>
+        <div className="gs">{'\u25c8'} Getting Connected</div><p>Enter the Tunnel URL, Code, and PIN from the desktop app. Only one controller can be connected at a time.</p>
+        <div className="gs">{'\u25ce'} Controls</div><p><strong>Skip</strong> \u2014 next video. <strong>Clear Queue</strong> \u2014 removes waiting videos. <strong>Panic</strong> \u2014 stops everything immediately. Volume (0\u2013200) and Speed (0.25\u20131.5\u00d7) adjust in real-time.</p>
+        <div className="gs">{'\ud83d\udd12'} Lock / Unlock</div><p>Lock disables the panic hotkey. The 3-second emergency hold (Ctrl+Shift+Esc) always works.</p>
+        <div className="gs">{'\u2699'} Options</div><p><strong>Loop</strong>, <strong>Shuffle</strong>, <strong>No Repeat</strong>, <strong>Show Cursor</strong>, <strong>Min Session Lock</strong>, <strong>Max Videos</strong>, <strong>Max Time</strong>.</p>
+        <div className="gs">{'\u23f1'} Schedule</div><p>Start Now, timed start, idle auto-start. The <strong>weekly grid</strong> lets you tap cells to set recurring schedules visually.</p>
+        <div className="gs">{'\u21bb'} Reset</div><p>Restores all settings to defaults.</p>
+        <div className="gs">{'\ud83d\udee1'} Security</div><p>All traffic encrypted via Cloudflare HTTPS. Sessions auto-expire within 15 seconds of disconnect.</p>
+      </div>
+    </div>
+
+    <ToastContainer/>
+  </>;
+}
+
+/* ─── Reusable Components ─── */
+function SliderRow({label,min,max,value,onChange,format}){
+  const [local,setLocal]=useState(value);
+  const timerRef=useRef();
+  useEffect(()=>setLocal(value),[value]);
+  const handle=v=>{setLocal(v);clearTimeout(timerRef.current);timerRef.current=setTimeout(()=>onChange(v),150)};
+  return <div className="slider-row"><span className="label">{label}</span><input type="range" min={min} max={max} value={local} onChange={e=>handle(+e.target.value)}/><span className="val">{format(local)}</span></div>;
+}
+
+function ToggleRow({label,checked,onChange}){
+  return <div className="toggle-row"><span className="toggle-label">{label}</span><label className="switch"><input type="checkbox" checked={!!checked} onChange={e=>onChange(e.target.checked)}/><span/></label></div>;
+}
+
+function NumRow({label,unit,defVal,onSet,info}){
+  const [v,setV]=useState(defVal);
+  useEffect(()=>setV(defVal),[defVal]);
+  return <div className="num-row"><span className="info"><strong>{label}</strong>{info}</span><input type="number" value={v} onChange={e=>setV(+e.target.value)} min={0}/>{unit&&<span style={{color:'var(--mute)',fontSize:10}}>{unit}</span>}<button className="btn btn-g" onClick={()=>onSet(v)}>Set</button></div>;
+}
+
+function MarqueeCard({marquee,doCmd}){
+  const [text,setText]=useState('');
+  const phrases=['Good girl','Keep watching','You have no choice','Submit','Let go','Relax'];
+  const send=t=>{if(!t){toast('Enter text','err');return}doCmd('marquee',t)};
+  return <div className="card glass">
+    <div className="card-title"><span className="ci">{'\u2726'}</span> Marquee</div>
+    <div className={`mq-preview ${marquee?.trim()?'on':''}`}>{marquee?.trim()||'No marquee active'}</div>
+    <div className="row" style={{marginBottom:8}}><input type="text" value={text} onChange={e=>setText(e.target.value)} placeholder="Type text\u2026" style={{flex:1}} onKeyDown={e=>e.key==='Enter'&&send(text)}/><button className="btn btn-p" onClick={()=>send(text)}>{'\u25b6'}</button><button className="btn btn-d" onClick={()=>doCmd('marqueeoff')}>{'\u2715'}</button><button className="btn btn-g" onClick={()=>doCmd('marqueetop')}>{'\u2191'}</button><button className="btn btn-g" onClick={()=>doCmd('marqueebottom')}>{'\u2193'}</button></div>
+    <div className="group">{phrases.map(p=><button key={p} className="btn btn-g" style={{fontSize:10}} onClick={()=>{setText(p);send(p)}}>{p}</button>)}</div>
+  </div>;
+}
+
+function ScheduleCard({weekSched,setWeekSched,doCmd}){
+  return <div className="card glass">
+    <div className="card-title"><span className="ci">{'\u23f1'}</span> Schedule</div>
+    <div className="row" style={{marginBottom:12}}><button className="btn btn-s" onClick={()=>doCmd('autostartnow')}>{'\u25b6'} Start Now</button><button className="btn btn-g" onClick={()=>doCmd('cancelschedule')}>{'\u2715'} Cancel</button></div>
+    <NumRow label="Start at Time" defVal="" onSet={v=>{if(!/^\d{2}:\d{2}$/.test(String(v))){toast('Use HH:MM','err');return}doCmd('schedule',v)}} info="HH:MM"/>
+    <NumRow label="Idle Auto-Start" unit="min" defVal={0} onSet={v=>doCmd('idlestart',v)} info="0 = off"/>
+    <NumRow label="Delay Start" unit="min" defVal={0} onSet={v=>doCmd('delay',v)} info="N minutes"/>
+
+    <div className="sec-title">Weekly Grid <span style={{fontSize:8,color:'var(--dim)',fontWeight:400}}>\u2014 tap cells to schedule</span></div>
+    <WeeklyGrid schedule={weekSched} onUpdate={next=>{setWeekSched(next);}}/>
+    <button className="btn btn-p" style={{width:'100%',marginTop:8}} onClick={()=>doCmd('weeklyschedule',JSON.stringify(weekSched))}>{'\ud83d\udcbe'} Save Weekly Schedule</button>
+  </div>;
+}
+
+function QueueCard({items,doCmd}){
+  return <div className="card glass">
+    <div className="card-title"><span className="ci">{'\u2630'}</span> Queue <span style={{color:'var(--mute)',fontWeight:400,fontSize:11,marginLeft:4}}>{items?.length?`(${items.length})`:'(empty)'}</span></div>
+    <div style={{maxHeight:180,overflowY:'auto',listStyle:'none'}}>
+      {(items||[]).slice(0,50).map((u,i)=>
+        <div key={i} className="q-item"><span className="q-num">{i+1}</span><span className="q-url" title={u}>{trunc(u,50)}</span><span className="q-rm" onClick={()=>doCmd('removequeue',i)}>{'\u00d7'}</span></div>
+      )}
+      {!(items?.length)&&<div style={{color:'var(--dim)',fontSize:11,padding:6}}>Empty</div>}
+    </div>
+    <QueueInput doCmd={doCmd}/>
+  </div>;
+}
+
+function QueueInput({doCmd}){
+  const [url,setUrl]=useState('');
+  const add=()=>{if(!url.trim()||!url.startsWith('http')){toast('Enter a valid URL','err');return}doCmd('appendurl',url.trim());setUrl('')};
+  return <div className="row" style={{marginTop:8}}><input type="text" value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://\u2026 add to queue" style={{flex:1}} onKeyDown={e=>e.key==='Enter'&&add()}/><button className="btn btn-g" onClick={add}>+ Queue</button></div>;
+}
+
+function PlaylistCard({playlist,plOp,loadPl}){
+  const [bulk,setBulk]=useState(false);
+  const [bulkText,setBulkText]=useState('');
+  const [sel,setSel]=useState(new Set());
+  const [addUrl,setAddUrl]=useState('');
+
+  const toggleSel=i=>{const n=new Set(sel);n.has(i)?n.delete(i):n.add(i);setSel(n)};
+  const bulkDel=()=>{if(!sel.size)return;if(!confirm(`Delete ${sel.size} items?`))return;plOp('bulkremove',{indices:[...sel].sort((a,b)=>b-a)});setSel(new Set())};
+  const bulkAdd=()=>{const lines=bulkText.split('\n').map(l=>l.trim()).filter(l=>l);if(!lines.length){toast('Paste URLs first','err');return}plOp('bulkappend',{entries:lines});setBulk(false);setBulkText('')};
+
+  return <div className="card glass">
+    <div className="card-title"><span className="ci">{'\u2261'}</span> Playlist <span style={{color:'var(--mute)',fontWeight:400,fontSize:11,marginLeft:4}}>{playlist.length} items</span></div>
+    <div className="row" style={{marginBottom:8}}>
+      <button className="btn btn-g" onClick={loadPl}>{'\u21bb'} Reload</button>
+      <button className="btn btn-d" onClick={()=>{if(confirm('Clear entire playlist?'))plOp('clear')}}>{'\u2715'} Clear</button>
+      <button className="btn btn-b" onClick={()=>setBulk(!bulk)}>{'\ud83d\udccb'} Bulk</button>
+      {sel.size>0&&<button className="btn btn-d" onClick={bulkDel}>Delete {sel.size}</button>}
+    </div>
+    {bulk&&<div style={{marginBottom:10}}>
+      <textarea value={bulkText} onChange={e=>setBulkText(e.target.value)} rows={4} placeholder="Paste URLs, one per line\u2026"/>
+      <div className="row" style={{marginTop:4}}><span style={{color:'var(--mute)',fontSize:10}}>{bulkText.split('\n').filter(l=>l.trim()).length} URLs</span><button className="btn btn-p" onClick={bulkAdd}>Add All</button><button className="btn btn-g" onClick={()=>{setBulk(false);setBulkText('')}}>Cancel</button></div>
+    </div>}
+    <div style={{maxHeight:320,overflowY:'auto'}}>
+      {playlist.map((e,i)=>{
+        const isDir=e.startsWith('#');
+        return <div key={i} className="pl-item">
+          <input type="checkbox" checked={sel.has(i)} onChange={()=>toggleSel(i)} style={{accentColor:'var(--iris)'}}/>
+          <span className="pl-num">{i+1}</span>
+          <span className={`pl-url${isDir?' dir':''}`} title={e}>{trunc(e,50)}</span>
+          <span className="pl-actions">
+            <button className="btn btn-g" style={{padding:'1px 4px',fontSize:9}} onClick={()=>plOp('moveup',{index:i})}>{'\u2191'}</button>
+            <button className="btn btn-g" style={{padding:'1px 4px',fontSize:9}} onClick={()=>plOp('movedown',{index:i})}>{'\u2193'}</button>
+            <button className="btn btn-d" style={{padding:'1px 4px',fontSize:9}} onClick={()=>{if(confirm(`Remove #${i+1}?`))plOp('remove',{index:i})}}>{'\u2715'}</button>
+          </span>
+        </div>;
+      })}
+      {!playlist.length&&<div style={{color:'var(--dim)',fontSize:11,padding:6}}>Empty \u2014 add URLs below.</div>}
+    </div>
+    <div className="row" style={{marginTop:10}}><input type="text" value={addUrl} onChange={e=>setAddUrl(e.target.value)} placeholder="https://\u2026" style={{flex:1}} onKeyDown={e=>e.key==='Enter'&&(()=>{if(!addUrl.trim())return;plOp('append',{entry:addUrl.trim()});setAddUrl('')})()}/><button className="btn btn-s" onClick={()=>{if(!addUrl.trim())return;plOp('append',{entry:addUrl.trim()});setAddUrl('')}}>+ Append</button><button className="btn btn-b" onClick={()=>{if(!addUrl.trim())return;plOp('prepend',{entry:addUrl.trim()});setAddUrl('')}}>+ Prepend</button></div>
+  </div>;
+}
+
+/* ─── Mount ─── */
+ReactDOM.render(<App/>,document.getElementById('root'));
 </script>
 </body>
-</html></body></html>
+</html>
