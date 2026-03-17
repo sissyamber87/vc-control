@@ -162,12 +162,31 @@ textarea{width:100%;resize:vertical;min-height:60px}
 .mq-preview.on{color:var(--txt);border-color:var(--bdr2);box-shadow:0 0 16px var(--glowS)}
 
 /* Weekly grid */
-.wk-grid-visual{display:grid;grid-template-columns:40px repeat(24,1fr);gap:1px;margin:10px 0}
-.wk-grid-visual .day-label{font-size:9px;color:var(--dim);font-family:var(--mono);display:flex;align-items:center;padding-right:4px;font-weight:600}
-.wk-grid-visual .hour-label{font-size:7px;color:var(--mute);font-family:var(--mono);text-align:center;padding:2px 0}
-.wk-cell{width:100%;aspect-ratio:1;border-radius:2px;background:rgba(255,255,255,.02);cursor:pointer;transition:all .2s;border:1px solid transparent;min-height:12px}
-.wk-cell:hover{background:rgba(140,100,255,.12);border-color:var(--bdr2)}
-.wk-cell.active{background:rgba(140,100,255,.25);border-color:var(--iris);box-shadow:0 0 8px var(--glowS)}
+/* Schedule entry cards */
+.sched-entry{display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:8px;border-radius:var(--r2);background:var(--card2);border:1px solid var(--bdr);transition:all .3s}
+.sched-entry:hover{border-color:var(--bdr2);box-shadow:0 0 20px var(--glowS)}
+.sched-entry .se-time{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--iris);min-width:70px;text-shadow:0 0 20px var(--glowS)}
+.sched-entry .se-days{display:flex;gap:4px;flex-wrap:wrap;flex:1}
+.sched-entry .se-day{font-size:10px;font-weight:600;padding:3px 8px;border-radius:12px;background:rgba(160,124,255,.12);color:var(--iris);letter-spacing:.04em;text-transform:uppercase;border:1px solid rgba(160,124,255,.2)}
+.sched-entry .se-urls{font-size:9px;color:var(--dim);font-family:var(--mono)}
+.sched-entry .se-actions{display:flex;gap:4px;flex-shrink:0}
+.sched-add-btn{width:100%;padding:14px;border:1px dashed var(--bdr2);border-radius:var(--r2);background:transparent;color:var(--dim);font-family:var(--sans);font-size:13px;cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center;gap:6px}
+.sched-add-btn:hover{border-color:var(--iris);color:var(--iris);background:rgba(160,124,255,.04)}
+
+/* Schedule editor (inline) */
+.sched-editor{padding:16px;margin:8px 0;border-radius:var(--r2);background:rgba(160,124,255,.04);border:1px solid var(--bdr2)}
+.day-pills{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.day-pill{padding:8px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .25s;border:1px solid var(--bdr);background:rgba(255,255,255,.03);color:var(--mute);letter-spacing:.04em;user-select:none}
+.day-pill:hover{border-color:var(--bdr2);color:var(--dim)}
+.day-pill.on{background:rgba(160,124,255,.2);border-color:var(--iris);color:var(--iris);box-shadow:0 0 12px var(--glowS)}
+
+/* Time picker (select dropdowns) */
+.time-picker{display:flex;align-items:center;justify-content:center;gap:6px;margin:16px 0;padding:16px;background:rgba(255,255,255,.02);border-radius:var(--r2);border:1px solid var(--bdr)}
+.tp-select{background:var(--card2);border:1px solid var(--bdr2);border-radius:var(--r);color:var(--txt);font-family:var(--mono);font-size:22px;font-weight:700;padding:10px 14px;cursor:pointer;outline:none;text-align:center;min-width:70px;appearance:none;-webkit-appearance:none;transition:all .25s}
+.tp-select:hover{border-color:var(--iris);box-shadow:0 0 16px var(--glowS)}
+.tp-select:focus{border-color:var(--iris);box-shadow:0 0 20px var(--glowS)}
+.tp-sep{font-family:var(--mono);font-size:28px;font-weight:700;color:var(--iris);padding:0 2px}
+.tp-ampm{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--dim);padding:4px 10px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid var(--bdr);min-width:36px;text-align:center}
 
 /* Chart container */
 .chart-wrap{position:relative;height:140px;margin:4px 0}
@@ -249,7 +268,6 @@ textarea{width:100%;resize:vertical;min-height:60px}
   .tz{display:none}
   .ring-container{width:140px;height:140px}
   .ring-time{font-size:20px}
-  .wk-grid-visual .hour-label{font-size:0} /* hide hour labels on mobile, too cramped */
   .fab-panic{bottom:80px;right:16px;width:50px;height:50px;font-size:20px}
   .chart-wrap{height:110px}
 }
@@ -407,37 +425,88 @@ function SessionHeatmap({data}){
   </div>;
 }
 
-/* ─── Weekly Visual Grid ─── */
-function WeeklyGrid({schedule,onUpdate}){
-  const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const dayKeys=['mon','tue','wed','thu','fri','sat','sun'];
-  const activeSet=useMemo(()=>{
-    const s=new Set();
-    (schedule||[]).forEach(e=>s.add(`${e.day}-${e.time}`));
-    return s;
-  },[schedule]);
-
-  const toggle=(dayIdx,hour)=>{
-    const day=dayKeys[dayIdx];
-    const time=String(hour).padStart(2,'0')+':00';
-    const key=`${day}-${time}`;
-    let next=[...(schedule||[])];
-    if(activeSet.has(key))next=next.filter(e=>!(e.day===day&&e.time===time));
-    else next.push({day,time});
-    onUpdate(next);
-  };
-
-  return <div className="wk-grid-visual">
-    <div/>{Array.from({length:24},(_,i)=><div key={i} className="hour-label">{i}</div>)}
-    {days.map((d,di)=><React.Fragment key={d}>
-      <div className="day-label">{d}</div>
-      {Array.from({length:24},(_,h)=>{
-        const key=`${dayKeys[di]}-${String(h).padStart(2,'0')}:00`;
-        return <div key={h} className={`wk-cell${activeSet.has(key)?' active':''}`} onClick={()=>toggle(di,h)} title={`${d} ${h}:00`}/>;
-      })}
-    </React.Fragment>)}
+/* ─── Time Picker (select dropdowns) ─── */
+function TimePicker({hour,min,onHourChange,onMinChange}){
+  const hours=Array.from({length:24},(_,i)=>String(i).padStart(2,'0'));
+  const mins=Array.from({length:12},(_,i)=>String(i*5).padStart(2,'0'));
+  return <div className="time-picker">
+    <select className="tp-select" value={hour} onChange={e=>onHourChange(e.target.value)}>
+      {hours.map(h=><option key={h} value={h}>{h}</option>)}
+    </select>
+    <span className="tp-sep">:</span>
+    <select className="tp-select" value={min} onChange={e=>onMinChange(e.target.value)}>
+      {mins.map(m=><option key={m} value={m}>{m}</option>)}
+    </select>
+    <span className="tp-ampm">{parseInt(hour)>=12?'PM':'AM'}</span>
   </div>;
 }
+
+function ScheduleEditor({initial,onSave,onCancel}){
+  const dayList=[{k:'mon',l:'Mon'},{k:'tue',l:'Tue'},{k:'wed',l:'Wed'},{k:'thu',l:'Thu'},{k:'fri',l:'Fri'},{k:'sat',l:'Sat'},{k:'sun',l:'Sun'}];
+  const [days,setDays]=useState(()=>initial?initial.days:['mon']);
+  const [hour,setHour]=useState(()=>initial?initial.hour:'22');
+  const [min,setMin]=useState(()=>initial?initial.min:'00');
+
+  const toggleDay=d=>{
+    setDays(prev=>prev.includes(d)?prev.filter(x=>x!==d):[...prev,d]);
+  };
+  const save=()=>{
+    if(!days.length){toast('Select at least one day','err');return}
+    onSave({days,hour,min});
+  };
+  const presets=[
+    {label:'Weeknights',days:['mon','tue','wed','thu','fri']},
+    {label:'Weekends',days:['sat','sun']},
+    {label:'Every day',days:['mon','tue','wed','thu','fri','sat','sun']},
+  ];
+
+  return <div className="sched-editor">
+    <div style={{fontSize:11,color:'var(--dim)',fontWeight:600,textTransform:'uppercase',letterSpacing:'.1em',marginBottom:8}}>
+      {initial?'Edit Entry':'New Schedule Entry'}
+    </div>
+    <div style={{display:'flex',gap:4,marginBottom:10,flexWrap:'wrap'}}>
+      {presets.map(p=><button key={p.label} className="btn btn-g" style={{fontSize:9,padding:'4px 10px'}}
+        onClick={()=>setDays(p.days)}>{p.label}</button>)}
+    </div>
+    <div className="day-pills">
+      {dayList.map(d=><div key={d.k} className={`day-pill${days.includes(d.k)?' on':''}`}
+        onClick={()=>toggleDay(d.k)}>{d.l}</div>)}
+    </div>
+    <TimePicker hour={hour} min={min} onHourChange={setHour} onMinChange={setMin}/>
+    <div style={{textAlign:'center',fontFamily:'var(--mono)',fontSize:14,color:'var(--iris)',margin:'12px 0'}}>
+      {days.map(d=>d.charAt(0).toUpperCase()+d.slice(1)).join(', ')} at {hour}:{min}
+    </div>
+    <div className="row" style={{justifyContent:'center'}}>
+      <button className="btn btn-p" onClick={save}>{initial?'Update':'Add Schedule'}</button>
+      <button className="btn btn-g" onClick={onCancel}>Cancel</button>
+    </div>
+  </div>;
+}
+
+function ScheduleEntryCard({entry,onDelete,onEdit}){
+  // entry = {days:['mon','wed','fri'], time:'22:00', urls:[...]}
+  const t=entry.time.split(':');
+  const h=parseInt(t[0]),m=t[1];
+  const ampm=h>=12?'PM':'AM';
+  const h12=h===0?12:h>12?h-12:h;
+  const timeStr=`${h12}:${m} ${ampm}`;
+  const hasUrls=entry.urls&&entry.urls.length>0;
+  return <div className="sched-entry">
+    <div className="se-time">{timeStr}</div>
+    <div style={{flex:1}}>
+      <div className="se-days">
+        {entry.days.map(d=><span key={d} className="se-day">{d}</span>)}
+      </div>
+      {hasUrls&&<div className="se-urls" style={{marginTop:4}}>{'\u2714'} {entry.urls.length} custom URLs</div>}
+      {!hasUrls&&<div className="se-urls" style={{marginTop:4}}>Default playlist</div>}
+    </div>
+    <div className="se-actions">
+      <button className="btn btn-g" style={{padding:'4px 8px',fontSize:10}} onClick={onEdit}>{'\u270e'}</button>
+      <button className="btn btn-d" style={{padding:'4px 8px',fontSize:10}} onClick={onDelete}>{'\u2715'}</button>
+    </div>
+  </div>;
+}
+
 
 /* ─── Main App ─── */
 function App(){
@@ -449,20 +518,33 @@ function App(){
   const [plSettings,setPlSettings]=useState({});
   const [weekSched,setWeekSched]=useState([]);
   const [guide,setGuide]=useState(false);
-  const pollRef=useRef();
+    const pollRef=useRef();
+  const failCountRef=useRef(0);
+  const lastFailTimeRef=useRef(0);
 
-  // Poll
+  // Poll — resilient to mobile background suspension + browser tab throttling
   const poll=useCallback(async()=>{
     try{
       const st=await api('GET','/status');
+      failCountRef.current=0; // reset on ANY success
       setStatus(st);
       if(st.weeklySchedule)try{setWeekSched(JSON.parse(st.weeklySchedule))}catch(e){}
       if(st.playlistSettings)setPlSettings(st.playlistSettings);
     }catch(e){
       if(e.message?.includes('401')||e.message?.includes('expired')){
-        clearInterval(pollRef.current);S.u=S.t=null;setAuthed(false);
-        toast('Session ended \u2014 disconnected','err');
+        // Debounce: rapid-fire 401s from same wake-up count as one failure
+        const now=Date.now();
+        if(now-lastFailTimeRef.current<5000)return;
+        lastFailTimeRef.current=now;
+        failCountRef.current++;
+        if(failCountRef.current===1){
+          toast('Connection interrupted — retrying…','inf');
+        }else if(failCountRef.current>=5){
+          clearInterval(pollRef.current);S.u=S.t=null;setAuthed(false);
+          toast('Session expired — please reconnect','err');
+        }
       }
+      // Network errors (offline, tunnel restart) — silently retry
     }
   },[]);
 
@@ -487,7 +569,16 @@ function App(){
 
   useEffect(()=>{
     window.addEventListener('beforeunload',()=>{if(S.t)try{fetch(S.u+'/disconnect',{method:'POST',headers:{'Authorization':'Bearer '+S.t},keepalive:true})}catch(e){}});
-  },[]);
+    // When tab comes back from background/sleep, immediately poll to refresh heartbeat
+    document.addEventListener('visibilitychange',()=>{
+      if(document.visibilityState==='visible'&&S.t){
+        poll(); // immediate heartbeat refresh
+        // Restart poll interval (browser may have killed the old one)
+        clearInterval(pollRef.current);
+        pollRef.current=setInterval(poll,2500);
+      }
+    });
+  },[poll]);
 
   useEffect(()=>{if(tab==='home')loadAnalytics();if(tab==='list')loadPl();},[tab]);
 
@@ -745,16 +836,89 @@ function MarqueeCard({marquee,doCmd}){
 }
 
 function ScheduleCard({weekSched,setWeekSched,doCmd}){
+  const [editing,setEditing]=useState(false); // false or {index, entry} for edit mode
+  const [adding,setAdding]=useState(false);
+
+  // Group raw schedule entries by time for display
+  const grouped=useMemo(()=>{
+    const map=new Map();
+    (weekSched||[]).forEach((e,i)=>{
+      const key=e.time;
+      if(!map.has(key))map.set(key,{time:e.time,days:[],urls:e.urls,indices:[]});
+      const g=map.get(key);
+      if(!g.days.includes(e.day))g.days.push(e.day);
+      g.indices.push(i);
+      if(e.urls&&e.urls.length)g.urls=e.urls;
+    });
+    return [...map.values()].sort((a,b)=>a.time.localeCompare(b.time));
+  },[weekSched]);
+
+  const saveEntry=({days,hour,min})=>{
+    const time=hour+':'+min;
+    let next=[...(weekSched||[])];
+    // If editing, remove old entries for this group first
+    if(editing&&editing.entry){
+      const oldTime=editing.entry.time;
+      next=next.filter(e=>e.time!==oldTime||!editing.entry.days.includes(e.day));
+    }
+    // Add new entries
+    days.forEach(d=>{
+      // Don't duplicate
+      if(!next.find(e=>e.day===d&&e.time===time)){
+        next.push({day:d,time});
+      }
+    });
+    setWeekSched(next);
+    setAdding(false);setEditing(false);
+    toast('Entry added \u2014 click Save to persist','inf');
+  };
+
+  const deleteGroup=(group)=>{
+    if(!confirm(`Delete ${group.days.join(', ')} at ${group.time}?`))return;
+    const next=(weekSched||[]).filter(e=>!(e.time===group.time&&group.days.includes(e.day)));
+    setWeekSched(next);
+    toast('Removed \u2014 click Save to persist','inf');
+  };
+
+  const editGroup=(group)=>{
+    const t=group.time.split(':');
+    setEditing({entry:group});
+    setAdding(false);
+  };
+
   return <div className="card glass">
     <div className="card-title"><span className="ci">{'\u23f1'}</span> Schedule</div>
-    <div className="row" style={{marginBottom:12}}><button className="btn btn-s" onClick={()=>doCmd('autostartnow')}>{'\u25b6'} Start Now</button><button className="btn btn-g" onClick={()=>doCmd('cancelschedule')}>{'\u2715'} Cancel</button></div>
-    <NumRow label="Start at Time" defVal="" onSet={v=>{if(!/^\d{2}:\d{2}$/.test(String(v))){toast('Use HH:MM','err');return}doCmd('schedule',v)}} info="HH:MM"/>
+
+    <div className="row" style={{marginBottom:14}}>
+      <button className="btn btn-s" onClick={()=>doCmd('autostartnow')}>{'\u25b6'} Start Now</button>
+      <button className="btn btn-g" onClick={()=>doCmd('cancelschedule')}>{'\u2715'} Cancel</button>
+    </div>
+
     <NumRow label="Idle Auto-Start" unit="min" defVal={0} onSet={v=>doCmd('idlestart',v)} info="0 = off"/>
     <NumRow label="Delay Start" unit="min" defVal={0} onSet={v=>doCmd('delay',v)} info="N minutes"/>
 
-    <div className="sec-title">Weekly Grid <span style={{fontSize:8,color:'var(--dim)',fontWeight:400}}>\u2014 tap cells to schedule</span></div>
-    <WeeklyGrid schedule={weekSched} onUpdate={next=>{setWeekSched(next);}}/>
-    <button className="btn btn-p" style={{width:'100%',marginTop:8}} onClick={()=>doCmd('weeklyschedule',JSON.stringify(weekSched))}>{'\ud83d\udcbe'} Save Weekly Schedule</button>
+    <div className="sec-title" style={{marginTop:16}}>Weekly Schedule</div>
+
+    {grouped.map((g,i)=>
+      <ScheduleEntryCard key={g.time+g.days.join()} entry={g}
+        onDelete={()=>deleteGroup(g)}
+        onEdit={()=>editGroup(g)}/>
+    )}
+
+    {!grouped.length&&!adding&&!editing&&
+      <div style={{color:'var(--mute)',fontSize:12,padding:'12px 0',textAlign:'center'}}>No recurring schedules set</div>}
+
+    {(adding||editing)&&
+      <ScheduleEditor
+        initial={editing?{days:editing.entry.days,hour:editing.entry.time.split(':')[0],min:editing.entry.time.split(':')[1]}:null}
+        onSave={saveEntry}
+        onCancel={()=>{setAdding(false);setEditing(false)}}/>
+    }
+
+    {!adding&&!editing&&
+      <button className="sched-add-btn" onClick={()=>setAdding(true)}>+ Add Schedule Entry</button>}
+
+    <button className="btn btn-p" style={{width:'100%',marginTop:10}} onClick={()=>doCmd('weeklyschedule',JSON.stringify(weekSched))}>{'\ud83d\udcbe'} Save Weekly Schedule</button>
   </div>;
 }
 
