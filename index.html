@@ -661,8 +661,15 @@ function App(){
     }
   },[]);
 
-  const loadAnalytics=useCallback(async()=>{
-    try{const d=await api('GET','/analytics');setAnalytics(d)}catch(e){}
+  const [trendDays,setTrendDays]=useState(30);
+  const [videoDetail,setVideoDetail]=useState(null); // {url, plays} for modal
+
+  const loadAnalytics=useCallback(async(days)=>{
+    try{const d=await api('GET','/analytics'+(days?'?days='+days:''));setAnalytics(d)}catch(e){}
+  },[]);
+
+  const loadVideoDetail=useCallback(async(url)=>{
+    try{const d=await api('GET','/analytics?video='+encodeURIComponent(url));setVideoDetail(d)}catch(e){toast('Failed to load video detail','err')}
   },[]);
 
   const loadPl=useCallback(async()=>{
@@ -670,7 +677,7 @@ function App(){
   },[]);
 
   const onLogin=useCallback(async()=>{
-    setAuthed(true);await poll();loadAnalytics();loadPl();
+    setAuthed(true);await poll();loadAnalytics(30);loadPl();
     pollRef.current=setInterval(poll,2500);
     toast('Connected','ok');
   },[poll,loadAnalytics,loadPl]);
@@ -693,7 +700,7 @@ function App(){
     });
   },[poll]);
 
-  useEffect(()=>{if(tab==='home')loadAnalytics();if(tab==='list')loadPl();},[tab]);
+  useEffect(()=>{if(tab==='home')loadAnalytics(trendDays);if(tab==='list')loadPl();},[tab,trendDays]);
 
   const doCmd=async(n,v,silent)=>{
     try{await cmd(n,v);if(!silent)toast('\u2713 '+n,'ok');setTimeout(poll,300)}catch(e){toast(e.message,'err')}
@@ -744,6 +751,8 @@ function App(){
       <div className="content">
         {/* ═══ HOME ═══ */}
         <div className={`tab-pane ${tab==='home'?'active':''}`}>
+
+          {/* Overview stats */}
           <div className="stats-grid">
             <div className="stat-card glass purple"><div className="val">{st.todayTime||'\u2014'}</div><div className="lbl">Today</div></div>
             <div className="stat-card glass blue"><div className="val">{st.totalTime||'\u2014'}</div><div className="lbl">All Time</div></div>
@@ -751,6 +760,7 @@ function App(){
             <div className="stat-card glass amber"><div className="val">{st.queueLength??'\u2014'}</div><div className="lbl">Queue</div></div>
           </div>
 
+          {/* Now Playing */}
           <div className="card glass">
             <div className="card-title"><span className="ci">{'\u25b6'}</span> Now Playing</div>
             <ProgressRing progress={pos} time={fmtSec(curSec)} total={lenSec>0?fmtSec(lenSec):'--:--'} url={st.currentUrl} playing={playing}/>
@@ -765,16 +775,117 @@ function App(){
             <div className="info-row"><span className="k">Marquee</span><span className="v">{o.marqueeText?.trim()||'Off'}</span></div>
           </div>
 
+          {/* Streaks */}
+          {an.streaks&&<div className="card glass">
+            <div className="card-title"><span className="ci">{'\ud83d\udd25'}</span> Streaks</div>
+            <div className="stats-grid">
+              <div className="stat-card glass amber"><div className="val">{an.streaks.currentStreak||0}</div><div className="lbl">Current</div></div>
+              <div className="stat-card glass red"><div className="val">{an.streaks.longestStreak||0}</div><div className="lbl">Longest</div></div>
+              <div className="stat-card glass purple"><div className="val">{an.streaks.totalActiveDays||0}</div><div className="lbl">Active Days</div></div>
+              <div className="stat-card glass green"><div className="val">{an.streaks.currentStreak>=7?'\u2714':an.streaks.currentStreak>=3?'\u25cf':'\u25cb'}</div><div className="lbl">Status</div></div>
+            </div>
+            {/* Mini calendar - last 5 weeks */}
+            {an.streaks.activeDates&&(()=>{
+              const today=new Date();today.setHours(0,0,0,0);
+              const activeSet=new Set(an.streaks.activeDates);
+              const cells=[];
+              for(let i=34;i>=0;i--){
+                const d=new Date(today);d.setDate(d.getDate()-i);
+                const key=d.toISOString().slice(0,10);
+                const active=activeSet.has(key);
+                const isToday=i===0;
+                cells.push(<div key={i} title={key} style={{
+                  width:12,height:12,borderRadius:2,
+                  background:active?'rgba(160,124,255,.5)':'rgba(255,255,255,.03)',
+                  boxShadow:active?'0 0 4px rgba(140,100,255,.3)':'none',
+                  border:isToday?'1px solid var(--iris)':'1px solid transparent',
+                  transition:'all .2s'
+                }}/>);
+              }
+              return <div style={{display:'flex',gap:2,justifyContent:'center',flexWrap:'wrap',padding:'8px 0'}}>{cells}</div>;
+            })()}
+          </div>}
+
+          {/* Period Comparison */}
+          {an.comparison&&<div className="card glass">
+            <div className="card-title"><span className="ci">{'\u2194'}</span> Period Comparison</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+              {(()=>{
+                const cmp=an.comparison;
+                const wkDiff=cmp.thisWeek.totalSec-cmp.lastWeek.totalSec;
+                const moDiff=cmp.thisMonth.totalSec-cmp.lastMonth.totalSec;
+                const arrow=(v)=>v>0?'\u25b2':v<0?'\u25bc':'\u25cf';
+                const color=(v)=>v>0?'var(--grn)':v<0?'var(--red)':'var(--mute)';
+                return <>
+                  <div className="glass" style={{padding:12,borderRadius:'var(--r)',textAlign:'center'}}>
+                    <div style={{fontSize:9,color:'var(--mute)',textTransform:'uppercase',letterSpacing:'.1em',marginBottom:4}}>This Week</div>
+                    <div style={{fontFamily:'var(--mono)',fontSize:18,fontWeight:700}}>{fmtSec(cmp.thisWeek.totalSec)}</div>
+                    <div style={{fontSize:10,color:color(wkDiff),fontFamily:'var(--mono)',marginTop:2}}>
+                      {arrow(wkDiff)} {wkDiff>0?'+':''}{Math.round(wkDiff/60)}min vs last week
+                    </div>
+                    <div style={{fontSize:9,color:'var(--mute)',marginTop:4}}>{cmp.thisWeek.sessions} sessions \u00b7 {cmp.thisWeek.videos} videos</div>
+                  </div>
+                  <div className="glass" style={{padding:12,borderRadius:'var(--r)',textAlign:'center'}}>
+                    <div style={{fontSize:9,color:'var(--mute)',textTransform:'uppercase',letterSpacing:'.1em',marginBottom:4}}>This Month</div>
+                    <div style={{fontFamily:'var(--mono)',fontSize:18,fontWeight:700}}>{fmtSec(cmp.thisMonth.totalSec)}</div>
+                    <div style={{fontSize:10,color:color(moDiff),fontFamily:'var(--mono)',marginTop:2}}>
+                      {arrow(moDiff)} {moDiff>0?'+':''}{Math.round(moDiff/60)}min vs last month
+                    </div>
+                    <div style={{fontSize:9,color:'var(--mute)',marginTop:4}}>{cmp.thisMonth.sessions} sessions \u00b7 {cmp.thisMonth.videos} videos</div>
+                  </div>
+                </>;
+              })()}
+            </div>
+          </div>}
+
+          {/* Goals */}
+          <GoalsCard goals={an.goals} doCmd={doCmd}/>
+
+          {/* Milestones */}
+          {an.milestones&&an.milestones.length>0&&<div className="card glass">
+            <div className="card-title"><span className="ci">{'\ud83c\udfc6'}</span> Milestones</div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',gap:6}}>
+              {an.milestones.filter(m=>m.progress>0).map((m,i)=>(
+                <div key={i} className="glass" style={{padding:'8px 10px',borderRadius:'var(--r)',opacity:m.reached?1:.6}}>
+                  <div style={{display:'flex',alignItems:'center',gap:4,marginBottom:4}}>
+                    <span style={{fontSize:14}}>{m.reached?'\u2b50':m.type==='hours'?'\u23f1':'\ud83d\udd25'}</span>
+                    <span style={{fontSize:10,fontWeight:600,color:m.reached?'var(--iris)':'var(--dim)'}}>
+                      {m.target}{m.type==='hours'?'h':' day'} {m.type==='streak'?'streak':'watched'}
+                    </span>
+                  </div>
+                  <div style={{height:3,borderRadius:3,background:'rgba(255,255,255,.05)',overflow:'hidden'}}>
+                    <div style={{height:'100%',width:m.progress+'%',borderRadius:3,
+                      background:m.reached?'var(--grn)':'linear-gradient(90deg,var(--v2),var(--iris))',
+                      transition:'width .5s ease'}}/>
+                  </div>
+                  <div style={{fontSize:8,color:'var(--mute)',fontFamily:'var(--mono)',textAlign:'right',marginTop:2}}>{m.progress}%</div>
+                </div>
+              ))}
+            </div>
+          </div>}
+
+          {/* Watch Time Trend with date range picker */}
           <div className="card glass">
-            <div className="card-title"><span className="ci">{'\u2191'}</span> Watch Time Trend</div>
+            <div className="card-title" style={{marginBottom:4}}>
+              <span className="ci">{'\u2191'}</span> Watch Time Trend
+              <div style={{marginLeft:'auto',display:'flex',gap:4}}>
+                {[7,30,90,365].map(d=>(
+                  <button key={d} className={`btn ${trendDays===d?'btn-p':'btn-g'}`}
+                    style={{padding:'3px 8px',fontSize:9}}
+                    onClick={()=>{setTrendDays(d);loadAnalytics(d)}}>{d===365?'1Y':d+'d'}</button>
+                ))}
+              </div>
+            </div>
             <TrendChart data={an.dailyTrend}/>
           </div>
 
+          {/* Session Heatmap */}
           <div className="card glass">
             <div className="card-title"><span className="ci">{'\u29bf'}</span> Session Heatmap</div>
             <SessionHeatmap data={an.heatmap}/>
           </div>
 
+          {/* Session Patterns */}
           <div className="card glass">
             <div className="card-title"><span className="ci">{'\u2606'}</span> Session Patterns</div>
             <div className="stats-grid">
@@ -793,16 +904,49 @@ function App(){
             </div>
           </div>
 
+          {/* Session Timeline */}
+          {(an.sessions||[]).length>0&&<div className="card glass">
+            <div className="card-title"><span className="ci">{'\u23f3'}</span> Session Timeline</div>
+            <div style={{maxHeight:250,overflowY:'auto'}}>
+              {(an.sessions||[]).slice(0,30).map((s,i)=>{
+                const maxDur=Math.max(1,...(an.sessions||[]).map(x=>x.durationSec));
+                const pct=Math.max(2,s.durationSec/maxDur*100);
+                return <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'5px 0',borderBottom:'1px solid rgba(255,255,255,.02)'}}>
+                  <span style={{fontSize:9,color:'var(--mute)',fontFamily:'var(--mono)',minWidth:52,flexShrink:0}}>{fmtLocal(s.startedAt)}</span>
+                  <div style={{flex:1,height:8,borderRadius:4,background:'rgba(255,255,255,.04)',overflow:'hidden'}}>
+                    <div style={{height:'100%',width:pct+'%',borderRadius:4,
+                      background:s.panic?'linear-gradient(90deg,var(--red),rgba(255,61,90,.4))':'linear-gradient(90deg,var(--v2),var(--iris))',
+                      transition:'width .4s ease'}}/>
+                  </div>
+                  <span style={{fontSize:9,color:s.panic?'var(--red)':'var(--dim)',fontFamily:'var(--mono)',minWidth:40,textAlign:'right'}}>{fmtSec(s.durationSec)}</span>
+                  <span style={{fontSize:8,color:'var(--mute)',minWidth:16}}>{s.videos}v</span>
+                </div>;
+              })}
+            </div>
+          </div>}
+
+          {/* Top Videos (clickable for detail) */}
           <div className="card glass">
             <div className="card-title"><span className="ci">{'\u2606'}</span> Top Videos</div>
-            <div style={{maxHeight:200,overflowY:'auto'}}>
-              {(an.topVideos||[]).slice(0,20).map((v,i)=>
-                <div key={i} className="tv-item"><span className="tv-rank">{i+1}</span><span className="tv-url" title={v.url}>{trunc(v.url,50)}</span><span className="tv-stats">{v.plays}x {v.completionRate}%</span></div>
-              )}
+            <div style={{maxHeight:220,overflowY:'auto'}}>
+              {(an.topVideos||[]).slice(0,20).map((v,i)=>{
+                const maxPlays=Math.max(1,...(an.topVideos||[]).map(x=>x.plays));
+                return <div key={i} className="tv-item" style={{cursor:'pointer'}} onClick={()=>loadVideoDetail(v.url)}>
+                  <span className="tv-rank">{i+1}</span>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div className="tv-url" title={v.url}>{trunc(v.url,45)}</div>
+                    <div style={{height:3,borderRadius:3,background:'rgba(255,255,255,.04)',marginTop:3,overflow:'hidden'}}>
+                      <div style={{height:'100%',width:Math.round(v.plays/maxPlays*100)+'%',borderRadius:3,background:'linear-gradient(90deg,var(--v2),var(--iris))'}}/>
+                    </div>
+                  </div>
+                  <span className="tv-stats">{v.plays}x {v.completionRate}%</span>
+                </div>;
+              })}
               {!(an.topVideos?.length)&&<div style={{color:'var(--dim)',fontSize:11}}>No data yet.</div>}
             </div>
           </div>
 
+          {/* Watch History */}
           <div className="card glass">
             <div className="card-title"><span className="ci">{'\u23f3'}</span> Watch History</div>
             <div style={{maxHeight:200,overflowY:'auto'}}>
@@ -812,7 +956,33 @@ function App(){
               {!(st.recentHistory?.length)&&<div style={{color:'var(--dim)',fontSize:11}}>No history yet.</div>}
             </div>
           </div>
+
+          {/* Video Detail Modal */}
+          {videoDetail&&<div style={{position:'fixed',inset:0,zIndex:9997,background:'rgba(0,0,0,.8)',backdropFilter:'blur(6px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={e=>{if(e.target===e.currentTarget)setVideoDetail(null)}}>
+            <div className="glass" style={{maxWidth:500,width:'100%',padding:24,maxHeight:'80vh',overflowY:'auto',animation:'rise .3s ease'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+                <div className="card-title" style={{margin:0}}><span className="ci">{'\ud83c\udfac'}</span> Video Detail</div>
+                <button className="btn btn-g" onClick={()=>setVideoDetail(null)}>{'\u2715'}</button>
+              </div>
+              <div style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--dim)',wordBreak:'break-all',marginBottom:14,padding:8,background:'rgba(255,255,255,.02)',borderRadius:'var(--r)'}}>{videoDetail.url}</div>
+              <div style={{fontSize:11,color:'var(--mute)',marginBottom:8}}>{videoDetail.plays?.length||0} plays recorded</div>
+              {(videoDetail.plays||[]).map((p,i)=>{
+                const watchPct=p.videoLenSec>0?Math.round(p.durationSec/p.videoLenSec*100):0;
+                return <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 0',borderBottom:'1px solid rgba(255,255,255,.02)',fontSize:10}}>
+                  <span style={{color:'var(--mute)',fontFamily:'var(--mono)',minWidth:65}}>{fmtLocal(p.startedAt)}</span>
+                  <div style={{flex:1,height:6,borderRadius:3,background:'rgba(255,255,255,.04)',overflow:'hidden'}}>
+                    <div style={{height:'100%',width:Math.min(100,watchPct)+'%',borderRadius:3,
+                      background:p.completed?'var(--grn)':p.skipped?'var(--red)':'var(--iris)'}}/>
+                  </div>
+                  <span style={{fontFamily:'var(--mono)',color:p.completed?'var(--grn)':p.skipped?'var(--red)':'var(--dim)',minWidth:36,textAlign:'right'}}>{fmtSec(p.durationSec)}</span>
+                  <span style={{fontSize:8,color:'var(--mute)',minWidth:20}}>{watchPct}%</span>
+                </div>;
+              })}
+            </div>
+          </div>}
+
         </div>
+
 
         {/* ═══ CONTROLS ═══ */}
         <div className={`tab-pane ${tab==='ctrl'?'active':''}`}>
@@ -934,6 +1104,61 @@ function NumRow({label,unit,defVal,onSet,info}){
   const [v,setV]=useState(defVal);
   useEffect(()=>setV(defVal),[defVal]);
   return <div className="num-row"><span className="info"><strong>{label}</strong>{info}</span><input type="number" value={v} onChange={e=>setV(+e.target.value)} min={0}/>{unit&&<span style={{color:'var(--mute)',fontSize:10}}>{unit}</span>}<button className="btn btn-g" onClick={()=>onSet(v)}>Set</button></div>;
+}
+
+/* ─── Goals Card ─── */
+function GoalsCard({goals,doCmd}){
+  const [editing,setEditing]=useState(false);
+  const [daily,setDaily]=useState(goals?.dailyMinutes||0);
+  const [weekly,setWeekly]=useState(goals?.weeklySessions||0);
+
+  useEffect(()=>{
+    if(goals){setDaily(goals.dailyMinutes||0);setWeekly(goals.weeklySessions||0)}
+  },[goals]);
+
+  const save=()=>{
+    doCmd('setgoals',JSON.stringify({dailyMinutes:daily,weeklySessions:weekly}));
+    setEditing(false);
+  };
+
+  if(!goals&&!editing)return <div className="card glass">
+    <div className="card-title"><span className="ci">{'\ud83c\udfaf'}</span> Goals</div>
+    <button className="btn btn-p" style={{width:'100%'}} onClick={()=>setEditing(true)}>Set Daily & Weekly Goals</button>
+  </div>;
+
+  if(editing)return <div className="card glass">
+    <div className="card-title"><span className="ci">{'\ud83c\udfaf'}</span> Set Goals</div>
+    <NumRow label="Daily Target" unit="min" defVal={daily} onSet={v=>setDaily(v)} info="Minutes per day"/>
+    <NumRow label="Weekly Sessions" defVal={weekly} onSet={v=>setWeekly(v)} info="Sessions per week"/>
+    <div className="row" style={{marginTop:8}}><button className="btn btn-p" onClick={save}>Save Goals</button><button className="btn btn-g" onClick={()=>setEditing(false)}>Cancel</button>
+    <button className="btn btn-d" onClick={()=>{doCmd('cleargoals');setEditing(false)}}>Clear Goals</button></div>
+  </div>;
+
+  return <div className="card glass">
+    <div className="card-title"><span className="ci">{'\ud83c\udfaf'}</span> Goals <button className="btn btn-g" style={{marginLeft:'auto',padding:'2px 8px',fontSize:9}} onClick={()=>setEditing(true)}>{'\u270e'}</button></div>
+    {goals.dailyMinutes>0&&<div style={{marginBottom:10}}>
+      <div style={{display:'flex',justifyContent:'space-between',fontSize:11,marginBottom:4}}>
+        <span style={{color:'var(--dim)'}}>Daily: {goals.dailyActualMin}/{goals.dailyMinutes} min</span>
+        <span style={{color:goals.dailyProgress>=100?'var(--grn)':'var(--iris)',fontFamily:'var(--mono)',fontWeight:600}}>{goals.dailyProgress}%</span>
+      </div>
+      <div style={{height:6,borderRadius:6,background:'rgba(255,255,255,.04)',overflow:'hidden'}}>
+        <div style={{height:'100%',width:Math.min(100,goals.dailyProgress)+'%',borderRadius:6,
+          background:goals.dailyProgress>=100?'var(--grn)':'linear-gradient(90deg,var(--v2),var(--iris))',
+          boxShadow:goals.dailyProgress>=100?'0 0 8px var(--grn)':'0 0 8px var(--glow)',transition:'width .6s ease'}}/>
+      </div>
+    </div>}
+    {goals.weeklySessions>0&&<div>
+      <div style={{display:'flex',justifyContent:'space-between',fontSize:11,marginBottom:4}}>
+        <span style={{color:'var(--dim)'}}>Weekly: {goals.weeklyActualSessions}/{goals.weeklySessions} sessions</span>
+        <span style={{color:goals.weeklyProgress>=100?'var(--grn)':'var(--iris)',fontFamily:'var(--mono)',fontWeight:600}}>{goals.weeklyProgress}%</span>
+      </div>
+      <div style={{height:6,borderRadius:6,background:'rgba(255,255,255,.04)',overflow:'hidden'}}>
+        <div style={{height:'100%',width:Math.min(100,goals.weeklyProgress)+'%',borderRadius:6,
+          background:goals.weeklyProgress>=100?'var(--grn)':'linear-gradient(90deg,var(--v2),var(--iris))',
+          boxShadow:goals.weeklyProgress>=100?'0 0 8px var(--grn)':'0 0 8px var(--glow)',transition:'width .6s ease'}}/>
+      </div>
+    </div>}
+  </div>;
 }
 
 function MarqueeCard({marquee,doCmd}){
