@@ -736,7 +736,7 @@ function useSwipeGesture(ref, {onSwipeLeft,onSwipeRight,onSwipeUp,onSwipeDown,th
 }
 
 /* ─── Swipe-to-Delete Item ─── */
-function SwipeItem({children,onDelete}){
+function SwipeItem({children,onDismiss}){
   const ref=useRef();
   const [offset,setOffset]=useState(0);
   const startXRef=useRef(0);
@@ -747,7 +747,7 @@ function SwipeItem({children,onDelete}){
     if(dx<0)setOffset(Math.max(-80,dx));
   };
   const onTouchEnd=()=>{
-    if(offset<-60){onDelete?.();try{navigator.vibrate?.(30)}catch(e){}}
+    if(offset<-60){onDismiss?.();try{navigator.vibrate?.(30)}catch(e){}}
     setOffset(0);
   };
 
@@ -1287,35 +1287,6 @@ function Skeleton({type='text',count=3}){
   if(type==='stats')return <div className="stats-grid">{Array.from({length:4},(_,i)=><div key={i} className="skeleton skel-stat"/>)}</div>;
   if(type==='chart')return <div className="skeleton skel-chart"/>;
   return <>{Array.from({length:count},(_,i)=><div key={i} className="skeleton skel-row"/>)}</>;
-}
-
-/* ─── Swipe to Delete ─── */
-function SwipeItem({children,onDismiss,threshold=80}){
-  const ref=useRef();
-  const startX=useRef(0);
-  const currentX=useRef(0);
-  const swiping=useRef(false);
-
-  const onTouchStart=e=>{startX.current=e.touches[0].clientX;swiping.current=false};
-  const onTouchMove=e=>{
-    const dx=e.touches[0].clientX-startX.current;
-    if(dx>-10)return; // only swipe left
-    swiping.current=true;
-    currentX.current=dx;
-    if(ref.current){ref.current.style.transform=`translateX(${Math.max(dx,-150)}px)`;ref.current.style.transition='none'}
-  };
-  const onTouchEnd=()=>{
-    if(!ref.current)return;
-    if(swiping.current&&currentX.current<-threshold){
-      ref.current.classList.add('dismissed');
-      setTimeout(()=>onDismiss?.(),300);
-    }else{
-      ref.current.style.transform='';ref.current.style.transition='';
-    }
-    swiping.current=false;currentX.current=0;
-  };
-
-  return <div ref={ref} className="swipe-item" onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>{children}</div>;
 }
 
 /* ─── Goals Card ─── */
