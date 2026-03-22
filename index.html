@@ -86,8 +86,8 @@ body::before{content:'';position:fixed;inset:0;background:
 /* Scrollable content */
 .content{flex:1;overflow-y:auto;padding:16px 20px 90px;position:relative}
 .content::-webkit-scrollbar{width:3px}.content::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:4px}
-.tab-pane{display:none;animation:rise .4s cubic-bezier(.16,1,.3,1)}.tab-pane.active{display:block}
-
+.tab-pane{display:none;opacity:0;transform:translateY(8px);transition:opacity .3s ease,transform .3s ease}
+.tab-pane.active{display:block;opacity:1;transform:none;animation:tabIn .4s cubic-bezier(.16,1,.3,1)}
 /* Cards */
 .card{padding:18px;margin-bottom:14px}
 .card-title{font-size:13px;font-weight:600;color:var(--iris);margin-bottom:12px;display:flex;align-items:center;gap:7px;letter-spacing:-.2px}
@@ -299,8 +299,6 @@ textarea{width:100%;resize:vertical;min-height:60px}
 .theme-btn:hover{border-color:var(--bdr2);background:rgba(255,255,255,.05);color:var(--txt)}
 
 /* ═══ TAB ANIMATIONS ═══ */
-.tab-pane{display:none;opacity:0;transform:translateY(8px);transition:opacity .3s ease,transform .3s ease}
-.tab-pane.active{display:block;opacity:1;transform:none;animation:tabIn .4s cubic-bezier(.16,1,.3,1)}
 @keyframes tabIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
 
 /* ═══ SKELETON LOADING ═══ */
@@ -1452,7 +1450,7 @@ function PlaylistCard({playlist,plOp,loadPl}){
 }
 
 /* ─── Mount ─── */
-ReactDOM.render(<App/>,document.getElementById('root'));
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 
 // Register service worker for PWA
 if('serviceWorker' in navigator){
