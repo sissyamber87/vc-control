@@ -926,34 +926,87 @@ function App(){
   const pollRef=useRef();
   const failCountRef=useRef(0);
   const lastFailTimeRef=useRef(0);
+  const wsRef=useRef(null);
+  const wsReconnectRef=useRef(null);
 
+  // Process incoming status data (shared by both WS and poll)
+  const processStatus=useCallback((st)=>{
+    failCountRef.current=0;
+    setStatus(st);
+    if(st.weeklySchedule&&!schedDirtyRef.current)try{setWeekSched(JSON.parse(st.weeklySchedule))}catch(e){}
+    if(st.profiles)try{setProfiles(JSON.parse(st.profiles))}catch(e){}
+    if(st.pendingChain){doCmd('loadprofile',st.pendingChain,true);toast('Chain: loading '+st.pendingChain,'inf')}
+    if(st.playlistSettings)setPlSettings(st.playlistSettings);
+  },[]);
+
+  // HTTP poll (fallback when WS unavailable)
   const poll=useCallback(async()=>{
     try{
       const st=await api('GET','/status');
-      failCountRef.current=0;
-      setStatus(st);
-      if(st.weeklySchedule&&!schedDirtyRef.current)try{setWeekSched(JSON.parse(st.weeklySchedule))}catch(e){}
-      if(st.profiles)try{setProfiles(JSON.parse(st.profiles))}catch(e){}
-      if(st.pendingChain){doCmd('loadprofile',st.pendingChain,true);toast('Chain: loading '+st.pendingChain,'inf')}
-      if(st.playlistSettings)setPlSettings(st.playlistSettings);
+      processStatus(st);
     }catch(e){
       if(e.message?.includes('401')||e.message?.includes('expired')){
         const now=Date.now();
         if(now-lastFailTimeRef.current<5000)return;
         lastFailTimeRef.current=now;
         failCountRef.current++;
-        if(failCountRef.current===1){
-          toast('Connection interrupted \u2014 retrying\u2026','inf');
-        }else if(failCountRef.current>=5){
-          clearInterval(pollRef.current);S.u=S.t=null;setAuthed(false);
-          toast('Session expired \u2014 please reconnect','err');
+        if(failCountRef.current===1)toast('Connection interrupted \u2014 retrying\u2026','inf');
+        else if(failCountRef.current>=5){
+          clearInterval(pollRef.current);wsRef.current?.close();
+          S.u=S.t=null;setAuthed(false);toast('Session expired \u2014 please reconnect','err');
         }
       }
     }
+  },[processStatus]);
+
+  // WebSocket connection
+  const connectWs=useCallback(()=>{
+    if(!S.u||!S.t)return;
+    try{
+      const wsUrl=S.u.replace(/^http/,'ws')+'/ws?token='+encodeURIComponent(S.t);
+      const ws=new WebSocket(wsUrl);
+      ws.onopen=()=>{
+        wsRef.current=ws;
+        // Stop polling — WS takes over
+        clearInterval(pollRef.current);pollRef.current=null;
+      };
+      ws.onmessage=(e)=>{
+        try{
+          const msg=JSON.parse(e.data);
+          if(msg.type==='status'&&msg.data)processStatus(msg.data);
+          else if(msg.type==='toast')toast(msg.message,msg.level||'inf');
+          else if(msg.type==='response'&&!msg.success)toast(msg.message||'Command failed','err');
+        }catch(ex){}
+      };
+      ws.onclose=()=>{
+        wsRef.current=null;
+        // Fall back to polling
+        if(S.t&&!pollRef.current)pollRef.current=setInterval(poll,2500);
+        // Try to reconnect WS after 5 seconds
+        clearTimeout(wsReconnectRef.current);
+        if(S.t)wsReconnectRef.current=setTimeout(connectWs,5000);
+      };
+      ws.onerror=()=>{ws.close()};
+    }catch(e){
+      // WS not supported or blocked — polling continues
+      if(S.t&&!pollRef.current)pollRef.current=setInterval(poll,2500);
+    }
+  },[poll,processStatus]);
+
+  // Send command via WS if available, else HTTP
+  const wsSend=useCallback((cmd,value)=>{
+    if(wsRef.current?.readyState===1){
+      wsRef.current.send(JSON.stringify({cmd,value}));
+      return true;
+    }
+    return false;
   },[]);
 
   const [trendDays,setTrendDays]=useState(30);
   const [videoDetail,setVideoDetail]=useState(null); // {url, plays} for modal
+  const [searchQuery,setSearchQuery]=useState('');
+  const [searchResults,setSearchResults]=useState(null);
+  const [sessionEvents,setSessionEvents]=useState(null); // {sessionId, events}
 
   const loadAnalytics=useCallback(async(days)=>{
     try{const d=await api('GET','/analytics'+(days?'?days='+days:''));setAnalytics(d)}catch(e){}
@@ -963,33 +1016,55 @@ function App(){
     try{const d=await api('GET','/analytics?video='+encodeURIComponent(url));setVideoDetail(d)}catch(e){toast('Failed to load video detail','err')}
   },[]);
 
+  const searchVideos=useCallback(async(q)=>{
+    if(!q||q.length<2){setSearchResults(null);return}
+    try{const d=await api('GET','/analytics?search='+encodeURIComponent(q));setSearchResults(d.results||[])}catch(e){}
+  },[]);
+
+  const loadSessionEvents=useCallback(async(sessionId)=>{
+    try{const d=await api('GET','/analytics?session='+sessionId);setSessionEvents(d)}catch(e){toast('Failed to load session','err')}
+  },[]);
+
+  const exportCsv=useCallback(async()=>{
+    try{
+      const resp=await fetch(S.u+'/analytics?export=csv',{headers:{'Authorization':'Bearer '+S.t}});
+      const csv=await resp.text();
+      const blob=new Blob([csv],{type:'text/csv'});
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+      a.download='voidcapture-history.csv';a.click();URL.revokeObjectURL(a.href);
+      toast('CSV downloaded','ok');
+    }catch(e){toast('Export failed','err')}
+  },[]);
+
   const loadPl=useCallback(async()=>{
     try{const r=await api('GET','/playlist');setPlaylist(r.entries||[]);setPlSettings({shuffle:r.shuffle,noRepeat:r.noRepeat,maxVideos:r.maxVideos,startFrom:r.startFrom})}catch(e){}
   },[]);
 
   const onLogin=useCallback(async()=>{
     setAuthed(true);await poll();loadAnalytics(30);loadPl();
-    pollRef.current=setInterval(poll,2500);
+    // Try WebSocket first, fall back to polling
+    connectWs();
+    if(!wsRef.current)pollRef.current=setInterval(poll,2500);
     toast('Connected','ok');
-  },[poll,loadAnalytics,loadPl]);
+  },[poll,loadAnalytics,loadPl,connectWs]);
 
   const logout=()=>{
     try{fetch(S.u+'/disconnect',{method:'POST',headers:{'Authorization':'Bearer '+S.t},keepalive:true}).catch(()=>{})}catch(e){}
-    clearInterval(pollRef.current);S.u=S.t=null;setAuthed(false);
+    clearInterval(pollRef.current);clearTimeout(wsReconnectRef.current);
+    wsRef.current?.close();wsRef.current=null;
+    S.u=S.t=null;setAuthed(false);
   };
 
   useEffect(()=>{
     window.addEventListener('beforeunload',()=>{if(S.t)try{fetch(S.u+'/disconnect',{method:'POST',headers:{'Authorization':'Bearer '+S.t},keepalive:true})}catch(e){}});
-    // When tab comes back from background/sleep, immediately poll to refresh heartbeat
     document.addEventListener('visibilitychange',()=>{
       if(document.visibilityState==='visible'&&S.t){
-        poll(); // immediate heartbeat refresh
-        // Restart poll interval (browser may have killed the old one)
-        clearInterval(pollRef.current);
-        pollRef.current=setInterval(poll,2500);
+        // Reconnect WS if it dropped, or refresh poll
+        if(!wsRef.current||wsRef.current.readyState!==1)connectWs();
+        else poll();
       }
     });
-  },[poll]);
+  },[poll,connectWs]);
 
   useEffect(()=>{if(tab==='home')loadAnalytics(trendDays);if(tab==='list')loadPl();},[tab,trendDays]);
 
@@ -1029,6 +1104,9 @@ function App(){
 
   const doCmd=async(n,v,silent)=>{
     if(!silent)haptic(10);
+    // Try WebSocket first for instant response
+    if(wsSend(n,v)){if(!silent)toast('\u2713 '+n,'ok');return null}
+    // Fall back to HTTP
     try{const r=await cmd(n,v);if(!silent)toast('\u2713 '+n,'ok');setTimeout(poll,300);return r?.message}catch(e){toast(e.message,'err');return null}
   };
 
@@ -1058,6 +1136,7 @@ function App(){
         <span className={`pill ${playing?'live':'idle'}`}><span className="dot"/>{playing?'Playing':'Idle'}</span>
         <span className="tz">{tz}</span>
         <div className="top-actions">
+          <span style={{fontSize:8,color:wsRef.current?.readyState===1?'var(--grn)':'var(--mute)',fontFamily:'var(--mono)',marginRight:4}}>{wsRef.current?.readyState===1?'\u26a1 WS':'\u21bb Poll'}</span>
           <button className="theme-btn" onClick={toggleTheme} title={theme==='dark'?'Light mode':'Dark mode'}>{theme==='dark'?'\u2600':'\u263e'}</button>
           <button className="tbtn" onClick={()=>{poll();toast('Synced','inf')}}>{'\u21bb'}</button>
           <button className="tbtn danger" onClick={()=>doCmd('panic')}>{'\u26a0'} Panic</button>
@@ -1236,14 +1315,14 @@ function App(){
             </div>
           </div>
 
-          {/* Session Timeline */}
+          {/* Session Timeline (clickable for replay) */}
           {(an.sessions||[]).length>0&&<div className="card glass">
-            <div className="card-title"><span className="ci">{'\u23f3'}</span> Session Timeline</div>
+            <div className="card-title"><span className="ci">{'\u23f3'}</span> Session Timeline <button className="btn btn-g" style={{float:'right',fontSize:9,padding:'2px 8px'}} onClick={exportCsv}>{'\u2b07'} CSV</button></div>
             <div style={{maxHeight:250,overflowY:'auto'}}>
               {(an.sessions||[]).slice(0,30).map((s,i)=>{
                 const maxDur=Math.max(1,...(an.sessions||[]).map(x=>x.durationSec));
                 const pct=Math.max(2,s.durationSec/maxDur*100);
-                return <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'5px 0',borderBottom:'1px solid rgba(255,255,255,.02)'}}>
+                return <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'5px 0',borderBottom:'1px solid rgba(255,255,255,.02)',cursor:'pointer'}} onClick={()=>loadSessionEvents(s.id||i)}>
                   <span style={{fontSize:9,color:'var(--mute)',fontFamily:'var(--mono)',minWidth:52,flexShrink:0}}>{fmtLocal(s.startedAt)}</span>
                   <div style={{flex:1,height:8,borderRadius:4,background:'rgba(255,255,255,.04)',overflow:'hidden'}}>
                     <div style={{height:'100%',width:pct+'%',borderRadius:4,
@@ -1257,25 +1336,48 @@ function App(){
             </div>
           </div>}
 
-          {/* Top Videos (clickable for detail) */}
-          <div className="card glass">
-            <div className="card-title"><span className="ci">{'\u2606'}</span> Top Videos</div>
-            <div style={{maxHeight:220,overflowY:'auto'}}>
-              {(an.topVideos||[]).slice(0,20).map((v,i)=>{
-                const maxPlays=Math.max(1,...(an.topVideos||[]).map(x=>x.plays));
-                return <div key={i} className="tv-item" style={{cursor:'pointer'}} onClick={()=>loadVideoDetail(v.url)}>
-                  <span className="tv-rank">{i+1}</span>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div className="tv-url" title={v.url}>{trunc(v.url,45)}</div>
-                    <div style={{height:3,borderRadius:3,background:'rgba(255,255,255,.04)',marginTop:3,overflow:'hidden'}}>
-                      <div style={{height:'100%',width:Math.round(v.plays/maxPlays*100)+'%',borderRadius:3,background:'linear-gradient(90deg,var(--v2),var(--iris))'}}/>
-                    </div>
-                  </div>
-                  <span className="tv-stats">{v.plays}x {v.completionRate}%</span>
+          {/* Session Replay Modal */}
+          {sessionEvents&&<div className="card glass" style={{border:'1px solid var(--iris)',boxShadow:'0 0 20px rgba(100,60,220,.1)'}}>
+            <div className="card-title"><span className="ci">{'\u25b6'}</span> Session Replay <button className="btn btn-g" style={{float:'right',fontSize:9,padding:'2px 8px'}} onClick={()=>setSessionEvents(null)}>{'\u2715'} Close</button></div>
+            <div style={{maxHeight:200,overflowY:'auto'}}>
+              {(sessionEvents.events||[]).map((e,i)=>{
+                const color=e.type==='panic'?'var(--red)':e.type==='video_skip'?'var(--amb)':e.type==='video_end'?'var(--grn)':'var(--dim)';
+                return <div key={i} style={{display:'flex',gap:8,padding:'4px 0',borderBottom:'1px solid rgba(255,255,255,.02)',fontSize:10}}>
+                  <span style={{color:'var(--mute)',fontFamily:'var(--mono)',minWidth:60,flexShrink:0}}>{e.timestamp?.slice(11,19)||''}</span>
+                  <span style={{color,fontWeight:600,minWidth:70}}>{e.type}</span>
+                  <span style={{color:'var(--dim)',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{e.url?trunc(e.url,60):e.data||''}</span>
                 </div>;
               })}
-              {!(an.topVideos?.length)&&<div style={{color:'var(--dim)',fontSize:11}}>No data yet.</div>}
+              {!(sessionEvents.events||[]).length&&<div style={{color:'var(--mute)',fontSize:11,padding:8}}>No events recorded for this session</div>}
             </div>
+          </div>}
+
+          {/* Top Videos with Search + Thumbnails */}
+          <div className="card glass">
+            <div className="card-title"><span className="ci">{'\u2606'}</span> Top Videos</div>
+            <div style={{marginBottom:8}}>
+              <input type="text" value={searchQuery} onChange={e=>{setSearchQuery(e.target.value);searchVideos(e.target.value)}} placeholder="Search videos by URL..." style={{width:'100%',fontSize:11,fontFamily:'var(--mono)'}}/>
+            </div>
+            <div style={{maxHeight:260,overflowY:'auto'}}>
+              {(searchResults||an.topVideos||[]).slice(0,20).map((v,i)=>{
+                const maxPlays=Math.max(1,...(searchResults||an.topVideos||[]).map(x=>x.plays));
+                const compPct=v.plays>0?Math.round((v.completed||0)/v.plays*100):0;
+                return <div key={i} className="tv-item" style={{cursor:'pointer',display:'flex',alignItems:'center',gap:8}} onClick={()=>loadVideoDetail(v.url)}>
+                  {v.thumbnail?<img src={v.thumbnail} style={{width:48,height:32,objectFit:'cover',borderRadius:4,flexShrink:0,background:'rgba(255,255,255,.04)'}} loading="lazy" onError={e=>{e.target.style.display='none'}}/>:<div style={{width:48,height:32,borderRadius:4,background:'rgba(255,255,255,.04)',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,color:'var(--mute)'}}>{'\u25b6'}</div>}
+                  <div style={{flex:1,minWidth:0}}>
+                    <div className="tv-url" title={v.url}>{trunc(v.url,40)}</div>
+                    <div style={{display:'flex',gap:4,height:3,borderRadius:3,marginTop:3,overflow:'hidden'}}>
+                      <div style={{height:'100%',flex:compPct,borderRadius:3,background:'var(--grn)'}} title={`${compPct}% completed`}/>
+                      <div style={{height:'100%',flex:100-compPct,borderRadius:3,background:'rgba(255,61,90,.3)'}} title={`${100-compPct}% skipped/partial`}/>
+                    </div>
+                  </div>
+                  <span className="tv-stats" style={{textAlign:'right',minWidth:48}}>{v.plays}x<br/><span style={{fontSize:8,color:compPct>70?'var(--grn)':'var(--amb)'}}>{compPct}%</span></span>
+                </div>;
+              })}
+              {searchResults&&!searchResults.length&&<div style={{color:'var(--dim)',fontSize:11,padding:8,textAlign:'center'}}>No results for "{searchQuery}"</div>}
+              {!searchResults&&!(an.topVideos?.length)&&<div style={{color:'var(--dim)',fontSize:11}}>No data yet.</div>}
+            </div>
+            {searchQuery&&<button className="btn btn-g" style={{width:'100%',marginTop:6,fontSize:10}} onClick={()=>{setSearchQuery('');setSearchResults(null)}}>Clear search</button>}
           </div>
 
           {/* Watch History */}
