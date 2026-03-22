@@ -321,6 +321,12 @@ textarea{width:100%;resize:vertical;min-height:60px}
 .ptr-indicator.pulling{height:36px}
 .ptr-indicator .ptr-spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--bdr);border-top-color:var(--iris);border-radius:50%;animation:sp .6s linear infinite;margin-right:6px}
 
+/* ═══ AMBIENT BACKGROUND ═══ */
+.ambient{position:fixed;inset:0;pointer-events:none;z-index:0;transition:opacity 2s ease}
+.ambient-idle{opacity:0}
+.ambient-playing{opacity:1;background:radial-gradient(ellipse at 50% 80%,rgba(100,60,220,.04),transparent 60%),radial-gradient(ellipse at 20% 20%,rgba(60,40,180,.03),transparent 50%)}
+[data-theme="light"] .ambient-playing{background:radial-gradient(ellipse at 50% 80%,rgba(100,60,220,.03),transparent 60%)}
+
 /* ═══ INSTALL PROMPT ═══ */
 .install-banner{position:fixed;bottom:90px;left:16px;right:16px;z-index:90;padding:12px 16px;border-radius:var(--r2);background:var(--card);backdrop-filter:blur(var(--blur));border:1px solid var(--bdr2);display:flex;align-items:center;gap:10px;animation:rise .4s ease;box-shadow:0 8px 30px rgba(0,0,0,.3)}
 .install-banner .ib-text{flex:1;font-size:12px;color:var(--dim)}
@@ -735,6 +741,146 @@ function useSwipeGesture(ref, {onSwipeLeft,onSwipeRight,onSwipeUp,onSwipeDown,th
   },[ref,onSwipeLeft,onSwipeRight,onSwipeUp,onSwipeDown,threshold]);
 }
 
+/* ─── Haptic Feedback ─── */
+const haptic=(ms=12)=>{try{navigator.vibrate?.(ms)}catch(e){}};
+
+/* ─── Long Press Hook ─── */
+function useLongPress(callback,delay=500){
+  const timerRef=useRef();
+  const activeRef=useRef(false);
+  const cbRef=useRef(callback);
+  cbRef.current=callback;
+  const start=useCallback(e=>{
+    activeRef.current=false;
+    timerRef.current=setTimeout(()=>{activeRef.current=true;haptic(20);cbRef.current?.(e)},delay);
+  },[delay]);
+  const cancel=useCallback(()=>{clearTimeout(timerRef.current)},[]);
+  const click=useCallback(e=>{if(activeRef.current){e.preventDefault();e.stopPropagation();activeRef.current=false}},[]);
+  return {onTouchStart:start,onTouchEnd:cancel,onTouchMove:cancel,onClickCapture:click};
+}
+
+/* ─── Animated Value (counter tick-up) ─── */
+function AnimatedValue({value,duration=600,format}){
+  const [display,setDisplay]=useState(value);
+  const prevRef=useRef(value);
+  useEffect(()=>{
+    const from=typeof prevRef.current==='number'?prevRef.current:0;
+    const to=typeof value==='number'?value:0;
+    if(typeof value!=='number'||from===to){setDisplay(value);prevRef.current=value;return}
+    const start=performance.now();
+    const step=t=>{
+      const p=Math.min(1,(t-start)/duration);
+      const ease=1-Math.pow(1-p,3); // ease-out cubic
+      setDisplay(Math.round(from+(to-from)*ease));
+      if(p<1)requestAnimationFrame(step);
+      else{setDisplay(to);prevRef.current=to}
+    };
+    requestAnimationFrame(step);
+    prevRef.current=to;
+  },[value,duration]);
+  return format?format(display):display;
+}
+
+/* ─── Pull to Refresh ─── */
+function PullToRefresh({onRefresh,children}){
+  const [pulling,setPulling]=useState(false);
+  const [refreshing,setRefreshing]=useState(false);
+  const startYRef=useRef(0);
+  const pullRef=useRef(0);
+  const contentRef=useRef();
+
+  const onTouchStart=e=>{
+    if(contentRef.current&&contentRef.current.scrollTop===0){
+      startYRef.current=e.touches[0].clientY;
+    }else{startYRef.current=0}
+  };
+  const onTouchMove=e=>{
+    if(!startYRef.current||refreshing)return;
+    const dy=e.touches[0].clientY-startYRef.current;
+    if(dy>20&&dy<120){setPulling(true);pullRef.current=dy}
+    else if(dy<=0){setPulling(false);pullRef.current=0}
+  };
+  const onTouchEnd=()=>{
+    if(pullRef.current>60&&!refreshing){
+      setRefreshing(true);setPulling(false);
+      haptic(15);
+      Promise.resolve(onRefresh?.()).finally(()=>{setRefreshing(false)});
+    }else{setPulling(false)}
+    pullRef.current=0;startYRef.current=0;
+  };
+
+  return <div ref={contentRef} onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} style={{flex:1,overflow:'auto'}}>
+    <div className={`ptr-indicator ${pulling||refreshing?'pulling':''}`}>
+      {refreshing?<><span className="ptr-spinner"/>Refreshing...</>:pulling?'Pull to refresh...':''}
+    </div>
+    {children}
+  </div>;
+}
+
+/* ─── Touch Sortable List ─── */
+function TouchSortable({items,renderItem,onReorder,keyFn}){
+  const [dragIdx,setDragIdx]=useState(-1);
+  const [overIdx,setOverIdx]=useState(-1);
+  const startYRef=useRef(0);
+  const dragActiveRef=useRef(false);
+  const itemRefs=useRef([]);
+
+  const onTouchStart=(e,idx)=>{
+    startYRef.current=e.touches[0].clientY;
+    dragActiveRef.current=false;
+    // Start drag after 200ms hold
+    const timer=setTimeout(()=>{
+      dragActiveRef.current=true;
+      setDragIdx(idx);
+      haptic(15);
+    },200);
+    e.currentTarget._dragTimer=timer;
+  };
+
+  const onTouchMove=(e,idx)=>{
+    if(!dragActiveRef.current){
+      // Cancel drag if moved too much before hold triggered
+      const dy=Math.abs(e.touches[0].clientY-startYRef.current);
+      if(dy>10)clearTimeout(e.currentTarget._dragTimer);
+      return;
+    }
+    e.preventDefault();
+    // Find which item we're over
+    const y=e.touches[0].clientY;
+    for(let i=0;i<itemRefs.current.length;i++){
+      const el=itemRefs.current[i];
+      if(!el)continue;
+      const rect=el.getBoundingClientRect();
+      if(y>=rect.top&&y<=rect.bottom){setOverIdx(i);break}
+    }
+  };
+
+  const onTouchEnd=(e,idx)=>{
+    clearTimeout(e.currentTarget._dragTimer);
+    if(dragActiveRef.current&&dragIdx>=0&&overIdx>=0&&dragIdx!==overIdx){
+      onReorder?.(dragIdx,overIdx);
+    }
+    setDragIdx(-1);setOverIdx(-1);
+    dragActiveRef.current=false;
+  };
+
+  return <div>{items.map((item,i)=>(
+    <div key={keyFn?keyFn(item,i):i}
+      ref={el=>itemRefs.current[i]=el}
+      onTouchStart={e=>onTouchStart(e,i)}
+      onTouchMove={e=>onTouchMove(e,i)}
+      onTouchEnd={e=>onTouchEnd(e,i)}
+      style={{
+        opacity:dragIdx===i?.5:1,
+        background:overIdx===i&&dragIdx>=0?'rgba(160,124,255,.08)':'transparent',
+        transition:'background .15s,opacity .15s',
+        touchAction:dragIdx>=0?'none':'auto',
+      }}>
+      {renderItem(item,i,dragIdx===i)}
+    </div>
+  ))}</div>;
+}
+
 /* ─── Swipe-to-Delete Item ─── */
 function SwipeItem({children,onDismiss}){
   const ref=useRef();
@@ -769,11 +915,14 @@ function App(){
   const [playlist,setPlaylist]=useState([]);
   const [plSettings,setPlSettings]=useState({});
   const [weekSched,setWeekSched]=useState([]);
+  const [profiles,setProfiles]=useState([]);
   const [guide,setGuide]=useState(false);
   const schedDirtyRef=useRef(false);
   const [theme,setTheme]=useState(()=>{try{return localStorage.getItem('vc_theme')||'dark'}catch(e){return 'dark'}});
   const [installPrompt,setInstallPrompt]=useState(null);
   const [showInstallBanner,setShowInstallBanner]=useState(false);
+  const [isIos]=useState(()=>/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream);
+  const [isStandalone]=useState(()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true);
   const pollRef=useRef();
   const failCountRef=useRef(0);
   const lastFailTimeRef=useRef(0);
@@ -784,6 +933,8 @@ function App(){
       failCountRef.current=0;
       setStatus(st);
       if(st.weeklySchedule&&!schedDirtyRef.current)try{setWeekSched(JSON.parse(st.weeklySchedule))}catch(e){}
+      if(st.profiles)try{setProfiles(JSON.parse(st.profiles))}catch(e){}
+      if(st.pendingChain){doCmd('loadprofile',st.pendingChain,true);toast('Chain: loading '+st.pendingChain,'inf')}
       if(st.playlistSettings)setPlSettings(st.playlistSettings);
     }catch(e){
       if(e.message?.includes('401')||e.message?.includes('expired')){
@@ -855,21 +1006,30 @@ function App(){
     if(meta)meta.content=playing?(theme==='dark'?'#0a1a10':'#e8f5ec'):(theme==='dark'?'#06060c':'#f4f2f8');
   },[playing,theme]);
 
-  // PWA install prompt
+  // PWA install prompt (Chrome/Android) + iOS detection
   useEffect(()=>{
+    // Already installed as standalone — don't show banner
+    if(isStandalone)return;
+    // Chrome/Android: capture the native prompt
     const handler=e=>{e.preventDefault();setInstallPrompt(e);setShowInstallBanner(true)};
     window.addEventListener('beforeinstallprompt',handler);
-    return ()=>window.removeEventListener('beforeinstallprompt',handler);
-  },[]);
+    // iOS: show manual instruction banner after 3 seconds (no native prompt exists)
+    let iosTimer;
+    if(isIos){
+      const dismissed=sessionStorage.getItem('vc_ios_dismiss');
+      if(!dismissed)iosTimer=setTimeout(()=>setShowInstallBanner(true),3000);
+    }
+    return ()=>{window.removeEventListener('beforeinstallprompt',handler);clearTimeout(iosTimer)};
+  },[isIos,isStandalone]);
   const doInstall=async()=>{
-    if(!installPrompt)return;
-    installPrompt.prompt();
-    await installPrompt.userChoice;
-    setInstallPrompt(null);setShowInstallBanner(false);
+    if(installPrompt){installPrompt.prompt();await installPrompt.userChoice;setInstallPrompt(null)}
+    setShowInstallBanner(false);
   };
+  const dismissInstall=()=>{setShowInstallBanner(false);if(isIos)sessionStorage.setItem('vc_ios_dismiss','1')};
 
   const doCmd=async(n,v,silent)=>{
-    try{await cmd(n,v);if(!silent)toast('\u2713 '+n,'ok');setTimeout(poll,300)}catch(e){toast(e.message,'err')}
+    if(!silent)haptic(10);
+    try{const r=await cmd(n,v);if(!silent)toast('\u2713 '+n,'ok');setTimeout(poll,300);return r?.message}catch(e){toast(e.message,'err');return null}
   };
 
   const plOp=async(action,data)=>{
@@ -889,6 +1049,9 @@ function App(){
 
   return <>
     <div id="app-wrap" className="on">
+      {/* Ambient background */}
+      <div className={`ambient ${playing?'ambient-playing':'ambient-idle'}`}/>
+
       {/* Top bar */}
       <div className="topbar">
         <span className="logo">VoidCapture</span>
@@ -915,6 +1078,7 @@ function App(){
           <button key={k} className={tab===k?'active':''} onClick={()=>setTab(k)}><span className="icon">{i}</span>{l}</button>)}
       </div>
 
+      <PullToRefresh onRefresh={()=>poll()}>
       <div className="content">
         {/* ═══ HOME ═══ */}
         <div className={`tab-pane ${tab==='home'?'active':''}`}>
@@ -923,8 +1087,8 @@ function App(){
           <div className="stats-grid">
             <div className="stat-card glass purple"><div className="val">{st.todayTime||'\u2014'}</div><div className="lbl">Today</div></div>
             <div className="stat-card glass blue"><div className="val">{st.totalTime||'\u2014'}</div><div className="lbl">All Time</div></div>
-            <div className="stat-card glass green"><div className="val">{st.todayVideos??'\u2014'}</div><div className="lbl">Videos</div></div>
-            <div className="stat-card glass amber"><div className="val">{st.queueLength??'\u2014'}</div><div className="lbl">Queue</div></div>
+            <div className="stat-card glass green"><div className="val"><AnimatedValue value={st.todayVideos??0}/></div><div className="lbl">Videos</div></div>
+            <div className="stat-card glass amber"><div className="val"><AnimatedValue value={st.queueLength??0}/></div><div className="lbl">Queue</div></div>
           </div>
 
           {/* Now Playing */}
@@ -1200,9 +1364,15 @@ function App(){
             </div>
           </div>
 
+          <ProfilesCard profiles={profiles} doCmd={doCmd} currentOptions={o} plSettings={plSettings}/>
+
           <MarqueeCard marquee={o.marqueeText} doCmd={doCmd}/>
 
           <ScheduleCard weekSched={weekSched} setWeekSched={setWeekSched} doCmd={doCmd} schedDirtyRef={schedDirtyRef}/>
+
+          <IdleChainCard doCmd={doCmd} idleSeconds={st.idleSeconds} chainConfig={st.chainConfig}/>
+
+          <BackupCard doCmd={doCmd}/>
 
           <div className="card glass">
             <div className="card-title"><span className="ci">{'\u21bb'}</span> Reset</div>
@@ -1220,6 +1390,7 @@ function App(){
 
           <QueueCard items={st.queueItems} doCmd={doCmd}/>
           <PlaylistCard playlist={playlist} plOp={plOp} loadPl={loadPl}/>
+          <FoldersCard doCmd={doCmd}/>
 
           <div className="card glass">
             <div className="card-title"><span className="ci">{'\u2699'}</span> Playlist Settings</div>
@@ -1230,17 +1401,26 @@ function App(){
           </div>
         </div>
       </div>
+      </PullToRefresh>
 
       {/* Floating Panic */}
-      <button className="fab-panic" onClick={()=>doCmd('panic')} title="Panic Stop">{'\u26a0'}</button>
+      <button className="fab-panic" onClick={()=>{haptic(50);doCmd('panic')}} title="Panic Stop">{'\u26a0'}</button>
     </div>
 
     {/* PWA Install Banner */}
-    {showInstallBanner&&<div className="install-banner">
-      <span style={{fontSize:24}}>{'\ud83d\udcf1'}</span>
-      <div className="ib-text"><strong>Install VoidCapture</strong>Add to your home screen for instant access</div>
-      <button className="btn btn-p" onClick={doInstall}>Install</button>
-      <button className="btn btn-g" onClick={()=>setShowInstallBanner(false)}>{'\u2715'}</button>
+    {showInstallBanner&&!isStandalone&&<div className="install-banner">
+      <span style={{fontSize:24}}>{isIos?'\u2b06':'\ud83d\udcf1'}</span>
+      <div className="ib-text">
+        {isIos?<>
+          <strong>Install VoidCapture</strong>
+          Tap <span style={{fontWeight:700,color:'var(--iris)'}}>Share</span> <span style={{fontSize:16}}>{'\u2b06'}</span> then <span style={{fontWeight:700,color:'var(--iris)'}}>Add to Home Screen</span>
+        </>:<>
+          <strong>Install VoidCapture</strong>
+          Add to your home screen for instant access
+        </>}
+      </div>
+      {!isIos&&<button className="btn btn-p" onClick={doInstall}>Install</button>}
+      <button className="btn btn-g" onClick={dismissInstall}>{'\u2715'}</button>
     </div>}
 
     {/* Guide */}
@@ -1287,6 +1467,231 @@ function Skeleton({type='text',count=3}){
   if(type==='stats')return <div className="stats-grid">{Array.from({length:4},(_,i)=><div key={i} className="skeleton skel-stat"/>)}</div>;
   if(type==='chart')return <div className="skeleton skel-chart"/>;
   return <>{Array.from({length:count},(_,i)=><div key={i} className="skeleton skel-row"/>)}</>;
+}
+
+/* ─── Session Profiles ─── */
+function ProfilesCard({profiles,doCmd,currentOptions,plSettings}){
+  const [saving,setSaving]=useState(false);
+  const [newName,setNewName]=useState('');
+
+  const saveCurrent=()=>{
+    const name=newName.trim();
+    if(!name){toast('Enter a profile name','err');return}
+    const profile={
+      name,
+      volume:currentOptions.volume??100,
+      speed:currentOptions.speed??1,
+      loop:!!currentOptions.loop,
+      maxTime:currentOptions.maxTime||0,
+      minSession:currentOptions.minSession||0,
+      cursorShow:!!currentOptions.cursorShow,
+      marquee:currentOptions.marqueeText||'',
+      shuffle:!!plSettings?.shuffle,
+      noRepeat:!!plSettings?.noRepeat,
+    };
+    doCmd('saveprofile',JSON.stringify(profile));
+    setSaving(false);setNewName('');
+  };
+
+  return <div className="card glass">
+    <div className="card-title"><span className="ci">{'\ud83d\udcbe'}</span> Session Profiles</div>
+    {(profiles||[]).length>0&&<div style={{marginBottom:10}}>
+      {profiles.map((p,i)=>{
+        const name=p.name||'Unnamed';
+        return <div key={name} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 12px',marginBottom:4,
+          borderRadius:'var(--r)',background:'var(--card2)',border:'1px solid var(--bdr)',transition:'all .2s'}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:600,color:'var(--txt)',marginBottom:2}}>{name}</div>
+            <div style={{fontSize:9,color:'var(--mute)',fontFamily:'var(--mono)'}}>
+              Vol:{p.volume||100} Spd:{p.speed||1}{'\u00d7'} {p.loop?'Loop ':''}
+              {p.shuffle?'Shuffle ':''}{p.maxTime?`Max:${p.maxTime}m `:''}
+              {p.marquee?`"${p.marquee.slice(0,15)}" `:''}
+            </div>
+          </div>
+          <button className="btn btn-p" style={{padding:'5px 12px'}} onClick={()=>{haptic(15);doCmd('loadprofile',name)}}>Load</button>
+          <button className="btn btn-d" style={{padding:'5px 8px',fontSize:10}} onClick={()=>{if(confirm(`Delete "${name}"?`))doCmd('deleteprofile',name)}}>{'\u2715'}</button>
+        </div>;
+      })}
+    </div>}
+    {!profiles?.length&&!saving&&<div style={{color:'var(--mute)',fontSize:12,padding:'8px 0',textAlign:'center'}}>No profiles saved</div>}
+    {saving?<div style={{padding:'10px 0'}}>
+      <input type="text" value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Profile name (e.g. Nightly Deep)" style={{width:'100%',marginBottom:8}} onKeyDown={e=>e.key==='Enter'&&saveCurrent()}/>
+      <div style={{fontSize:9,color:'var(--mute)',marginBottom:8}}>Saves current: volume, speed, loop, shuffle, max time, min session, cursor, marquee</div>
+      <div className="row"><button className="btn btn-p" onClick={saveCurrent}>Save Profile</button><button className="btn btn-g" onClick={()=>{setSaving(false);setNewName('')}}>Cancel</button></div>
+    </div>:
+    <button className="btn btn-g" style={{width:'100%',marginTop:4}} onClick={()=>setSaving(true)}>+ Save Current Settings as Profile</button>}
+  </div>;
+}
+
+/* ─── Backup / Restore ─── */
+function BackupCard({doCmd}){
+  const [restoreData,setRestoreData]=useState('');
+  const [showRestore,setShowRestore]=useState(false);
+  const [exporting,setExporting]=useState(false);
+
+  const doBackup=async()=>{
+    setExporting(true);
+    try{
+      const res=await doCmd('backup',null,true);
+      // The backup data comes back as the result message
+      if(res){
+        try{navigator.clipboard?.writeText(res)}catch(e){}
+        // Also offer as download
+        const blob=new Blob([res],{type:'text/plain'});
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(blob);
+        a.download='voidcapture-backup-'+new Date().toISOString().slice(0,10)+'.vcb';
+        a.click();URL.revokeObjectURL(a.href);
+        toast('Backup downloaded','ok');
+      }
+    }catch(e){toast('Backup failed','err')}
+    setExporting(false);
+  };
+
+  const doRestore=()=>{
+    if(!restoreData.trim()){toast('Paste backup data first','err');return}
+    if(!confirm('Restore will overwrite current data. Continue?'))return;
+    doCmd('restore',restoreData.trim());
+    setShowRestore(false);setRestoreData('');
+  };
+
+  const handleFile=e=>{
+    const file=e.target.files?.[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=()=>setRestoreData(reader.result);
+    reader.readAsText(file);
+  };
+
+  return <div className="card glass">
+    <div className="card-title"><span className="ci">{'\ud83d\udcbe'}</span> Backup & Restore</div>
+    <div className="row" style={{marginBottom:8}}>
+      <button className="btn btn-p" onClick={doBackup} disabled={exporting} style={{flex:1}}>
+        {exporting?'Exporting...':'\u2b07 Export Backup'}
+      </button>
+      <button className="btn btn-g" onClick={()=>setShowRestore(!showRestore)} style={{flex:1}}>
+        {'\u2b06'} Restore Backup
+      </button>
+    </div>
+    {showRestore&&<div style={{padding:'8px 0'}}>
+      <div style={{fontSize:10,color:'var(--mute)',marginBottom:6}}>Upload a .vcb backup file or paste backup data:</div>
+      <input type="file" accept=".vcb,.txt" onChange={handleFile} style={{marginBottom:6,fontSize:10,color:'var(--dim)'}}/>
+      <textarea value={restoreData} onChange={e=>setRestoreData(e.target.value)} rows={3} placeholder="Or paste backup data here..." style={{fontSize:10,fontFamily:'var(--mono)'}}/>
+      <div className="row" style={{marginTop:6}}>
+        <button className="btn btn-p" onClick={doRestore}>Restore Now</button>
+        <button className="btn btn-g" onClick={()=>{setShowRestore(false);setRestoreData('')}}>Cancel</button>
+      </div>
+    </div>}
+    <div style={{fontSize:9,color:'var(--mute)',marginTop:4}}>Exports all settings, profiles, schedules, playlists, analytics. Encrypted with Windows DPAPI.</div>
+  </div>;
+}
+
+/* ─── Idle & Chain Config ─── */
+function IdleChainCard({doCmd,idleSeconds,chainConfig}){
+  const chain=chainConfig?JSON.parse(chainConfig||'{}'):{};
+  const [chainProfile,setChainProfile]=useState(chain.profile||'');
+  const [chainCooldown,setChainCooldown]=useState(chain.cooldownMinutes||5);
+
+  const saveChain=()=>{
+    if(!chainProfile.trim()){doCmd('clearchainconfig');toast('Chain disabled','inf');return}
+    doCmd('setchainconfig',JSON.stringify({profile:chainProfile.trim(),cooldownMinutes:chainCooldown}));
+  };
+
+  return <div className="card glass">
+    <div className="card-title"><span className="ci">{'\u23f1'}</span> Automation</div>
+    <div style={{fontSize:11,color:'var(--dim)',marginBottom:8}}>
+      System idle: <span style={{fontFamily:'var(--mono)',color:'var(--iris)'}}>{idleSeconds!=null?`${Math.floor(idleSeconds/60)}m ${idleSeconds%60}s`:'\u2014'}</span>
+    </div>
+    <div style={{fontSize:10,color:'var(--mute)',marginBottom:12}}>
+      Idle auto-start is configured via the Idle Start setting above. When your system is idle for that duration, a session starts automatically from your playlist.
+    </div>
+    <div style={{borderTop:'1px solid var(--bdr)',paddingTop:10,marginTop:4}}>
+      <div style={{fontSize:11,fontWeight:600,color:'var(--txt)',marginBottom:6}}>Session Chaining</div>
+      <div style={{fontSize:10,color:'var(--mute)',marginBottom:8}}>When a session ends, auto-load a profile after a cooldown.</div>
+      <div style={{display:'flex',gap:6,alignItems:'center',marginBottom:6}}>
+        <input type="text" value={chainProfile} onChange={e=>setChainProfile(e.target.value)} placeholder="Profile name to chain" style={{flex:1,fontSize:11}}/>
+        <input type="number" value={chainCooldown} onChange={e=>setChainCooldown(+e.target.value)} min={1} max={120} style={{width:50,fontSize:11,textAlign:'center'}}/>
+        <span style={{fontSize:9,color:'var(--mute)'}}>min</span>
+      </div>
+      <div className="row">
+        <button className="btn btn-p" onClick={saveChain} style={{fontSize:10}}>Save Chain</button>
+        <button className="btn btn-g" onClick={()=>{setChainProfile('');doCmd('clearchainconfig')}} style={{fontSize:10}}>Clear</button>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ─── Playlist Folders ─── */
+function FoldersCard({doCmd}){
+  const [folders,setFolders]=useState([]);
+  const [creating,setCreating]=useState(false);
+  const [newName,setNewName]=useState('');
+  const [newUrls,setNewUrls]=useState('');
+  const [loaded,setLoaded]=useState(false);
+
+  const loadFolders=async()=>{
+    try{
+      const res=await doCmd('getfolders',null,true);
+      if(res){
+        try{setFolders(JSON.parse(res))}catch(e){setFolders([])}
+      }
+    }catch(e){}
+    setLoaded(true);
+  };
+
+  useEffect(()=>{loadFolders()},[]);
+
+  const saveFolder=()=>{
+    const name=newName.trim();
+    if(!name){toast('Enter a folder name','err');return}
+    const urls=newUrls.split('\n').map(l=>l.trim()).filter(l=>l.startsWith('http'));
+    if(!urls.length){toast('Add at least one URL','err');return}
+    const updated=[...folders.filter(f=>f.name!==name),{name,urls,count:urls.length}];
+    doCmd('savefolders',JSON.stringify(updated),true);
+    setFolders(updated);
+    setCreating(false);setNewName('');setNewUrls('');
+    toast('Folder saved','ok');
+  };
+
+  const deleteFolder=(name)=>{
+    if(!confirm(`Delete folder "${name}"?`))return;
+    const updated=folders.filter(f=>f.name!==name);
+    doCmd('savefolders',JSON.stringify(updated),true);
+    setFolders(updated);
+  };
+
+  const loadFolder=(name)=>{
+    if(!confirm(`Load "${name}" into active playlist? This replaces current playlist.`))return;
+    doCmd('loadfolder',name);
+  };
+
+  return <div className="card glass">
+    <div className="card-title"><span className="ci">{'\ud83d\udcc1'}</span> Playlist Folders</div>
+    {folders.length>0&&<div style={{marginBottom:8}}>
+      {folders.map((f,i)=>(
+        <div key={f.name} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',marginBottom:4,
+          borderRadius:'var(--r)',background:'var(--card2)',border:'1px solid var(--bdr)'}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:12,fontWeight:600,color:'var(--txt)'}}>{f.name}</div>
+            <div style={{fontSize:9,color:'var(--mute)',fontFamily:'var(--mono)'}}>{f.urls?.length||0} URLs</div>
+          </div>
+          <button className="btn btn-p" style={{padding:'4px 10px',fontSize:10}} onClick={()=>loadFolder(f.name)}>Load</button>
+          <button className="btn btn-d" style={{padding:'4px 6px',fontSize:10}} onClick={()=>deleteFolder(f.name)}>{'\u2715'}</button>
+        </div>
+      ))}
+    </div>}
+    {!folders.length&&loaded&&!creating&&<div style={{color:'var(--mute)',fontSize:11,padding:'8px 0',textAlign:'center'}}>No folders saved. Create one to organize playlists.</div>}
+    {creating?<div style={{padding:'8px 0'}}>
+      <input type="text" value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Folder name (e.g. Favorites, Weekend Mix)" style={{marginBottom:6}}/>
+      <textarea value={newUrls} onChange={e=>setNewUrls(e.target.value)} rows={5} placeholder="Paste URLs, one per line..." style={{fontSize:10,fontFamily:'var(--mono)'}}/>
+      <div style={{fontSize:9,color:'var(--mute)',margin:'4px 0'}}>{newUrls.split('\n').filter(l=>l.trim().startsWith('http')).length} valid URLs</div>
+      <div className="row">
+        <button className="btn btn-p" onClick={saveFolder}>Save Folder</button>
+        <button className="btn btn-g" onClick={()=>{setCreating(false);setNewName('');setNewUrls('')}}>Cancel</button>
+      </div>
+    </div>:
+    <button className="btn btn-g" style={{width:'100%',marginTop:4}} onClick={()=>setCreating(true)}>+ Create Folder</button>}
+  </div>;
 }
 
 /* ─── Goals Card ─── */
@@ -1383,10 +1788,19 @@ function PlaylistCard({playlist,plOp,loadPl}){
   const [bulkText,setBulkText]=useState('');
   const [sel,setSel]=useState(new Set());
   const [addUrl,setAddUrl]=useState('');
+  const [ctxMenu,setCtxMenu]=useState(null); // {index, x, y}
 
   const toggleSel=i=>{const n=new Set(sel);n.has(i)?n.delete(i):n.add(i);setSel(n)};
   const bulkDel=()=>{if(!sel.size)return;if(!confirm(`Delete ${sel.size} items?`))return;plOp('bulkremove',{indices:[...sel].sort((a,b)=>b-a)});setSel(new Set())};
   const bulkAdd=()=>{const lines=bulkText.split('\n').map(l=>l.trim()).filter(l=>l);if(!lines.length){toast('Paste URLs first','err');return}plOp('bulkappend',{entries:lines});setBulk(false);setBulkText('')};
+
+  // Close context menu on outside tap
+  useEffect(()=>{
+    if(!ctxMenu)return;
+    const close=()=>setCtxMenu(null);
+    document.addEventListener('touchstart',close);document.addEventListener('click',close);
+    return ()=>{document.removeEventListener('touchstart',close);document.removeEventListener('click',close)};
+  },[ctxMenu]);
 
   return <div className="card glass">
     <div className="card-title"><span className="ci">{'\u2261'}</span> Playlist <span style={{color:'var(--mute)',fontWeight:400,fontSize:11,marginLeft:4}}>{playlist.length} items</span></div>
@@ -1401,22 +1815,49 @@ function PlaylistCard({playlist,plOp,loadPl}){
       <div className="row" style={{marginTop:4}}><span style={{color:'var(--mute)',fontSize:10}}>{bulkText.split('\n').filter(l=>l.trim()).length} URLs</span><button className="btn btn-p" onClick={bulkAdd}>Add All</button><button className="btn btn-g" onClick={()=>{setBulk(false);setBulkText('')}}>Cancel</button></div>
     </div>}
     <div style={{maxHeight:320,overflowY:'auto'}}>
-      {playlist.map((e,i)=>{
-        const isDir=e.startsWith('#');
-        return <div key={i} className="pl-item">
-          <input type="checkbox" checked={sel.has(i)} onChange={()=>toggleSel(i)} style={{accentColor:'var(--iris)'}}/>
-          <span className="pl-num">{i+1}</span>
-          <span className={`pl-url${isDir?' dir':''}`} title={e}>{trunc(e,50)}</span>
-          <span className="pl-actions">
-            <button className="btn btn-g" style={{padding:'1px 4px',fontSize:9}} onClick={()=>plOp('moveup',{index:i})}>{'\u2191'}</button>
-            <button className="btn btn-g" style={{padding:'1px 4px',fontSize:9}} onClick={()=>plOp('movedown',{index:i})}>{'\u2193'}</button>
-            <button className="btn btn-d" style={{padding:'1px 4px',fontSize:9}} onClick={()=>{if(confirm(`Remove #${i+1}?`))plOp('remove',{index:i})}}>{'\u2715'}</button>
-          </span>
-        </div>;
-      })}
-      {!playlist.length&&<div style={{color:'var(--dim)',fontSize:11,padding:6}}>Empty \u2014 add URLs below.</div>}
+      <TouchSortable
+        items={playlist}
+        keyFn={(e,i)=>i+'-'+e.slice(0,20)}
+        onReorder={(from,to)=>plOp('moveto',{from,to})}
+        renderItem={(e,i,dragging)=>{
+          const isDir=e.startsWith('#');
+          return <PlaylistItem url={e} index={i} isDir={isDir} selected={sel.has(i)}
+            onToggle={()=>toggleSel(i)} onLongPress={(ev)=>{
+              const rect=ev?.target?.getBoundingClientRect?.();
+              setCtxMenu({index:i,url:e,x:rect?rect.left:100,y:rect?rect.bottom:100});
+            }}
+            onMoveUp={()=>plOp('moveup',{index:i})} onMoveDown={()=>plOp('movedown',{index:i})}
+            onRemove={()=>{if(confirm(`Remove #${i+1}?`))plOp('remove',{index:i})}}
+            dragging={dragging}/>;
+        }}/>
+      {!playlist.length&&<div style={{color:'var(--dim)',fontSize:11,padding:6}}>Empty {'\u2014'} add URLs below.</div>}
     </div>
+    {/* Context menu */}
+    {ctxMenu&&<div style={{position:'fixed',zIndex:999,left:Math.min(ctxMenu.x,window.innerWidth-180),top:Math.min(ctxMenu.y,window.innerHeight-200),
+      background:'var(--card)',border:'1px solid var(--bdr2)',borderRadius:'var(--r)',padding:4,minWidth:160,
+      backdropFilter:'blur(16px)',boxShadow:'0 8px 30px rgba(0,0,0,.4)',animation:'rise .2s ease'}}
+      onClick={e=>e.stopPropagation()}>
+      <div style={{padding:'6px 12px',fontSize:11,color:'var(--mute)',fontFamily:'var(--mono)',borderBottom:'1px solid var(--bdr)',marginBottom:2}}>#{ctxMenu.index+1}</div>
+      <button className="btn btn-g" style={{width:'100%',justifyContent:'flex-start',borderRadius:4,marginBottom:2}} onClick={()=>{plOp('moveto',{from:ctxMenu.index,to:0});setCtxMenu(null)}}>Move to top</button>
+      <button className="btn btn-g" style={{width:'100%',justifyContent:'flex-start',borderRadius:4,marginBottom:2}} onClick={()=>{plOp('moveto',{from:ctxMenu.index,to:playlist.length-1});setCtxMenu(null)}}>Move to bottom</button>
+      <button className="btn btn-g" style={{width:'100%',justifyContent:'flex-start',borderRadius:4,marginBottom:2}} onClick={()=>{try{navigator.clipboard?.writeText(ctxMenu.url)}catch(e){}toast('URL copied','ok');setCtxMenu(null)}}>Copy URL</button>
+      <button className="btn btn-d" style={{width:'100%',justifyContent:'flex-start',borderRadius:4}} onClick={()=>{if(confirm(`Remove #${ctxMenu.index+1}?`))plOp('remove',{index:ctxMenu.index});setCtxMenu(null)}}>Delete</button>
+    </div>}
     <div className="row" style={{marginTop:10}}><input type="text" value={addUrl} onChange={e=>setAddUrl(e.target.value)} placeholder="https://\u2026" style={{flex:1}} onKeyDown={e=>e.key==='Enter'&&(()=>{if(!addUrl.trim())return;plOp('append',{entry:addUrl.trim()});setAddUrl('')})()}/><button className="btn btn-s" onClick={()=>{if(!addUrl.trim())return;plOp('append',{entry:addUrl.trim()});setAddUrl('')}}>+ Append</button><button className="btn btn-b" onClick={()=>{if(!addUrl.trim())return;plOp('prepend',{entry:addUrl.trim()});setAddUrl('')}}>+ Prepend</button></div>
+  </div>;
+}
+
+function PlaylistItem({url,index,isDir,selected,onToggle,onLongPress,onMoveUp,onMoveDown,onRemove,dragging}){
+  const lp=useLongPress(onLongPress,400);
+  return <div className="pl-item" style={{opacity:dragging?.5:1}} {...lp}>
+    <input type="checkbox" checked={selected} onChange={onToggle} style={{accentColor:'var(--iris)'}}/>
+    <span className="pl-num">{index+1}</span>
+    <span className={`pl-url${isDir?' dir':''}`} title={url}>{trunc(url,50)}</span>
+    <span className="pl-actions">
+      <button className="btn btn-g" style={{padding:'1px 4px',fontSize:9}} onClick={onMoveUp}>{'\u2191'}</button>
+      <button className="btn btn-g" style={{padding:'1px 4px',fontSize:9}} onClick={onMoveDown}>{'\u2193'}</button>
+      <button className="btn btn-d" style={{padding:'1px 4px',fontSize:9}} onClick={onRemove}>{'\u2715'}</button>
+    </span>
   </div>;
 }
 

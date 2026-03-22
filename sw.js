@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vc-v9.1';
+const CACHE_NAME = 'vc-v10.1';
 const SHELL_ASSETS = [
   './',
   './index.html',
