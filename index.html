@@ -10,350 +10,254 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>VoidCapture</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
+
+/* ═══ v14.1 DESIGN SYSTEM ═══ */
 :root{
---bg:#06060c;--bg2:#0a0a14;--card:rgba(14,12,28,.72);--card2:rgba(20,16,38,.6);
---bdr:rgba(130,90,255,.1);--bdr2:rgba(130,90,255,.22);--bdrH:rgba(130,90,255,.35);
---txt:#ede8f6;--txt2:#c8c0e0;--dim:#7a7498;--mute:#4e4968;
---iris:#a07cff;--v1:#7c5cfc;--v2:#6346e0;--v3:#4e30c4;--glow:rgba(140,100,255,.3);--glowS:rgba(140,100,255,.12);
---red:#ff3d5a;--grn:#3de8a0;--amb:#ffb740;--sky:#40b0ff;
---mono:'JetBrains Mono',monospace;--sans:'Sora',sans-serif;
---r:10px;--r2:14px;--r3:20px;--blur:24px;
+/* Backgrounds */
+--bg:#09090b;--bg2:#0c0c0e;--card:#111113;--card2:#161618;
+/* Borders */
+--bdr:rgba(255,255,255,.06);--bdr2:rgba(255,255,255,.1);--bdrH:rgba(139,92,246,.3);
+/* Text */
+--txt:#e4e4e7;--txt2:#a1a1aa;--dim:#71717a;--mute:#52525b;
+/* Accent - single refined violet */
+--iris:#8b5cf6;--v1:#7c3aed;--v2:#6d28d9;--v3:#5b21b6;
+/* Semantic */
+--red:#ef4444;--grn:#22c55e;--amb:#f59e0b;--sky:#3b82f6;
+/* Typography */
+--sans:'Inter',system-ui,-apple-system,sans-serif;--mono:'JetBrains Mono',monospace;
+/* Radii */
+--r:6px;--r2:8px;--r3:12px;
 }
-html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--txt);overflow:hidden;-webkit-font-smoothing:antialiased}
 
-/* Animated BG */
-body::before{content:'';position:fixed;inset:0;background:
-  radial-gradient(ellipse 60% 50% at 20% 10%,rgba(100,70,220,.06),transparent),
-  radial-gradient(ellipse 50% 60% at 80% 90%,rgba(60,40,180,.04),transparent),
-  radial-gradient(circle at 50% 50%,rgba(80,50,200,.02),transparent 70%);
-  pointer-events:none;z-index:0}
+html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--txt);overflow:hidden;-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5}
 
-/* Glass */
-.glass{background:var(--card);backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur));border:1px solid var(--bdr);border-radius:var(--r2);transition:border-color .3s,box-shadow .3s}
-.glass:hover{border-color:var(--bdr2);box-shadow:0 0 40px var(--glowS)}
+/* ═══ REDUCED MOTION ═══ */
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important}}
 
-/* Login */
-#login-wrap{display:flex;align-items:center;justify-content:center;height:100vh;padding:20px;position:relative;z-index:1}
-.login-card{padding:44px 40px;max-width:400px;width:100%;box-shadow:0 0 80px rgba(100,60,255,.06),0 24px 48px rgba(0,0,0,.5);animation:rise .7s cubic-bezier(.16,1,.3,1)}
-.login-card h1{font-size:32px;font-weight:700;background:linear-gradient(135deg,#fff 10%,var(--iris) 90%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;letter-spacing:-.8px}
-.login-card .tag{text-align:center;font-size:11px;color:var(--mute);font-family:var(--mono);letter-spacing:.15em;text-transform:uppercase;margin:4px 0 32px}
-.field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
-.field label{font-size:10px;color:var(--dim);font-weight:500;text-transform:uppercase;letter-spacing:.1em}
-.field input{background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;font-family:var(--mono);font-size:14px;color:var(--txt);outline:none;transition:all .3s}
-.field input:focus{border-color:var(--iris);box-shadow:0 0 24px var(--glowS),inset 0 0 12px rgba(140,100,255,.04)}
-.btn-primary{width:100%;padding:14px;border:none;border-radius:var(--r);background:linear-gradient(135deg,var(--v2),var(--iris));color:#fff;font-family:var(--sans);font-size:15px;font-weight:600;cursor:pointer;transition:all .3s;margin-top:8px}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px var(--glow)}
-.btn-primary:active{transform:translateY(0)}.btn-primary:disabled{opacity:.45;cursor:default;transform:none}
-.login-err{color:var(--red);font-size:12px;text-align:center;min-height:20px;margin-top:8px;opacity:0;transition:opacity .3s}.login-err.show{opacity:1}
-.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:sp .5s linear infinite}
+/* ═══ FOCUS ═══ */
+:focus-visible{outline:2px solid var(--iris);outline-offset:2px;border-radius:var(--r)}
 
-/* App */
-#app-wrap{display:none;height:100vh;flex-direction:column;position:relative;z-index:1}
+/* ═══ LAYOUT ═══ */
+#app-wrap{display:none;height:100vh;flex-direction:column;position:relative}
 #app-wrap.on{display:flex}
+.top-bar{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--bdr);background:var(--card);min-height:48px;gap:8px}
+.top-bar .logo{font-size:15px;font-weight:700;letter-spacing:-.02em}
+.top-actions{display:flex;gap:6px;margin-left:auto;align-items:center}
+.content{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
 
-/* Top bar */
-.topbar{display:flex;align-items:center;height:54px;padding:0 16px;background:var(--card);backdrop-filter:blur(var(--blur));border-bottom:1px solid var(--bdr);flex-shrink:0;z-index:10}
-.topbar .logo{font-size:15px;font-weight:700;background:linear-gradient(135deg,#fff,var(--iris));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.3px}
-.pill{display:inline-flex;align-items:center;gap:5px;margin-left:10px;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;font-family:var(--mono);letter-spacing:.06em;transition:all .4s}
-.pill.live{background:rgba(61,232,160,.08);color:var(--grn);box-shadow:0 0 14px rgba(61,232,160,.12)}
-.pill.idle{background:rgba(255,255,255,.03);color:var(--mute)}
-.pill .dot{width:6px;height:6px;border-radius:50%;transition:all .4s}
-.pill.live .dot{background:var(--grn);box-shadow:0 0 8px var(--grn)}
-.pill.idle .dot{background:var(--mute)}
-.tz{font-size:9px;color:var(--mute);font-family:var(--mono);margin-left:auto;padding:0 10px}
-.top-actions{display:flex;gap:5px;margin-left:auto}
-.tbtn{background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:8px;color:var(--dim);padding:5px 11px;font-size:12px;cursor:pointer;transition:all .25s;font-family:var(--sans);font-weight:500}
-.tbtn:hover{background:rgba(255,255,255,.08);color:var(--txt);border-color:var(--bdr2)}
-.tbtn.danger{color:var(--red);border-color:rgba(255,61,90,.15)}.tbtn.danger:hover{background:rgba(255,61,90,.08);box-shadow:0 0 16px rgba(255,61,90,.1)}
-
-/* Nav tabs */
-.nav-bar{display:flex;border-bottom:1px solid var(--bdr);background:rgba(10,10,20,.5);backdrop-filter:blur(12px);padding:0 12px;flex-shrink:0}
-.nav-item{padding:11px 18px;font-size:12px;font-weight:500;color:var(--mute);cursor:pointer;border-bottom:2px solid transparent;transition:all .25s;letter-spacing:.02em}
-.nav-item:hover{color:var(--dim)}
+/* ═══ NAVIGATION ═══ */
+.nav-bar{display:flex;border-bottom:1px solid var(--bdr);background:var(--card);padding:0 16px;gap:4px}
+.nav-item{padding:12px 16px;font-size:13px;font-weight:500;color:var(--mute);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s;min-height:44px;display:flex;align-items:center}
+.nav-item:hover{color:var(--txt2)}
 .nav-item.active{color:var(--iris);border-color:var(--iris)}
-.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;z-index:50;background:var(--card);backdrop-filter:blur(var(--blur));border-top:1px solid var(--bdr);padding:6px 0 max(6px,env(safe-area-inset-bottom))}
-.mob-nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px;font-size:9px;color:var(--mute);cursor:pointer;transition:all .2s;background:none;border:none;font-family:var(--sans)}
-.mob-nav button.active{color:var(--iris)}
-.mob-nav button .icon{font-size:17px}
+.mob-nav{display:none}
 
-/* Scrollable content */
-.content{flex:1;overflow-y:auto;padding:16px 20px 90px;position:relative}
-.content::-webkit-scrollbar{width:3px}.content::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:4px}
-.tab-pane{display:none;opacity:0;transform:translateY(8px);transition:opacity .3s ease,transform .3s ease}
-.tab-pane.active{display:block;opacity:1;transform:none;animation:tabIn .4s cubic-bezier(.16,1,.3,1)}
-/* Cards */
-.card{padding:18px;margin-bottom:14px}
-.card-title{font-size:13px;font-weight:600;color:var(--iris);margin-bottom:12px;display:flex;align-items:center;gap:7px;letter-spacing:-.2px}
-.card-title .ci{font-size:15px;opacity:.6}
+@media(max-width:640px){
+  .nav-bar{display:none}
+  .mob-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--card);border-top:1px solid var(--bdr);padding:4px 0;justify-content:space-around}
+  .mob-nav button{background:none;border:none;color:var(--mute);font-size:10px;padding:8px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:44px;min-width:44px}
+  .mob-nav button .icon{font-size:18px}
+  .mob-nav button.active{color:var(--iris)}
+  .content{padding-bottom:72px}
+}
 
-/* Stat grid */
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
-.stat-card{text-align:center;padding:14px 8px;position:relative;overflow:hidden}
-.stat-card::before{content:'';position:absolute;top:0;left:25%;right:25%;height:1px;background:var(--accent,var(--iris));box-shadow:0 0 12px var(--accent,var(--iris));opacity:.4}
-.stat-card .val{font-family:var(--mono);font-size:20px;font-weight:700;margin-bottom:1px}
-.stat-card .lbl{font-size:9px;color:var(--mute);text-transform:uppercase;letter-spacing:.12em}
-.stat-card.purple{--accent:var(--iris)}.stat-card.green{--accent:var(--grn)}.stat-card.red{--accent:var(--red)}.stat-card.blue{--accent:var(--sky)}.stat-card.amber{--accent:var(--amb)}
+/* ═══ CARDS ═══ */
+.card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r3);padding:16px;margin-bottom:12px;transition:border-color .15s}
+.card:hover{border-color:var(--bdr2)}
+.card-title{font-size:13px;font-weight:600;color:var(--txt2);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.card-title .ci{font-size:14px;color:var(--iris)}
 
-/* Progress ring */
-.ring-wrap{display:flex;align-items:center;justify-content:center;padding:16px 0}
-.ring-container{position:relative;width:160px;height:160px}
-.ring-container svg{width:100%;height:100%;transform:rotate(-90deg)}
-.ring-bg{fill:none;stroke:rgba(255,255,255,.04);stroke-width:6}
-.ring-fill{fill:none;stroke:url(#ringGrad);stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .8s ease}
-.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
-.ring-time{font-family:var(--mono);font-size:24px;font-weight:700}
-.ring-label{font-size:10px;color:var(--dim);margin-top:2px}
-.ring-url{font-size:9px;color:var(--mute);font-family:var(--mono);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:6px}
-.ring-pulse{position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--iris);opacity:0;animation:ringPulse 2.5s infinite}
-@keyframes ringPulse{0%{opacity:.3;transform:scale(.98)}50%{opacity:0;transform:scale(1.04)}100%{opacity:0;transform:scale(1.04)}}
+/* ═══ STAT CARDS ═══ */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.stat-card{background:var(--card2);border:1px solid var(--bdr);border-radius:var(--r2);padding:12px;text-align:center}
+.stat-card .val{font-family:var(--mono);font-size:20px;font-weight:700;margin-bottom:2px}
+.stat-card .lbl{font-size:10px;font-weight:500;color:var(--mute);text-transform:uppercase;letter-spacing:.05em}
+.stat-card.purple .val{color:var(--iris)}.stat-card.blue .val{color:var(--sky)}.stat-card.green .val{color:var(--grn)}.stat-card.amber .val{color:var(--amb)}
+@media(max-width:480px){.stats-grid{grid-template-columns:1fr 1fr}}
 
-/* Sliders */
-.slider-row{display:grid;grid-template-columns:50px 1fr 46px;align-items:center;gap:8px;margin-bottom:8px}
-.slider-row .label{font-size:11px;color:var(--dim);font-weight:500}
-.slider-row .val{font-size:12px;color:var(--iris);font-family:var(--mono);text-align:right}
-input[type=range]{-webkit-appearance:none;width:100%;height:5px;background:rgba(255,255,255,.05);border-radius:5px;outline:none;cursor:pointer;transition:background .2s}
-input[type=range]:hover{background:rgba(255,255,255,.08)}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--iris);box-shadow:0 0 14px var(--glow);cursor:pointer;transition:all .2s}
-input[type=range]::-webkit-slider-thumb:hover{box-shadow:0 0 24px var(--glow);transform:scale(1.1)}
-input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--iris);box-shadow:0 0 14px var(--glow);border:none;cursor:pointer}
+/* ═══ BUTTONS ═══ */
+.btn{border:none;border-radius:var(--r);padding:8px 14px;font-size:12px;font-weight:500;font-family:var(--sans);cursor:pointer;transition:all .15s;min-height:36px;display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.btn-p{background:var(--iris);color:#fff}.btn-p:hover{background:var(--v1)}
+.btn-s{background:var(--card2);color:var(--iris);border:1px solid var(--iris)}.btn-s:hover{background:rgba(139,92,246,.1)}
+.btn-g{background:transparent;color:var(--txt2);border:1px solid var(--bdr2)}.btn-g:hover{border-color:var(--bdrH);color:var(--txt)}
+.btn-d{background:transparent;color:var(--red);border:1px solid rgba(239,68,68,.2)}.btn-d:hover{background:rgba(239,68,68,.06)}
+.btn-b{background:var(--card2);color:var(--sky);border:1px solid rgba(59,130,246,.2)}
+.tbtn{background:transparent;border:1px solid var(--bdr);border-radius:var(--r);padding:6px 10px;font-size:11px;color:var(--dim);cursor:pointer;font-family:var(--sans);min-height:32px}
+.tbtn:hover{border-color:var(--bdr2);color:var(--txt2)}
+.tbtn.danger{color:var(--red);border-color:rgba(239,68,68,.2)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 
-/* Remote buttons */
-.remote{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
-.remote .rbtn{padding:16px 8px;border:1px solid var(--bdr);border-radius:var(--r2);background:var(--card2);color:var(--txt2);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:all .3s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px}
-.remote .rbtn:hover{border-color:var(--bdr2);transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.3)}
-.remote .rbtn:active{transform:translateY(0)}
-.remote .rbtn .ri{font-size:22px}
-.remote .rbtn.accent{background:linear-gradient(135deg,rgba(255,61,90,.1),rgba(255,61,90,.05));border-color:rgba(255,61,90,.2);color:var(--red)}
-.remote .rbtn.accent:hover{box-shadow:0 0 24px rgba(255,61,90,.12)}
+/* ═══ INPUTS ═══ */
+input[type=text],input[type=number],textarea,select{background:var(--bg);border:1px solid var(--bdr2);border-radius:var(--r);padding:10px 12px;font-family:var(--mono);font-size:13px;color:var(--txt);outline:none;transition:border-color .15s;width:100%;min-height:40px}
+input:focus,textarea:focus,select:focus{border-color:var(--iris)}
+textarea{resize:vertical;min-height:80px}
 
-/* Toggle */
-.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.03)}
-.toggle-row:last-child{border-bottom:none}
-.toggle-label{font-size:12px;color:var(--dim)}
-.switch{position:relative;width:42px;height:22px;flex-shrink:0}
+/* ═══ TOGGLE ═══ */
+.toggle-row{display:flex;align-items:center;padding:8px 0;gap:10px}
+.toggle-label{flex:1;font-size:13px;color:var(--txt2)}
+.switch{position:relative;width:40px;height:22px;cursor:pointer}
 .switch input{opacity:0;width:0;height:0}
-.switch span{position:absolute;inset:0;background:rgba(255,255,255,.06);border-radius:22px;cursor:pointer;transition:all .3s;border:1px solid var(--bdr)}
-.switch span::after{content:'';position:absolute;left:2px;top:2px;width:16px;height:16px;background:#444;border-radius:50%;transition:all .3s}
-.switch input:checked+span{background:rgba(160,124,255,.15);border-color:var(--iris);box-shadow:0 0 12px var(--glowS)}
-.switch input:checked+span::after{transform:translateX(20px);background:var(--iris);box-shadow:0 0 8px var(--iris)}
+.switch span{position:absolute;inset:0;background:var(--card2);border:1px solid var(--bdr2);border-radius:11px;transition:all .2s}
+.switch span::after{content:'';position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--mute);transition:all .2s}
+.switch input:checked+span{background:rgba(139,92,246,.15);border-color:var(--iris)}
+.switch input:checked+span::after{transform:translateX(18px);background:var(--iris)}
 
-/* Buttons */
-.btn{border:none;border-radius:8px;padding:7px 14px;font-family:var(--sans);font-size:11px;font-weight:500;cursor:pointer;transition:all .25s;display:inline-flex;align-items:center;gap:4px}
-.btn:hover{transform:translateY(-1px)}.btn:active{transform:translateY(0)}
-.btn-g{background:rgba(255,255,255,.05);color:var(--dim);border:1px solid var(--bdr)}.btn-g:hover{background:rgba(255,255,255,.08);color:var(--txt)}
-.btn-p{background:linear-gradient(135deg,var(--v2),var(--iris));color:#fff}.btn-p:hover{box-shadow:0 4px 20px var(--glow)}
-.btn-d{background:rgba(255,61,90,.06);color:var(--red);border:1px solid rgba(255,61,90,.12)}.btn-d:hover{background:rgba(255,61,90,.12)}
-.btn-s{background:rgba(61,232,160,.06);color:var(--grn);border:1px solid rgba(61,232,160,.12)}.btn-s:hover{background:rgba(61,232,160,.12)}
-.btn-b{background:rgba(64,176,255,.06);color:var(--sky);border:1px solid rgba(64,176,255,.12)}.btn-b:hover{background:rgba(64,176,255,.12)}
+/* ═══ SLIDER ═══ */
+.slider-row{display:flex;align-items:center;gap:10px;padding:6px 0}
+.slider-row .label{font-size:12px;color:var(--txt2);min-width:60px}
+.slider-row .val{font-size:12px;color:var(--iris);font-family:var(--mono);min-width:40px;text-align:right}
+input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:rgba(255,255,255,.08);outline:none;flex:1}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--iris);cursor:pointer;border:none}
 
-/* Inputs */
-input[type=text],input[type=number],input[type=password],textarea,select{background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:var(--r);padding:8px 12px;font-family:var(--mono);font-size:12px;color:var(--txt);outline:none;transition:all .25s}
-input:focus,textarea:focus,select:focus{border-color:var(--iris);box-shadow:0 0 18px var(--glowS)}
-textarea{width:100%;resize:vertical;min-height:60px}
+/* ═══ NUM ROW ═══ */
+.num-row{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px}
+.num-row .info{flex:1;color:var(--txt2)}.num-row .info strong{display:block;margin-bottom:1px}
+.num-row input[type=number]{width:60px;min-height:32px;padding:4px 8px;text-align:center}
 
-/* Number row */
-.num-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap}
-.num-row input[type=number]{width:65px;text-align:center}
-.num-row .info{flex:1;min-width:100px;font-size:11px;color:var(--dim)}.num-row .info strong{display:block;color:var(--txt2);font-size:12px;margin-bottom:1px}
+/* ═══ PROGRESS RING ═══ */
+.ring-container{display:flex;justify-content:center;padding:20px 0;touch-action:none}
+.ring-container svg{filter:none}
 
-/* Marquee preview */
-.mq-preview{background:rgba(255,255,255,.02);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 14px;font-family:var(--mono);font-size:12px;color:var(--mute);min-height:38px;word-break:break-all;transition:all .3s;margin-bottom:10px}
-.mq-preview.on{color:var(--txt);border-color:var(--bdr2);box-shadow:0 0 16px var(--glowS)}
+/* ═══ LOGIN ═══ */
+.login-wrap{height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{width:100%;max-width:360px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r3);padding:32px;border-top:2px solid var(--iris)}
+.login-card h2{font-size:20px;font-weight:700;margin-bottom:4px;letter-spacing:-.02em}
+.login-card .tag{text-align:center;font-size:11px;color:var(--mute);font-family:var(--mono);letter-spacing:.15em;text-transform:uppercase;margin:4px 0 24px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.field input{min-height:44px;font-size:14px}
 
-/* Weekly grid */
-/* Schedule entry cards */
-.sched-entry{display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:8px;border-radius:var(--r2);background:var(--card2);border:1px solid var(--bdr);transition:all .3s}
-.sched-entry:hover{border-color:var(--bdr2);box-shadow:0 0 20px var(--glowS)}
-.sched-entry .se-time{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--iris);min-width:70px;text-shadow:0 0 20px var(--glowS)}
-.sched-entry .se-days{display:flex;gap:4px;flex-wrap:wrap;flex:1}
-.sched-entry .se-day{font-size:10px;font-weight:600;padding:3px 8px;border-radius:12px;background:rgba(160,124,255,.12);color:var(--iris);letter-spacing:.04em;text-transform:uppercase;border:1px solid rgba(160,124,255,.2)}
-.sched-entry .se-urls{font-size:9px;color:var(--dim);font-family:var(--mono)}
-.sched-entry .se-actions{display:flex;gap:4px;flex-shrink:0}
-.sched-add-btn{width:100%;padding:14px;border:1px dashed var(--bdr2);border-radius:var(--r2);background:transparent;color:var(--dim);font-family:var(--sans);font-size:13px;cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center;gap:6px}
-.sched-add-btn:hover{border-color:var(--iris);color:var(--iris);background:rgba(160,124,255,.04)}
+/* ═══ TOAST ═══ */
+.toast-wrap{position:fixed;top:12px;right:12px;z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.toast{padding:10px 14px;border-radius:var(--r2);font-size:12px;font-weight:500;pointer-events:auto;animation:fadeIn .2s ease;border:1px solid var(--bdr)}
+.toast.ok{background:rgba(34,197,94,.08);color:var(--grn);border-color:rgba(34,197,94,.15)}
+.toast.err{background:rgba(239,68,68,.08);color:var(--red);border-color:rgba(239,68,68,.15)}
+.toast.inf{background:var(--card);color:var(--txt2)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+@keyframes fadeOut{from{opacity:1}to{opacity:0;transform:translateY(-8px)}}
 
-/* Schedule editor (inline) */
-.sched-editor{padding:16px;margin:8px 0;border-radius:var(--r2);background:rgba(160,124,255,.04);border:1px solid var(--bdr2)}
-.day-pills{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
-.day-pill{padding:8px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;transition:all .25s;border:1px solid var(--bdr);background:rgba(255,255,255,.03);color:var(--mute);letter-spacing:.04em;user-select:none}
-.day-pill:hover{border-color:var(--bdr2);color:var(--dim)}
-.day-pill.on{background:rgba(160,124,255,.2);border-color:var(--iris);color:var(--iris);box-shadow:0 0 12px var(--glowS)}
-
-/* Time picker (select dropdowns) */
-.time-picker{display:flex;align-items:center;justify-content:center;gap:6px;margin:16px 0;padding:16px;background:rgba(255,255,255,.02);border-radius:var(--r2);border:1px solid var(--bdr)}
-.tp-select{background:var(--card2);border:1px solid var(--bdr2);border-radius:var(--r);color:var(--txt);font-family:var(--mono);font-size:22px;font-weight:700;padding:10px 14px;cursor:pointer;outline:none;text-align:center;min-width:70px;appearance:none;-webkit-appearance:none;transition:all .25s}
-.tp-select:hover{border-color:var(--iris);box-shadow:0 0 16px var(--glowS)}
-.tp-select:focus{border-color:var(--iris);box-shadow:0 0 20px var(--glowS)}
-.tp-sep{font-family:var(--mono);font-size:28px;font-weight:700;color:var(--iris);padding:0 2px}
-.tp-ampm{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--dim);padding:4px 10px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid var(--bdr);min-width:36px;text-align:center}
-
-/* Chart container */
-.chart-wrap{position:relative;height:140px;margin:4px 0}
-.chart-wrap canvas{width:100%!important}
-
-/* Heatmap */
-.heatmap{display:grid;grid-template-columns:30px repeat(24,1fr);gap:1px;margin:8px 0}
-.hm-label{font-size:8px;color:var(--mute);font-family:var(--mono);display:flex;align-items:center}
-.hm-cell{aspect-ratio:1.2;border-radius:2px;min-height:10px;transition:all .2s}
-.hm-hour{font-size:7px;color:var(--mute);font-family:var(--mono);text-align:center}
-
-/* Playlist items */
-.pl-item{display:flex;align-items:center;gap:5px;padding:5px 6px;border-bottom:1px solid rgba(255,255,255,.02);font-size:11px;transition:background .2s}
-.pl-item:hover{background:rgba(255,255,255,.02)}
-.pl-num{color:var(--mute);font-family:var(--mono);font-size:9px;min-width:20px;text-align:right}
-.pl-url{color:var(--dim);font-family:var(--mono);font-size:10px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pl-url.dir{color:var(--iris)}
-.pl-actions{display:flex;gap:2px;flex-shrink:0}
-
-/* Queue */
-.q-item{display:flex;align-items:center;gap:6px;padding:5px 6px;border-bottom:1px solid rgba(255,255,255,.02);font-size:11px;list-style:none}
-.q-num{color:var(--mute);font-family:var(--mono);font-size:9px;min-width:16px}
-.q-url{color:var(--dim);font-family:var(--mono);font-size:10px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.q-rm{color:var(--red);cursor:pointer;font-size:13px;padding:2px}
-
-/* History */
-.hist-item{display:flex;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.015);font-size:10px}
-.hist-time{color:var(--mute);font-family:var(--mono);font-size:9px;flex-shrink:0}
-.hist-url{color:var(--dim);font-family:var(--mono);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-
-/* Top videos */
-.tv-item{display:flex;gap:6px;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.02)}
-.tv-rank{color:var(--mute);font-family:var(--mono);font-size:9px;width:18px;text-align:right;flex-shrink:0}
-.tv-url{font-family:var(--mono);font-size:10px;color:var(--dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tv-stats{font-family:var(--mono);font-size:9px;color:var(--iris);flex-shrink:0}
-
-/* Floating panic */
-.fab-panic{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#ff1a3a,#cc0022);border:2px solid rgba(255,61,90,.3);color:#fff;font-size:22px;cursor:pointer;z-index:999;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px rgba(255,61,90,.25),0 0 40px rgba(255,61,90,.08);transition:all .3s}
-.fab-panic:hover{transform:scale(1.08);box-shadow:0 6px 32px rgba(255,61,90,.35),0 0 60px rgba(255,61,90,.12)}
+/* ═══ PANIC FAB ═══ */
+.fab-panic{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:var(--red);border:none;color:#fff;font-size:20px;cursor:pointer;z-index:999;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(239,68,68,.2);transition:transform .15s}
+.fab-panic:hover{transform:scale(1.05)}
 .fab-panic:active{transform:scale(.95)}
+@media(max-width:640px){.fab-panic{bottom:76px;right:16px;width:48px;height:48px}}
 
-/* Section titles */
-.sec-title{font-size:10px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.12em;margin:12px 0 6px}
+/* ═══ CHART ═══ */
+.chart-wrap{position:relative;height:160px;margin:8px 0}
 
-/* Toast */
-.toasts{position:fixed;top:60px;right:14px;z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none}
-.toast{padding:9px 16px;border-radius:var(--r);font-size:11px;font-weight:500;backdrop-filter:blur(12px);animation:rise .3s ease;transition:opacity .3s;pointer-events:auto;border:1px solid}
-.toast-ok{background:rgba(61,232,160,.08);color:var(--grn);border-color:rgba(61,232,160,.15)}
-.toast-err{background:rgba(255,61,90,.08);color:var(--red);border-color:rgba(255,61,90,.15)}
-.toast-inf{background:rgba(160,124,255,.08);color:var(--iris);border-color:rgba(160,124,255,.15)}
+/* ═══ HEATMAP ═══ */
+.hm-cell{border-radius:2px;transition:opacity .15s}
 
-/* Info row */
-.info-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.02);font-size:11px}
-.info-row .k{color:var(--mute)}.info-row .v{color:var(--iris);font-family:var(--mono)}
+/* ═══ INFO ROW ═══ */
+.info-row{display:flex;justify-content:space-between;padding:6px 0;font-size:12px;border-bottom:1px solid var(--bdr)}
+.info-row .k{color:var(--mute)}.info-row .v{color:var(--txt);font-family:var(--mono)}
 
-/* Row + group helpers */
-.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.group{display:flex;gap:6px;flex-wrap:wrap}
+/* ═══ TOP VIDEOS ═══ */
+.tv-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bdr);font-size:11px;transition:background .1s}
+.tv-item:hover{background:rgba(255,255,255,.02)}
+.tv-rank{color:var(--mute);font-family:var(--mono);min-width:20px;text-align:right}
+.tv-url{color:var(--txt2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono);font-size:10px}
+.tv-stats{color:var(--dim);font-family:var(--mono);font-size:10px;min-width:48px;text-align:right}
 
-/* Animations */
-@keyframes rise{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+/* ═══ HISTORY ═══ */
+.hist-item{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--bdr);font-size:10px}
+.hist-time{color:var(--mute);font-family:var(--mono);min-width:60px;flex-shrink:0}
+.hist-url{color:var(--txt2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ═══ QUEUE ═══ */
+.q-item{display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid var(--bdr);font-size:11px}
+.q-num{color:var(--mute);font-family:var(--mono);min-width:20px}
+.q-url{flex:1;color:var(--txt2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono);font-size:10px}
+.q-rm{color:var(--dim);cursor:pointer;font-size:14px;min-width:24px;min-height:24px;display:flex;align-items:center;justify-content:center}.q-rm:hover{color:var(--red)}
+
+/* ═══ PLAYLIST ═══ */
+.pl-item{display:flex;align-items:center;gap:6px;padding:5px 4px;border-bottom:1px solid var(--bdr);font-size:11px;min-height:36px}
+.pl-num{color:var(--mute);font-family:var(--mono);min-width:20px;font-size:10px}
+.pl-url{flex:1;color:var(--txt2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono);font-size:10px}
+.pl-url.dir{color:var(--iris);font-style:italic}
+.pl-actions{display:flex;gap:2px}
+
+/* ═══ MARQUEE PREVIEW ═══ */
+.mq-preview{font-family:var(--mono);font-size:11px;padding:8px;background:var(--bg);border-radius:var(--r);color:var(--txt2);min-height:36px;margin-bottom:8px;word-break:break-all}
+
+/* ═══ GUIDE OVERLAY ═══ */
+.guide-overlay{position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.85);overflow-y:auto;padding:20px;display:none}
+.guide-overlay.open{display:block}
+.guide-inner{max-width:560px;margin:40px auto;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r3);padding:28px;position:relative}
+.guide-inner h2{font-size:20px;margin-bottom:16px}.gs{font-weight:600;margin:16px 0 4px;color:var(--iris);font-size:14px}
+.guide-inner p{font-size:13px;color:var(--txt2);line-height:1.6}
+
+/* ═══ TAB ANIMATION ═══ */
+.tab-pane{display:none;opacity:0;transition:opacity .2s ease}
+.tab-pane.active{display:block;opacity:1;animation:fadeIn .2s ease}
+
+/* ═══ SKELETON ═══ */
+.skeleton{border-radius:var(--r);background:rgba(255,255,255,.04);position:relative;overflow:hidden}
+.skeleton::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.03),transparent);animation:shimmer 1.5s infinite}
+@keyframes shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.skel-stat{height:48px;border-radius:var(--r2)}.skel-chart{height:120px;border-radius:var(--r2)}.skel-row{height:24px;margin:4px 0;border-radius:4px}
+
+/* ═══ SWIPE ═══ */
+.swipe-item{transition:transform .2s ease,opacity .2s ease}
+.swipe-item.dismissed{transform:translateX(-100%);opacity:0;height:0;padding:0;margin:0;overflow:hidden;transition:all .25s ease}
+
+/* ═══ PULL TO REFRESH ═══ */
+.ptr-indicator{text-align:center;height:0;overflow:hidden;transition:height .2s ease;color:var(--iris);font-size:11px;font-family:var(--mono);display:flex;align-items:center;justify-content:center}
+.ptr-indicator.pulling{height:32px}
+.ptr-indicator .ptr-spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--bdr);border-top-color:var(--iris);border-radius:50%;animation:sp .6s linear infinite;margin-right:6px}
 @keyframes sp{to{transform:rotate(360deg)}}
 
-/* Guide */
-.guide-overlay{position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);overflow-y:auto;padding:20px;display:none}
-.guide-overlay.open{display:block}
-.guide-inner{max-width:600px;margin:20px auto;padding:28px;animation:rise .3s}
-.guide-inner h2{font-size:20px;font-weight:700;background:linear-gradient(135deg,#fff 30%,var(--iris));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:16px}
-.guide-inner .gs{color:var(--txt);font-weight:600;font-size:13px;margin:16px 0 6px;border-bottom:1px solid var(--bdr);padding-bottom:4px}
-.guide-inner p{font-size:12px;color:var(--dim);line-height:1.7;margin-bottom:6px}
+/* ═══ THEME TOGGLE ═══ */
+.theme-btn{background:none;border:1px solid var(--bdr);border-radius:var(--r);width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:all .15s;color:var(--dim)}
+.theme-btn:hover{border-color:var(--bdr2);color:var(--txt)}
 
-/* Responsive */
-@media(max-width:768px){
-  .nav-bar{display:none!important}
-  .mob-nav{display:flex!important}
-  .content{padding:14px 12px 88px}
-  .stats-grid{grid-template-columns:repeat(2,1fr)}
-  .remote{grid-template-columns:1fr 1fr 1fr}
-  .tz{display:none}
-  .ring-container{width:140px;height:140px}
-  .ring-time{font-size:20px}
-  .fab-panic{bottom:80px;right:16px;width:50px;height:50px;font-size:20px}
-  .chart-wrap{height:110px}
-}
-@media(max-width:400px){.stats-grid{grid-template-columns:1fr 1fr}.stat-card .val{font-size:16px}}
-/* ═══ LIGHT THEME ═══ */
-[data-theme="light"]{
---bg:#f4f2f8;--bg2:#ebe8f2;--card:rgba(255,255,255,.85);--card2:rgba(248,245,255,.7);
---bdr:rgba(100,70,200,.1);--bdr2:rgba(100,70,200,.18);--bdrH:rgba(100,70,200,.3);
---txt:#1a1a2e;--txt2:#2a2840;--dim:#5a5474;--mute:#8884a0;
---iris:#7c5cfc;--v1:#6346e0;--v2:#5030c0;--v3:#4020a0;--glow:rgba(100,70,220,.2);--glowS:rgba(100,70,220,.08);
---red:#e03050;--grn:#20b070;--amb:#d09020;--sky:#3090e0;
-}
-[data-theme="light"] body{background:var(--bg)}
-[data-theme="light"] body::before{background:radial-gradient(ellipse at 30% 20%,rgba(100,70,220,.04),transparent),radial-gradient(ellipse at 70% 80%,rgba(60,40,180,.03),transparent)}
-[data-theme="light"] .glass{backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
-[data-theme="light"] input[type=range]{background:rgba(0,0,0,.06)}
-[data-theme="light"] .stat-card::before{opacity:.25}
-[data-theme="light"] .login-card{box-shadow:0 8px 40px rgba(100,70,200,.1),0 1px 3px rgba(0,0,0,.05)}
-[data-theme="light"] .fab-panic{box-shadow:0 4px 20px rgba(224,48,80,.2)}
-
-/* Theme toggle button */
-.theme-btn{background:none;border:1px solid var(--bdr);border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;transition:all .3s;color:var(--dim)}
-.theme-btn:hover{border-color:var(--bdr2);background:rgba(255,255,255,.05);color:var(--txt)}
-
-/* ═══ TAB ANIMATIONS ═══ */
-@keyframes tabIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
-
-/* ═══ SKELETON LOADING ═══ */
-.skeleton{border-radius:var(--r);overflow:hidden;position:relative;background:rgba(255,255,255,.04)}
-.skeleton::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.04),transparent);animation:shimmer 1.5s infinite}
-@keyframes shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
-.skel-text{height:12px;margin:6px 0;border-radius:4px}
-.skel-stat{height:48px;border-radius:var(--r)}
-.skel-chart{height:120px;border-radius:var(--r)}
-.skel-row{height:28px;margin:4px 0;border-radius:6px}
-
-/* ═══ GESTURE SUPPORT ═══ */
-.gesture-area{touch-action:pan-x pan-y;-webkit-user-select:none;user-select:none}
-.swipe-item{transition:transform .25s ease,opacity .25s ease}
-.swipe-item.swiping{transition:none}
-.swipe-item.dismissed{transform:translateX(-100%);opacity:0;height:0;padding:0;margin:0;overflow:hidden;transition:all .3s ease}
-
-/* Pull to refresh */
-.ptr-indicator{text-align:center;height:0;overflow:hidden;transition:height .3s ease;color:var(--iris);font-size:11px;font-family:var(--mono);display:flex;align-items:center;justify-content:center}
-.ptr-indicator.pulling{height:36px}
-.ptr-indicator .ptr-spinner{display:inline-block;width:14px;height:14px;border:2px solid var(--bdr);border-top-color:var(--iris);border-radius:50%;animation:sp .6s linear infinite;margin-right:6px}
-
-/* ═══ AMBIENT BACKGROUND ═══ */
-.ambient{position:fixed;inset:0;pointer-events:none;z-index:0;transition:opacity 2s ease}
-.ambient-idle{opacity:0}
-.ambient-playing{opacity:1;background:radial-gradient(ellipse at 50% 80%,rgba(100,60,220,.04),transparent 60%),radial-gradient(ellipse at 20% 20%,rgba(60,40,180,.03),transparent 50%)}
-[data-theme="light"] .ambient-playing{background:radial-gradient(ellipse at 50% 80%,rgba(100,60,220,.03),transparent 60%)}
-
-/* ═══ INSTALL PROMPT ═══ */
-.install-banner{position:fixed;bottom:90px;left:16px;right:16px;z-index:90;padding:12px 16px;border-radius:var(--r2);background:var(--card);backdrop-filter:blur(var(--blur));border:1px solid var(--bdr2);display:flex;align-items:center;gap:10px;animation:rise .4s ease;box-shadow:0 8px 30px rgba(0,0,0,.3)}
+/* ═══ INSTALL BANNER ═══ */
+.install-banner{position:fixed;bottom:90px;left:16px;right:16px;z-index:90;padding:12px 16px;border-radius:var(--r2);background:var(--card);border:1px solid var(--bdr2);display:flex;align-items:center;gap:10px;animation:fadeIn .2s ease;box-shadow:0 4px 16px rgba(0,0,0,.3)}
 .install-banner .ib-text{flex:1;font-size:12px;color:var(--dim)}
 .install-banner .ib-text strong{color:var(--txt);display:block;margin-bottom:2px}
 
-/* Skeleton loading */
-.skeleton{background:linear-gradient(90deg,rgba(255,255,255,.03) 25%,rgba(255,255,255,.06) 50%,rgba(255,255,255,.03) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--r)}
-@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-.skel-text{height:14px;margin-bottom:8px;border-radius:4px}
-.skel-card{height:80px;margin-bottom:12px}
-.skel-stat{height:60px}
-.skel-ring{width:160px;height:160px;border-radius:50%;margin:16px auto}
+/* ═══ AMBIENT ═══ */
+.ambient{position:fixed;inset:0;pointer-events:none;z-index:0;transition:opacity 1.5s ease}
+.ambient-idle{opacity:0}
+.ambient-playing{opacity:1;background:radial-gradient(ellipse at 50% 80%,rgba(139,92,246,.02),transparent 60%)}
 
-/* Slide transitions */
-.tab-slide-enter{animation:slideIn .35s cubic-bezier(.16,1,.3,1)}
-.tab-slide-exit{animation:slideOut .2s ease}
-@keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:none;opacity:1}}
-@keyframes slideOut{from{opacity:1}to{transform:translateX(-20px);opacity:0}}
+/* ═══ OFFLINE BANNER ═══ */
+/* offline-banner defined in accessibility section */
 
-/* Swipeable items */
-.swipeable{position:relative;overflow:hidden;touch-action:pan-y}
-.swipe-bg{position:absolute;right:0;top:0;bottom:0;width:80px;background:linear-gradient(90deg,transparent,rgba(255,61,90,.2));display:flex;align-items:center;justify-content:flex-end;padding-right:12px;color:var(--red);font-size:18px;opacity:0;transition:opacity .2s}
-.swipeable.swiping .swipe-bg{opacity:1}
-
-/* Pull to refresh */
-.ptr-indicator{text-align:center;padding:0;overflow:hidden;height:0;transition:height .2s;color:var(--iris);font-size:11px;font-family:var(--mono)}
-.ptr-indicator.active{height:32px;padding:8px 0}
+/* ═══ LIGHT THEME ═══ */
+[data-theme="light"]{
+--bg:#fafafa;--bg2:#f4f4f5;--card:#ffffff;--card2:#f9fafb;
+--bdr:rgba(0,0,0,.06);--bdr2:rgba(0,0,0,.1);--bdrH:rgba(139,92,246,.3);
+--txt:#18181b;--txt2:#3f3f46;--dim:#71717a;--mute:#a1a1aa;
+--iris:#7c3aed;--v1:#6d28d9;--v2:#5b21b6;--v3:#4c1d95;
+--red:#dc2626;--grn:#16a34a;--amb:#d97706;--sky:#2563eb;
+}
+[data-theme="light"] body{background:var(--bg)}
+[data-theme="light"] .fab-panic{box-shadow:0 4px 12px rgba(220,38,38,.15)}
+/* ═══ ACCESSIBILITY ═══ */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;scroll-behavior:auto !important}
+  .tab-pane.active{animation:none}
+  .ambient{display:none}
+}
+:focus-visible{outline:2px solid var(--iris);outline-offset:2px;border-radius:var(--r)}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,[role="tab"]:focus-visible{outline:2px solid var(--iris);outline-offset:2px}
+/* Minimum 44px touch targets */
+.btn,.tbtn,.theme-btn,.nav-item,button,.toggle-row label.switch,.fab-panic{min-height:44px;min-width:44px}
+.mobile-nav button{min-height:48px;min-width:48px}
+.pl-actions button{min-height:36px;min-width:36px;padding:6px 8px}
+/* Screen reader announcements */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+[aria-live="polite"]{position:fixed;bottom:-100px;left:0;width:1px;height:1px;overflow:hidden}
+/* Offline banner */
+.offline-banner{position:fixed;top:0;left:0;right:0;z-index:9999;padding:10px 16px;background:rgba(245,158,11,.06);border-bottom:1px solid rgba(245,158,11,.15);font-size:12px;color:var(--amb);display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--sans)}
 </style>
 </head>
 <body>
@@ -387,6 +291,34 @@ const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'
 
 /* ─── Toast System ─── */
 let toastId=0;
+function Confetti({active}){
+  const canvasRef=useRef(null);
+  useEffect(()=>{
+    if(!active||!canvasRef.current)return;
+    const c=canvasRef.current,ctx=c.getContext('2d');
+    c.width=window.innerWidth;c.height=window.innerHeight;
+    const particles=[];
+    const colors=['#8b5cf6','#22c55e','#f59e0b','#3b82f6','#ef4444','#ec4899'];
+    for(let i=0;i<80;i++)particles.push({x:c.width/2+Math.random()*200-100,y:c.height/3,vx:(Math.random()-0.5)*12,vy:Math.random()*-14-4,r:Math.random()*4+2,color:colors[Math.floor(Math.random()*colors.length)],life:1});
+    let frame=0;
+    const draw=()=>{
+      ctx.clearRect(0,0,c.width,c.height);
+      let alive=false;
+      particles.forEach(p=>{
+        p.x+=p.vx;p.y+=p.vy;p.vy+=0.3;p.life-=0.012;p.vx*=0.99;
+        if(p.life<=0)return;alive=true;
+        ctx.globalAlpha=p.life;ctx.fillStyle=p.color;
+        ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+      });
+      ctx.globalAlpha=1;
+      if(alive&&frame<120){frame++;requestAnimationFrame(draw)}
+    };
+    draw();
+  },[active]);
+  if(!active)return null;
+  return <canvas ref={canvasRef} style={{position:'fixed',inset:0,zIndex:9997,pointerEvents:'none'}}/>;
+}
+
 function ToastContainer(){
   const [toasts,setToasts]=useState([]);
   window._addToast=(msg,type='ok')=>{
@@ -431,14 +363,46 @@ function LoginScreen({onLogin}){
   };
 
   return <div id="login-wrap">
-    <div className="login-card glass">
+    <div className="login-card">
       <h1>VoidCapture</h1>
       <div className="tag">Remote Controller</div>
-      <div className="field"><label>Tunnel URL</label><input type="text" value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://xxxx.trycloudflare.com" onKeyDown={e=>e.key==='Enter'&&codeRef.current?.focus()} autoComplete="off" spellCheck="false"/></div>
-      <div className="field"><label>Session Code</label><input ref={codeRef} type="text" value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="ABC123" maxLength={6} style={{textTransform:'uppercase',letterSpacing:'.2em'}} onKeyDown={e=>e.key==='Enter'&&pinRef.current?.focus()} autoComplete="off"/></div>
+      <div className="field"><label>Tunnel URL</label><input type="text" value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://xxxx.trycloudflare.com" aria-label="Tunnel URL" onKeyDown={e=>e.key==='Enter'&&codeRef.current?.focus()} autoComplete="off" spellCheck="false"/></div>
+      <div className="field"><label>Session Code</label><input ref={codeRef} type="text" value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="ABC123" maxLength={6} aria-label="Session code" style={{textTransform:'uppercase',letterSpacing:'.2em'}} onKeyDown={e=>e.key==='Enter'&&pinRef.current?.focus()} autoComplete="off"/></div>
       <div className="field"><label>PIN</label><input ref={pinRef} type="password" value={pin} onChange={e=>setPin(e.target.value)} placeholder={'\u2022\u2022\u2022\u2022\u2022\u2022'} maxLength={6} inputMode="numeric" onKeyDown={e=>e.key==='Enter'&&submit()} autoComplete="off"/></div>
       <button className="btn-primary" onClick={submit} disabled={busy}>{busy?<><span className="spin"/> Connecting{'\u2026'}</>:'Connect'}</button>
       <div className={`login-err ${err?'show':''}`}>{err}</div>
+    </div>
+  </div>;
+}
+
+/* ─── Onboarding Wizard (v16.0) ─── */
+function OnboardingWizard({onComplete}){
+  const [step,setStep]=useState(0);
+  const steps=[
+    {icon:'\u2728',title:'Welcome to VoidCapture',body:'Your personal video session manager. Control playback remotely, track your habits, and build a watching routine \u2014 all from your phone.'},
+    {icon:'\u26a1',title:'How It Works',body:'VoidCapture runs on your desktop and creates a secure tunnel. You connect from any device using the tunnel URL + session code + PIN. Everything stays private.'},
+    {icon:'\u25b6',title:'Queue Videos',body:'Use the browser extension to queue videos from any site with one click. Or paste URLs directly in the Queue tab. Videos play fullscreen on your desktop.'},
+    {icon:'\u2699',title:'Take Control',body:'Adjust volume, speed, and marquee text remotely. Set session time limits. Lock the panic button. Everything updates in real-time over WebSocket.'},
+    {icon:'\u2b50',title:'Track & Grow',body:'Watch your streaks grow, unlock achievements, and hit daily goals. Smart playlists auto-generate from your watch patterns. The app learns what you like.'},
+    {icon:'\u2764',title:'You\u2019re Ready!',body:'Explore the tabs, queue your first video, and set a daily goal. VoidCapture gets better the more you use it.'},
+  ];
+  const s=steps[step];
+  const finish=()=>{localStorage.setItem('vc-onboarded','1');onComplete()};
+  return <div style={{position:'fixed',inset:0,zIndex:9998,background:'rgba(0,0,0,.85)',display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+    <div style={{background:'var(--card)',border:'1px solid var(--bdr2)',borderRadius:'var(--r3)',padding:32,maxWidth:360,width:'100%',textAlign:'center'}}>
+      <div style={{fontSize:48,marginBottom:12}}>{s.icon}</div>
+      <h2 style={{fontSize:18,fontWeight:700,color:'var(--txt)',marginBottom:8}}>{s.title}</h2>
+      <p style={{fontSize:13,color:'var(--dim)',lineHeight:1.6,marginBottom:24}}>{s.body}</p>
+      <div style={{display:'flex',justifyContent:'center',gap:6,marginBottom:16}}>
+        {steps.map((_,i)=><div key={i} style={{width:8,height:8,borderRadius:4,background:i===step?'var(--iris)':'rgba(255,255,255,.1)',transition:'all .2s'}}/>)}
+      </div>
+      <div style={{display:'flex',gap:8,justifyContent:'center'}}>
+        {step>0&&<button className="btn btn-g" onClick={()=>setStep(step-1)} style={{padding:'8px 16px'}}>Back</button>}
+        {step<steps.length-1?
+          <button className="btn btn-p" onClick={()=>setStep(step+1)} style={{padding:'8px 20px'}}>Next</button>:
+          <button className="btn btn-p" onClick={finish} style={{padding:'8px 20px'}}>Get Started</button>}
+      </div>
+      <button onClick={finish} style={{background:'none',border:'none',color:'var(--mute)',fontSize:11,marginTop:12,cursor:'pointer',padding:4}}>Skip tour</button>
     </div>
   </div>;
 }
@@ -678,7 +642,7 @@ function ScheduleCard({weekSched,setWeekSched,doCmd,schedDirtyRef}){
     setAdding(false);
   };
 
-  return <div className="card glass">
+  return <div className="card">
     <div className="card-title"><span className="ci">{'\u23f1'}</span> Schedule</div>
 
     <div className="row" style={{marginBottom:14}}>
@@ -910,8 +874,27 @@ function SwipeItem({children,onDismiss}){
 function App(){
   const [authed,setAuthed]=useState(false);
   const [tab,setTab]=useState('home');
+  const [showOnboarding,setShowOnboarding]=useState(false);
+  const [onboardStep,setOnboardStep]=useState(0);
+  const defaultWidgets=['stats','suggestion','insight','nowplaying','trend','heatmap','timeline','topvideos','smartplaylists','achievements','history'];
+  const [widgetOrder,setWidgetOrder]=useState(()=>{try{return JSON.parse(localStorage.getItem('vc-widgets'))||defaultWidgets}catch{return defaultWidgets}});
+  const [widgetEditMode,setWidgetEditMode]=useState(false);
+  const isWidgetVisible=(id)=>widgetOrder.includes(id);
+  const toggleWidget=(id)=>{
+    const next=widgetOrder.includes(id)?widgetOrder.filter(w=>w!==id):[...widgetOrder,id];
+    setWidgetOrder(next);localStorage.setItem('vc-widgets',JSON.stringify(next));
+  };
+  const moveWidget=(id,dir)=>{
+    const idx=widgetOrder.indexOf(id);if(idx<0)return;
+    const next=[...widgetOrder];const swap=idx+dir;
+    if(swap<0||swap>=next.length)return;
+    [next[idx],next[swap]]=[next[swap],next[idx]];
+    setWidgetOrder(next);localStorage.setItem('vc-widgets',JSON.stringify(next));
+  };
   const [status,setStatus]=useState(null);
   const [analytics,setAnalytics]=useState(null);
+  const [showConfetti,setShowConfetti]=useState(false);
+  const prevAchCountRef=useRef(0);
   const [playlist,setPlaylist]=useState([]);
   const [plSettings,setPlSettings]=useState({});
   const [weekSched,setWeekSched]=useState([]);
@@ -923,6 +906,9 @@ function App(){
   const [showInstallBanner,setShowInstallBanner]=useState(false);
   const [isIos]=useState(()=>/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream);
   const [isStandalone]=useState(()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true);
+  const [isOffline,setIsOffline]=useState(!navigator.onLine);
+  const offlineQueueRef=useRef([]);
+  const lastStatusTimeRef=useRef(null);
   const pollRef=useRef();
   const failCountRef=useRef(0);
   const lastFailTimeRef=useRef(0);
@@ -932,12 +918,31 @@ function App(){
   // Process incoming status data (shared by both WS and poll)
   const processStatus=useCallback((st)=>{
     failCountRef.current=0;
+    lastStatusTimeRef.current=Date.now();
     setStatus(st);
     if(st.weeklySchedule&&!schedDirtyRef.current)try{setWeekSched(JSON.parse(st.weeklySchedule))}catch(e){}
     if(st.profiles)try{setProfiles(JSON.parse(st.profiles))}catch(e){}
     if(st.pendingChain){doCmd('loadprofile',st.pendingChain,true);toast('Chain: loading '+st.pendingChain,'inf')}
     if(st.playlistSettings)setPlSettings(st.playlistSettings);
   },[]);
+
+  // Offline detection + command replay
+  useEffect(()=>{
+    const goOffline=()=>setIsOffline(true);
+    const goOnline=()=>{
+      setIsOffline(false);
+      // Replay queued commands
+      const q=offlineQueueRef.current.splice(0);
+      if(q.length>0){
+        toast(`Replaying ${q.length} queued command(s)`,'inf');
+        q.forEach(({n,v})=>cmd(n,v).catch(()=>{}));
+        setTimeout(poll,500);
+      }
+    };
+    window.addEventListener('offline',goOffline);
+    window.addEventListener('online',goOnline);
+    return ()=>{window.removeEventListener('offline',goOffline);window.removeEventListener('online',goOnline)};
+  },[poll]);
 
   // HTTP poll (fallback when WS unavailable)
   const poll=useCallback(async()=>{
@@ -1009,7 +1014,18 @@ function App(){
   const [sessionEvents,setSessionEvents]=useState(null); // {sessionId, events}
 
   const loadAnalytics=useCallback(async(days)=>{
-    try{const d=await api('GET','/analytics'+(days?'?days='+days:''));setAnalytics(d)}catch(e){}
+    try{
+      const d=await api('GET','/analytics'+(days?'?days='+days:''));
+      // Detect new achievement unlocks
+      const unlocked=(d.achievements||[]).filter(a=>a.unlocked).length;
+      if(unlocked>prevAchCountRef.current&&prevAchCountRef.current>0){
+        const newOnes=(d.achievements||[]).filter(a=>a.unlocked).slice(-1);
+        if(newOnes.length)toast(`\u2b50 Achievement: ${newOnes[0].name}`,'ok');
+        setShowConfetti(true);haptic(50);setTimeout(()=>setShowConfetti(false),3000);
+      }
+      prevAchCountRef.current=unlocked;
+      setAnalytics(d);
+    }catch(e){}
   },[]);
 
   const loadVideoDetail=useCallback(async(url)=>{
@@ -1042,10 +1058,11 @@ function App(){
 
   const onLogin=useCallback(async()=>{
     setAuthed(true);await poll();loadAnalytics(30);loadPl();
-    // Try WebSocket first, fall back to polling
     connectWs();
     if(!wsRef.current)pollRef.current=setInterval(poll,2500);
     toast('Connected','ok');
+    // v16.0: Show onboarding on first use
+    if(!localStorage.getItem('vc-onboarded'))setShowOnboarding(true);
   },[poll,loadAnalytics,loadPl,connectWs]);
 
   const logout=()=>{
@@ -1104,6 +1121,8 @@ function App(){
 
   const doCmd=async(n,v,silent)=>{
     if(!silent)haptic(10);
+    // Queue if offline
+    if(isOffline){offlineQueueRef.current.push({n,v});if(!silent)toast(`Queued: ${n} (offline)`,'inf');return null}
     // Try WebSocket first for instant response
     if(wsSend(n,v)){if(!silent)toast('\u2713 '+n,'ok');return null}
     // Fall back to HTTP
@@ -1123,7 +1142,7 @@ function App(){
   const lenSec=st.videoLengthSec||0;
   const an=analytics||{};
 
-  if(!authed)return <><LoginScreen onLogin={onLogin}/><ToastContainer/></>;
+  if(!authed)return <><LoginScreen onLogin={onLogin}/><ToastContainer aria-live="polite"/></>;
 
   return <>
     <div id="app-wrap" className="on">
@@ -1136,19 +1155,20 @@ function App(){
         <span className={`pill ${playing?'live':'idle'}`}><span className="dot"/>{playing?'Playing':'Idle'}</span>
         <span className="tz">{tz}</span>
         <div className="top-actions">
-          <span style={{fontSize:8,color:wsRef.current?.readyState===1?'var(--grn)':'var(--mute)',fontFamily:'var(--mono)',marginRight:4}}>{wsRef.current?.readyState===1?'\u26a1 WS':'\u21bb Poll'}</span>
-          <button className="theme-btn" onClick={toggleTheme} title={theme==='dark'?'Light mode':'Dark mode'}>{theme==='dark'?'\u2600':'\u263e'}</button>
-          <button className="tbtn" onClick={()=>{poll();toast('Synced','inf')}}>{'\u21bb'}</button>
-          <button className="tbtn danger" onClick={()=>doCmd('panic')}>{'\u26a0'} Panic</button>
-          <button className="tbtn" onClick={()=>setGuide(true)}>?</button>
-          <button className="tbtn" onClick={logout}>Logout</button>
+          <span style={{fontSize:8,color:isOffline?'var(--amb)':wsRef.current?.readyState===1?'var(--grn)':'var(--mute)',fontFamily:'var(--mono)',marginRight:4}}>{isOffline?'\u26a0 Offline':wsRef.current?.readyState===1?'\u26a1 WS':'\u21bb Poll'}</span>
+          {st.connectedDevices>1&&<span style={{fontSize:8,color:'var(--iris)',fontFamily:'var(--mono)',marginRight:4}}>{st.connectedDevices} devices</span>}
+          <button className="theme-btn" onClick={toggleTheme} title={theme==='dark'?'Light mode':'Dark mode'} aria-label={theme==='dark'?'Switch to light mode':'Switch to dark mode'}>{theme==='dark'?'\u2600':'\u263e'}</button>
+          <button className="tbtn" onClick={()=>{poll();toast('Synced','inf')}} aria-label="Sync status">{'\u21bb'}</button>
+          <button className="tbtn danger" onClick={()=>doCmd('panic')} aria-label="Panic stop">{'\u26a0'} Panic</button>
+          <button className="tbtn" onClick={()=>setGuide(true)} aria-label="Open help guide">?</button>
+          <button className="tbtn" onClick={logout} aria-label="Logout">Logout</button>
         </div>
       </div>
 
       {/* Desktop nav */}
-      <div className="nav-bar">
+      <div className="nav-bar" role="tablist" aria-label="Main navigation">
         {[['home','\u25c8 Home'],['ctrl','\u2699 Controls'],['list','\u2261 Playlist & Queue']].map(([k,l])=>
-          <div key={k} className={`nav-item ${tab===k?'active':''}`} onClick={()=>setTab(k)}>{l}</div>)}
+          <div key={k} className={`nav-item ${tab===k?'active':''}`} onClick={()=>setTab(k)} role="tab" aria-selected={tab===k}>{l}</div>)}
       </div>
 
       {/* Mobile nav */}
@@ -1159,20 +1179,71 @@ function App(){
 
       <PullToRefresh onRefresh={()=>poll()}>
       <div className="content">
+        {isOffline&&<div className="offline-banner" role="alert">
+          {'\u26a0'} <span>Offline{lastStatusTimeRef.current?` \u2014 last updated ${Math.round((Date.now()-lastStatusTimeRef.current)/1000)}s ago`:''}{offlineQueueRef.current.length>0?` \u2022 ${offlineQueueRef.current.length} command(s) queued`:''}</span>
+        </div>}
         {/* ═══ HOME ═══ */}
-        <div className={`tab-pane ${tab==='home'?'active':''}`}>
+        <div className={`tab-pane ${tab==='home'?'active':''}`} role="tabpanel" aria-label="Home">
 
-          {/* Overview stats */}
-          <div className="stats-grid">
-            <div className="stat-card glass purple"><div className="val">{st.todayTime||'\u2014'}</div><div className="lbl">Today</div></div>
-            <div className="stat-card glass blue"><div className="val">{st.totalTime||'\u2014'}</div><div className="lbl">All Time</div></div>
-            <div className="stat-card glass green"><div className="val"><AnimatedValue value={st.todayVideos??0}/></div><div className="lbl">Videos</div></div>
-            <div className="stat-card glass amber"><div className="val"><AnimatedValue value={st.queueLength??0}/></div><div className="lbl">Queue</div></div>
+          {/* Customize button */}
+          <div style={{display:'flex',justifyContent:'flex-end',marginBottom:4}}>
+            <button className="btn btn-g" style={{fontSize:9,padding:'3px 8px'}} onClick={()=>setWidgetEditMode(!widgetEditMode)} aria-label="Customize dashboard">{widgetEditMode?'\u2715 Done':'\u2699 Customize'}</button>
           </div>
 
+          {/* Widget config panel */}
+          {widgetEditMode&&<div className="card" style={{border:'1px solid var(--iris)',marginBottom:12}}>
+            <div className="card-title" style={{fontSize:12}}>Dashboard Widgets</div>
+            <div style={{fontSize:11,color:'var(--dim)',marginBottom:8}}>Toggle visibility and use arrows to reorder.</div>
+            {defaultWidgets.map(id=>{
+              const names={stats:'Stats Overview',suggestion:'Suggestions',insight:'Session Insight',nowplaying:'Now Playing',trend:'Trend Chart',heatmap:'Session Heatmap',timeline:'Session Timeline',topvideos:'Top Videos',smartplaylists:'Smart Playlists',achievements:'Achievements',history:'Watch History'};
+              const vis=isWidgetVisible(id);
+              return <div key={id} style={{display:'flex',alignItems:'center',gap:6,padding:'4px 0',borderBottom:'1px solid rgba(255,255,255,.03)'}}>
+                <input type="checkbox" checked={vis} onChange={()=>toggleWidget(id)} style={{accentColor:'var(--iris)'}}/>
+                <span style={{flex:1,fontSize:11,color:vis?'var(--txt)':'var(--mute)'}}>{names[id]||id}</span>
+                {vis&&<button className="btn btn-g" style={{padding:'1px 6px',fontSize:10}} onClick={()=>moveWidget(id,-1)}>{'\u2191'}</button>}
+                {vis&&<button className="btn btn-g" style={{padding:'1px 6px',fontSize:10}} onClick={()=>moveWidget(id,1)}>{'\u2193'}</button>}
+              </div>;
+            })}
+            <button className="btn btn-g" style={{width:'100%',marginTop:8,fontSize:10}} onClick={()=>{setWidgetOrder([...defaultWidgets]);localStorage.setItem('vc-widgets',JSON.stringify(defaultWidgets))}}>Reset to Default</button>
+          </div>}
+
+          {/* Overview stats */}
+          {isWidgetVisible('stats')&&<div className="stats-grid">
+            <div className="stat-card purple"><div className="val">{st.todayTime||'\u2014'}</div><div className="lbl">Today</div></div>
+            <div className="stat-card blue"><div className="val">{st.totalTime||'\u2014'}</div><div className="lbl">All Time</div></div>
+            <div className="stat-card green"><div className="val"><AnimatedValue value={st.todayVideos??0}/></div><div className="lbl">Videos</div></div>
+            <div className="stat-card amber"><div className="val"><AnimatedValue value={st.queueLength??0}/></div><div className="lbl">Queue</div></div>
+          </div>}
+
+          {/* v15.1: Suggestion banner */}
+          {isWidgetVisible('suggestion')&&an?.suggestions?.length>0&&<div className="card" style={{border:'1px solid rgba(139,92,246,.15)',background:'rgba(139,92,246,.04)'}}>
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <span style={{fontSize:18}}>{'\u2728'}</span>
+              <span style={{fontSize:13,color:'var(--txt)',flex:1}}>{an.suggestions[0].message}</span>
+              {an.suggestions[0].type==='schedule'&&<button className="btn btn-g" style={{fontSize:10,padding:'4px 10px'}} onClick={()=>{doCmd('autostartnow');toast('Session starting!','ok')}}>Start</button>}
+            </div>
+          </div>}
+
+          {/* v15.2: Session insight (shows after session ends) */}
+          {isWidgetVisible('insight')&&an?.sessionInsight&&!playing&&an.sessionInsight.videos>0&&<div className="card" style={{border:'1px solid rgba(34,197,94,.15)',background:'rgba(34,197,94,.04)'}}>
+            <div className="card-title"><span className="ci">{'\u2139'}</span> Last Session</div>
+            <div className="stats-grid" style={{gridTemplateColumns:'repeat(3,1fr)'}}>
+              <div style={{textAlign:'center'}}><div style={{fontSize:18,fontWeight:700,color:'var(--txt)'}}>{fmtSec(an.sessionInsight.durationSec)}</div><div style={{fontSize:9,color:'var(--mute)'}}>Duration</div></div>
+              <div style={{textAlign:'center'}}><div style={{fontSize:18,fontWeight:700,color:'var(--grn)'}}>{an.sessionInsight.completed}/{an.sessionInsight.videos}</div><div style={{fontSize:9,color:'var(--mute)'}}>Completed</div></div>
+              <div style={{textAlign:'center'}}><div style={{fontSize:18,fontWeight:700,color:an.sessionInsight.completionRate>70?'var(--grn)':'var(--amb)'}}>{an.sessionInsight.completionRate}%</div><div style={{fontSize:9,color:'var(--mute)'}}>Completion</div></div>
+            </div>
+            {an.sessionInsight.avgDurationSec>0&&<div style={{fontSize:10,color:'var(--dim)',textAlign:'center',marginTop:4}}>
+              {an.sessionInsight.durationSec>an.sessionInsight.avgDurationSec?'\u2191':'\u2193'} {Math.abs(Math.round((an.sessionInsight.durationSec-an.sessionInsight.avgDurationSec)/60))} min vs your average
+            </div>}
+          </div>}
+
           {/* Now Playing */}
-          <div className="card glass">
+          {isWidgetVisible('nowplaying')&&<div className="card">
             <div className="card-title"><span className="ci">{'\u25b6'}</span> Now Playing</div>
+            {st.currentVideo?.title&&<div style={{textAlign:'center',padding:'4px 8px',marginBottom:4}}>
+              <div style={{fontSize:14,fontWeight:600,color:'var(--txt)'}}>{st.currentVideo.title}</div>
+              {st.currentVideo.channel&&<div style={{fontSize:11,color:'var(--dim)',marginTop:2}}>{st.currentVideo.channel}</div>}
+            </div>}
             <ProgressRing progress={pos} time={fmtSec(curSec)} total={lenSec>0?fmtSec(lenSec):'--:--'} url={st.currentUrl} playing={playing} onVolumeChange={d=>{const v=Math.max(0,Math.min(200,(o.volume||100)+d));doCmd('volume',v,true);toast('Volume: '+v,'inf')}} onSpeedChange={d=>{const s=Math.max(0.25,Math.min(1.5,(o.speed||1)+d));doCmd('speed',+s.toFixed(2),true);toast('Speed: '+s.toFixed(2)+'\u00d7','inf')}}/>
             <div style={{textAlign:'center',fontSize:9,color:'var(--mute)',fontFamily:'var(--mono)',marginTop:-4,marginBottom:8}}>Swipe \u2191\u2193 volume \u00b7 \u2190\u2192 speed</div>
             {st.sessionStartedAt&&o.maxTime>0&&playing&&(()=>{
@@ -1184,16 +1255,16 @@ function App(){
             <div className="info-row"><span className="k">Volume</span><span className="v">{o.volume??'\u2014'}</span></div>
             <div className="info-row"><span className="k">Loop</span><span className="v">{o.loop!==undefined?(o.loop?'On':'Off'):'\u2014'}</span></div>
             <div className="info-row"><span className="k">Marquee</span><span className="v">{o.marqueeText?.trim()||'Off'}</span></div>
-          </div>
+          </div>}
 
           {/* Streaks */}
-          {an.streaks?<div className="card glass">
+          {an.streaks?<div className="card">
             <div className="card-title"><span className="ci">{'\ud83d\udd25'}</span> Streaks</div>
             <div className="stats-grid">
-              <div className="stat-card glass amber"><div className="val">{an.streaks.currentStreak||0}</div><div className="lbl">Current</div></div>
-              <div className="stat-card glass red"><div className="val">{an.streaks.longestStreak||0}</div><div className="lbl">Longest</div></div>
-              <div className="stat-card glass purple"><div className="val">{an.streaks.totalActiveDays||0}</div><div className="lbl">Active Days</div></div>
-              <div className="stat-card glass green"><div className="val">{an.streaks.currentStreak>=7?'\u2714':an.streaks.currentStreak>=3?'\u25cf':'\u25cb'}</div><div className="lbl">Status</div></div>
+              <div className="stat-card amber"><div className="val">{an.streaks.currentStreak||0}</div><div className="lbl">Current</div></div>
+              <div className="stat-card red"><div className="val">{an.streaks.longestStreak||0}</div><div className="lbl">Longest</div></div>
+              <div className="stat-card purple"><div className="val">{an.streaks.totalActiveDays||0}</div><div className="lbl">Active Days</div></div>
+              <div className="stat-card green"><div className="val">{an.streaks.currentStreak>=7?'\u2714':an.streaks.currentStreak>=3?'\u25cf':'\u25cb'}</div><div className="lbl">Status</div></div>
             </div>
             {/* Mini calendar - last 5 weeks */}
             {an.streaks.activeDates&&(()=>{
@@ -1215,10 +1286,10 @@ function App(){
               }
               return <div style={{display:'flex',gap:2,justifyContent:'center',flexWrap:'wrap',padding:'8px 0'}}>{cells}</div>;
             })()}
-          </div>:<div className="card glass"><div className="card-title"><span className="ci">{'\ud83d\udd25'}</span> Streaks</div><Skeleton type="stats"/></div>}
+          </div>:<div className="card"><div className="card-title"><span className="ci">{'\ud83d\udd25'}</span> Streaks</div><Skeleton type="stats"/></div>}
 
           {/* Period Comparison */}
-          {an.comparison&&<div className="card glass">
+          {an.comparison&&<div className="card">
             <div className="card-title"><span className="ci">{'\u2194'}</span> Period Comparison</div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
               {(()=>{
@@ -1228,7 +1299,7 @@ function App(){
                 const arrow=(v)=>v>0?'\u25b2':v<0?'\u25bc':'\u25cf';
                 const color=(v)=>v>0?'var(--grn)':v<0?'var(--red)':'var(--mute)';
                 return <>
-                  <div className="glass" style={{padding:12,borderRadius:'var(--r)',textAlign:'center'}}>
+                  <div style={{background:"var(--card)",border:"1px solid var(--bdr)",padding:12,borderRadius:'var(--r)',textAlign:'center'}}>
                     <div style={{fontSize:9,color:'var(--mute)',textTransform:'uppercase',letterSpacing:'.1em',marginBottom:4}}>This Week</div>
                     <div style={{fontFamily:'var(--mono)',fontSize:18,fontWeight:700}}>{fmtSec(cmp.thisWeek.totalSec)}</div>
                     <div style={{fontSize:10,color:color(wkDiff),fontFamily:'var(--mono)',marginTop:2}}>
@@ -1236,7 +1307,7 @@ function App(){
                     </div>
                     <div style={{fontSize:9,color:'var(--mute)',marginTop:4}}>{cmp.thisWeek.sessions} sessions \u00b7 {cmp.thisWeek.videos} videos</div>
                   </div>
-                  <div className="glass" style={{padding:12,borderRadius:'var(--r)',textAlign:'center'}}>
+                  <div style={{background:"var(--card)",border:"1px solid var(--bdr)",padding:12,borderRadius:'var(--r)',textAlign:'center'}}>
                     <div style={{fontSize:9,color:'var(--mute)',textTransform:'uppercase',letterSpacing:'.1em',marginBottom:4}}>This Month</div>
                     <div style={{fontFamily:'var(--mono)',fontSize:18,fontWeight:700}}>{fmtSec(cmp.thisMonth.totalSec)}</div>
                     <div style={{fontSize:10,color:color(moDiff),fontFamily:'var(--mono)',marginTop:2}}>
@@ -1253,11 +1324,11 @@ function App(){
           <GoalsCard goals={an.goals} doCmd={doCmd}/>
 
           {/* Milestones */}
-          {an.milestones&&an.milestones.length>0&&<div className="card glass">
+          {an.milestones&&an.milestones.length>0&&<div className="card">
             <div className="card-title"><span className="ci">{'\ud83c\udfc6'}</span> Milestones</div>
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))',gap:6}}>
               {an.milestones.filter(m=>m.progress>0).map((m,i)=>(
-                <div key={i} className="glass" style={{padding:'8px 10px',borderRadius:'var(--r)',opacity:m.reached?1:.6}}>
+                <div key={i} style={{background:"var(--card)",border:"1px solid var(--bdr)",padding:"8px 10px",borderRadius:'var(--r)',opacity:m.reached?1:.6}}>
                   <div style={{display:'flex',alignItems:'center',gap:4,marginBottom:4}}>
                     <span style={{fontSize:14}}>{m.reached?'\u2b50':m.type==='hours'?'\u23f1':'\ud83d\udd25'}</span>
                     <span style={{fontSize:10,fontWeight:600,color:m.reached?'var(--iris)':'var(--dim)'}}>
@@ -1276,7 +1347,7 @@ function App(){
           </div>}
 
           {/* Watch Time Trend with date range picker */}
-          <div className="card glass">
+          <div className="card">
             <div className="card-title" style={{marginBottom:4}}>
               <span className="ci">{'\u2191'}</span> Watch Time Trend
               <div style={{marginLeft:'auto',display:'flex',gap:4}}>
@@ -1291,13 +1362,13 @@ function App(){
           </div>
 
           {/* Session Heatmap */}
-          <div className="card glass">
+          <div className="card">
             <div className="card-title"><span className="ci">{'\u29bf'}</span> Session Heatmap</div>
             <SessionHeatmap data={an.heatmap}/>
           </div>
 
           {/* Session Patterns */}
-          <div className="card glass">
+          <div className="card">
             <div className="card-title"><span className="ci">{'\u2606'}</span> Session Patterns</div>
             <div className="stats-grid">
               {(()=>{const sess=an.sessions||[];const avgDur=sess.length?Math.round(sess.reduce((s,x)=>s+x.durationSec,0)/sess.length):0;
@@ -1306,17 +1377,17 @@ function App(){
                 const skipRate=totalPlays>0?Math.round(totalSkips/totalPlays*100):0;
                 let sessWk='\u2014';if(sess.length>=2){const o=new Date(sess[sess.length-1].startedAt),n=new Date(sess[0].startedAt);const days=Math.max(1,(n-o)/864e5);sessWk=(sess.length/days*7).toFixed(1)}
                 return <>
-                  <div className="stat-card glass purple"><div className="val">{fmtSec(avgDur)}</div><div className="lbl">Avg Duration</div></div>
-                  <div className="stat-card glass blue"><div className="val">{sessWk}</div><div className="lbl">Sessions/Wk</div></div>
-                  <div className="stat-card glass amber"><div className="val">{skipRate}%</div><div className="lbl">Skip Rate</div></div>
-                  <div className="stat-card glass green"><div className="val">{avgCr}%</div><div className="lbl">Completion</div></div>
+                  <div className="stat-card purple"><div className="val">{fmtSec(avgDur)}</div><div className="lbl">Avg Duration</div></div>
+                  <div className="stat-card blue"><div className="val">{sessWk}</div><div className="lbl">Sessions/Wk</div></div>
+                  <div className="stat-card amber"><div className="val">{skipRate}%</div><div className="lbl">Skip Rate</div></div>
+                  <div className="stat-card green"><div className="val">{avgCr}%</div><div className="lbl">Completion</div></div>
                 </>;
               })()}
             </div>
           </div>
 
           {/* Session Timeline (clickable for replay) */}
-          {(an.sessions||[]).length>0&&<div className="card glass">
+          {(an.sessions||[]).length>0&&<div className="card">
             <div className="card-title"><span className="ci">{'\u23f3'}</span> Session Timeline <button className="btn btn-g" style={{float:'right',fontSize:9,padding:'2px 8px'}} onClick={exportCsv}>{'\u2b07'} CSV</button></div>
             <div style={{maxHeight:250,overflowY:'auto'}}>
               {(an.sessions||[]).slice(0,30).map((s,i)=>{
@@ -1337,7 +1408,7 @@ function App(){
           </div>}
 
           {/* Session Replay Modal */}
-          {sessionEvents&&<div className="card glass" style={{border:'1px solid var(--iris)',boxShadow:'0 0 20px rgba(100,60,220,.1)'}}>
+          {sessionEvents&&<div className="card" style={{border:'1px solid var(--iris)',boxShadow:'0 0 20px rgba(100,60,220,.1)'}}>
             <div className="card-title"><span className="ci">{'\u25b6'}</span> Session Replay <button className="btn btn-g" style={{float:'right',fontSize:9,padding:'2px 8px'}} onClick={()=>setSessionEvents(null)}>{'\u2715'} Close</button></div>
             <div style={{maxHeight:200,overflowY:'auto'}}>
               {(sessionEvents.events||[]).map((e,i)=>{
@@ -1353,7 +1424,7 @@ function App(){
           </div>}
 
           {/* Top Videos with Search + Thumbnails */}
-          <div className="card glass">
+          <div className="card">
             <div className="card-title"><span className="ci">{'\u2606'}</span> Top Videos</div>
             <div style={{marginBottom:8}}>
               <input type="text" value={searchQuery} onChange={e=>{setSearchQuery(e.target.value);searchVideos(e.target.value)}} placeholder="Search videos by URL..." style={{width:'100%',fontSize:11,fontFamily:'var(--mono)'}}/>
@@ -1380,8 +1451,46 @@ function App(){
             {searchQuery&&<button className="btn btn-g" style={{width:'100%',marginTop:6,fontSize:10}} onClick={()=>{setSearchQuery('');setSearchResults(null)}}>Clear search</button>}
           </div>
 
+          {/* v15.1: Smart Playlists */}
+          {isWidgetVisible('smartplaylists')&&an?.smartPlaylists&&(an.smartPlaylists.mostWatched?.length>0||an.smartPlaylists.favorites?.length>0)&&<div className="card">
+            <div className="card-title"><span className="ci">{'\u2726'}</span> Smart Playlists</div>
+            {[['mostWatched','Most Watched','\u2605'],['favorites','Favorites','\u2764'],['unfinished','Unfinished','\u23ef'],['recentlyAdded','Recently Added','\u271a']].map(([key,label,icon])=>{
+              const urls=an.smartPlaylists[key]||[];
+              if(!urls.length)return null;
+              return <div key={key} style={{marginBottom:8}}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
+                  <span style={{fontSize:12,fontWeight:600,color:'var(--txt)'}}>{icon} {label} <span style={{color:'var(--mute)',fontWeight:400}}>({urls.length})</span></span>
+                  <button className="btn btn-g" style={{fontSize:9,padding:'2px 8px'}} onClick={()=>{urls.forEach(u=>doCmd('appendurl',u,true));toast(`Queued ${urls.length} from ${label}`,'ok')}} aria-label={`Play ${label}`}>{'\u25b6'} Play</button>
+                </div>
+                <div style={{maxHeight:60,overflowY:'auto'}}>
+                  {urls.slice(0,5).map((u,i)=><div key={i} style={{fontSize:10,color:'var(--dim)',padding:'1px 0',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{trunc(u,55)}</div>)}
+                </div>
+              </div>;
+            })}
+          </div>}
+
+          {/* v15.2: Achievements */}
+          {isWidgetVisible('achievements')&&an?.achievements?.length>0&&<div className="card">
+            <div className="card-title"><span className="ci">{'\u2b50'}</span> Achievements <span style={{color:'var(--mute)',fontWeight:400,fontSize:11,marginLeft:4}}>{an.achievements.filter(a=>a.unlocked).length}/{an.achievements.length}</span></div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(90px,1fr))',gap:6}}>
+              {an.achievements.map(a=><div key={a.id} style={{
+                textAlign:'center',padding:'8px 4px',borderRadius:'var(--r)',
+                border:'1px solid '+(a.unlocked?'rgba(139,92,246,.3)':'var(--bdr)'),
+                background:a.unlocked?'rgba(139,92,246,.06)':'transparent',
+                opacity:a.unlocked?1:0.5,transition:'all .2s',
+              }}>
+                <div style={{fontSize:18,marginBottom:2}}>{a.unlocked?'\u2b50':'\u2b1c'}</div>
+                <div style={{fontSize:9,fontWeight:600,color:a.unlocked?'var(--iris)':'var(--mute)'}}>{a.name}</div>
+                <div style={{fontSize:8,color:'var(--mute)'}}>{a.category}</div>
+                {!a.unlocked&&<div style={{height:3,borderRadius:3,background:'rgba(255,255,255,.04)',marginTop:3,overflow:'hidden'}}>
+                  <div style={{height:'100%',width:a.progress+'%',borderRadius:3,background:'var(--iris)',transition:'width .3s'}}/>
+                </div>}
+              </div>)}
+            </div>
+          </div>}
+
           {/* Watch History */}
-          <div className="card glass">
+          {isWidgetVisible('history')&&<div className="card">
             <div className="card-title"><span className="ci">{'\u23f3'}</span> Watch History</div>
             <div style={{maxHeight:200,overflowY:'auto'}}>
               {(st.recentHistory||[]).slice(0,100).map((h,i)=>
@@ -1389,11 +1498,11 @@ function App(){
               )}
               {!(st.recentHistory?.length)&&<div style={{color:'var(--dim)',fontSize:11}}>No history yet.</div>}
             </div>
-          </div>
+          </div>}
 
           {/* Video Detail Modal */}
-          {videoDetail&&<div style={{position:'fixed',inset:0,zIndex:9997,background:'rgba(0,0,0,.8)',backdropFilter:'blur(6px)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={e=>{if(e.target===e.currentTarget)setVideoDetail(null)}}>
-            <div className="glass" style={{maxWidth:500,width:'100%',padding:24,maxHeight:'80vh',overflowY:'auto',animation:'rise .3s ease'}}>
+          {videoDetail&&<div style={{position:'fixed',inset:0,zIndex:9997,background:'rgba(0,0,0,.8)',display:'flex',alignItems:'center',justifyContent:'center',padding:16}} onClick={e=>{if(e.target===e.currentTarget)setVideoDetail(null)}}>
+            <div style={{background:"var(--card)",border:"1px solid var(--bdr)",borderRadius:"var(--r3)",maxWidth:500,width:'100%',padding:24,maxHeight:'80vh',overflowY:'auto',animation:'rise .3s ease'}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
                 <div className="card-title" style={{margin:0}}><span className="ci">{'\ud83c\udfac'}</span> Video Detail</div>
                 <button className="btn btn-g" onClick={()=>setVideoDetail(null)}>{'\u2715'}</button>
@@ -1419,8 +1528,8 @@ function App(){
 
 
         {/* ═══ CONTROLS ═══ */}
-        <div className={`tab-pane ${tab==='ctrl'?'active':''}`}>
-          <div className="card glass">
+        <div className={`tab-pane ${tab==='ctrl'?'active':''}`} role="tabpanel" aria-label="Controls">
+          <div className="card">
             <div className="card-title"><span className="ci">{'\u23ef'}</span> Remote</div>
             <div className="remote">
               <button className="rbtn" onClick={()=>doCmd('skip')}><span className="ri">{'\u23ed'}</span>Skip</button>
@@ -1429,13 +1538,13 @@ function App(){
             </div>
           </div>
 
-          <div className="card glass">
+          <div className="card">
             <div className="card-title"><span className="ci">{'\u266b'}</span> Sliders</div>
             <SliderRow label="Volume" min={0} max={200} value={o.volume??100} onChange={v=>doCmd('volume',v,true)} format={v=>v}/>
             <SliderRow label="Speed" min={25} max={150} value={o.speed?Math.round(o.speed*100):100} onChange={v=>doCmd('speed',+(v/100).toFixed(2),true)} format={v=>(v/100).toFixed(2)+'\u00d7'}/>
           </div>
 
-          <div className="card glass">
+          <div className="card">
             <div className="card-title"><span className="ci">{'\ud83d\udd12'}</span> Lock / Unlock</div>
             <div style={{marginBottom:10,fontSize:13,color:st.panicLocked?'var(--red)':'var(--grn)',fontFamily:'var(--mono)'}}>
               {st.panicLocked?'\ud83d\udd12 PANIC LOCKED':'\ud83d\udd13 Panic hotkey active'}
@@ -1446,12 +1555,12 @@ function App(){
             </div>
           </div>
 
-          <div className="card glass">
+          <div className="card">
             <div className="card-title"><span className="ci">{'\u25b6'}</span> Play From Playlist</div>
             <button className="btn btn-p" style={{width:'100%'}} onClick={()=>{if(confirm('Clear queue and start playlist?'))doCmd('playnow')}}>Start Playing Playlist Now</button>
           </div>
 
-          <div className="card glass">
+          <div className="card">
             <div className="card-title"><span className="ci">{'\u2699'}</span> Session Options</div>
             <ToggleRow label="Loop Playlist" checked={o.loop} onChange={v=>doCmd('loop',v)}/>
             <ToggleRow label="Shuffle" checked={plSettings.shuffle} onChange={v=>doCmd('shuffle',v)}/>
@@ -1476,15 +1585,15 @@ function App(){
 
           <BackupCard doCmd={doCmd}/>
 
-          <div className="card glass">
+          <div className="card">
             <div className="card-title"><span className="ci">{'\u21bb'}</span> Reset</div>
             <button className="btn btn-d" style={{width:'100%'}} onClick={()=>{if(confirm('Reset ALL settings to defaults?'))doCmd('reset')}}>{'\u27f3'} Reset All Settings to Defaults</button>
           </div>
         </div>
 
         {/* ═══ PLAYLIST ═══ */}
-        <div className={`tab-pane ${tab==='list'?'active':''}`}>
-          <div className="card glass">
+        <div className={`tab-pane ${tab==='list'?'active':''}`} role="tabpanel" aria-label="Playlist">
+          <div className="card">
             <div className="card-title"><span className="ci">{'\u25b6'}</span> Now Playing</div>
             <div className="mq-preview" style={{color:st.currentUrl?'var(--txt)':'var(--mute)'}}>{st.currentUrl||'\u2014'}</div>
             <div className="row"><button className="btn btn-g" onClick={()=>doCmd('skip')}>{'\u23ed'} Skip</button><button className="btn btn-d" onClick={()=>doCmd('clearqueue')}>{'\u2715'} Clear Queue</button></div>
@@ -1494,7 +1603,7 @@ function App(){
           <PlaylistCard playlist={playlist} plOp={plOp} loadPl={loadPl}/>
           <FoldersCard doCmd={doCmd}/>
 
-          <div className="card glass">
+          <div className="card">
             <div className="card-title"><span className="ci">{'\u2699'}</span> Playlist Settings</div>
             <ToggleRow label="Shuffle" checked={plSettings.shuffle} onChange={v=>doCmd('shuffle',v)}/>
             <ToggleRow label="No Repeat" checked={plSettings.noRepeat} onChange={v=>doCmd('norepeat',v)}/>
@@ -1506,7 +1615,7 @@ function App(){
       </PullToRefresh>
 
       {/* Floating Panic */}
-      <button className="fab-panic" onClick={()=>{haptic(50);doCmd('panic')}} title="Panic Stop">{'\u26a0'}</button>
+      <button className="fab-panic" aria-label="Emergency panic stop" onClick={()=>{haptic(50);doCmd('panic')}} title="Panic Stop">{'\u26a0'}</button>
     </div>
 
     {/* PWA Install Banner */}
@@ -1527,7 +1636,7 @@ function App(){
 
     {/* Guide */}
     <div className={`guide-overlay ${guide?'open':''}`} onClick={e=>{if(e.target===e.currentTarget)setGuide(false)}}>
-      <div className="guide-inner glass">
+      <div className="guide-inner">
         <button className="btn btn-g" style={{position:'absolute',top:12,right:12}} onClick={()=>setGuide(false)}>{'\u2715'} Close</button>
         <div style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--iris)',textTransform:'uppercase',letterSpacing:'.2em',marginBottom:4}}>VoidCapture</div>
         <h2>Controller Guide</h2>
@@ -1541,7 +1650,9 @@ function App(){
       </div>
     </div>
 
-    <ToastContainer/>
+    {showOnboarding&&<OnboardingWizard onComplete={()=>setShowOnboarding(false)}/>}
+    <Confetti active={showConfetti}/>
+    <ToastContainer aria-live="polite"/>
   </>;
 }
 
@@ -1555,7 +1666,7 @@ function SliderRow({label,min,max,value,onChange,format}){
 }
 
 function ToggleRow({label,checked,onChange}){
-  return <div className="toggle-row"><span className="toggle-label">{label}</span><label className="switch"><input type="checkbox" checked={!!checked} onChange={e=>onChange(e.target.checked)}/><span/></label></div>;
+  return <div className="toggle-row"><span className="toggle-label">{label}</span><label className="switch"><input type="checkbox" checked={!!checked} onChange={e=>onChange(e.target.checked)} role="switch" aria-checked={!!checked} aria-label={label}/><span/></label></div>;
 }
 
 function NumRow({label,unit,defVal,onSet,info}){
@@ -1595,7 +1706,7 @@ function ProfilesCard({profiles,doCmd,currentOptions,plSettings}){
     setSaving(false);setNewName('');
   };
 
-  return <div className="card glass">
+  return <div className="card">
     <div className="card-title"><span className="ci">{'\ud83d\udcbe'}</span> Session Profiles</div>
     {(profiles||[]).length>0&&<div style={{marginBottom:10}}>
       {profiles.map((p,i)=>{
@@ -1665,7 +1776,7 @@ function BackupCard({doCmd}){
     reader.readAsText(file);
   };
 
-  return <div className="card glass">
+  return <div className="card">
     <div className="card-title"><span className="ci">{'\ud83d\udcbe'}</span> Backup & Restore</div>
     <div className="row" style={{marginBottom:8}}>
       <button className="btn btn-p" onClick={doBackup} disabled={exporting} style={{flex:1}}>
@@ -1699,7 +1810,7 @@ function IdleChainCard({doCmd,idleSeconds,chainConfig}){
     doCmd('setchainconfig',JSON.stringify({profile:chainProfile.trim(),cooldownMinutes:chainCooldown}));
   };
 
-  return <div className="card glass">
+  return <div className="card">
     <div className="card-title"><span className="ci">{'\u23f1'}</span> Automation</div>
     <div style={{fontSize:11,color:'var(--dim)',marginBottom:8}}>
       System idle: <span style={{fontFamily:'var(--mono)',color:'var(--iris)'}}>{idleSeconds!=null?`${Math.floor(idleSeconds/60)}m ${idleSeconds%60}s`:'\u2014'}</span>
@@ -1767,7 +1878,7 @@ function FoldersCard({doCmd}){
     doCmd('loadfolder',name);
   };
 
-  return <div className="card glass">
+  return <div className="card">
     <div className="card-title"><span className="ci">{'\ud83d\udcc1'}</span> Playlist Folders</div>
     {folders.length>0&&<div style={{marginBottom:8}}>
       {folders.map((f,i)=>(
@@ -1811,12 +1922,12 @@ function GoalsCard({goals,doCmd}){
     setEditing(false);
   };
 
-  if(!goals&&!editing)return <div className="card glass">
+  if(!goals&&!editing)return <div className="card">
     <div className="card-title"><span className="ci">{'\ud83c\udfaf'}</span> Goals</div>
     <button className="btn btn-p" style={{width:'100%'}} onClick={()=>setEditing(true)}>Set Daily & Weekly Goals</button>
   </div>;
 
-  if(editing)return <div className="card glass">
+  if(editing)return <div className="card">
     <div className="card-title"><span className="ci">{'\ud83c\udfaf'}</span> Set Goals</div>
     <NumRow label="Daily Target" unit="min" defVal={daily} onSet={v=>setDaily(v)} info="Minutes per day"/>
     <NumRow label="Weekly Sessions" defVal={weekly} onSet={v=>setWeekly(v)} info="Sessions per week"/>
@@ -1824,7 +1935,7 @@ function GoalsCard({goals,doCmd}){
     <button className="btn btn-d" onClick={()=>{doCmd('cleargoals');setEditing(false)}}>Clear Goals</button></div>
   </div>;
 
-  return <div className="card glass">
+  return <div className="card">
     <div className="card-title"><span className="ci">{'\ud83c\udfaf'}</span> Goals <button className="btn btn-g" style={{marginLeft:'auto',padding:'2px 8px',fontSize:9}} onClick={()=>setEditing(true)}>{'\u270e'}</button></div>
     {goals.dailyMinutes>0&&<div style={{marginBottom:10}}>
       <div style={{display:'flex',justifyContent:'space-between',fontSize:11,marginBottom:4}}>
@@ -1855,7 +1966,7 @@ function MarqueeCard({marquee,doCmd}){
   const [text,setText]=useState('');
   const phrases=['Good girl','Keep watching','You have no choice','Submit','Let go','Relax'];
   const send=t=>{if(!t){toast('Enter text','err');return}doCmd('marquee',t)};
-  return <div className="card glass">
+  return <div className="card">
     <div className="card-title"><span className="ci">{'\u2726'}</span> Marquee</div>
     <div className={`mq-preview ${marquee?.trim()?'on':''}`}>{marquee?.trim()||'No marquee active'}</div>
     <div className="row" style={{marginBottom:8}}><input type="text" value={text} onChange={e=>setText(e.target.value)} placeholder="Type text\u2026" style={{flex:1}} onKeyDown={e=>e.key==='Enter'&&send(text)}/><button className="btn btn-p" onClick={()=>send(text)}>{'\u25b6'}</button><button className="btn btn-d" onClick={()=>doCmd('marqueeoff')}>{'\u2715'}</button><button className="btn btn-g" onClick={()=>doCmd('marqueetop')}>{'\u2191'}</button><button className="btn btn-g" onClick={()=>doCmd('marqueebottom')}>{'\u2193'}</button></div>
@@ -1865,14 +1976,27 @@ function MarqueeCard({marquee,doCmd}){
 
 
 function QueueCard({items,doCmd}){
-  return <div className="card glass">
+  return <div className="card">
     <div className="card-title"><span className="ci">{'\u2630'}</span> Queue <span style={{color:'var(--mute)',fontWeight:400,fontSize:11,marginLeft:4}}>{items?.length?`(${items.length})`:'(empty)'}</span></div>
-    <div style={{maxHeight:180,overflowY:'auto',listStyle:'none'}}>
-      {(items||[]).slice(0,50).map((u,i)=>
-        <SwipeItem key={i+u} onDismiss={()=>doCmd('removequeue',i)}>
-          <div className="q-item"><span className="q-num">{i+1}</span><span className="q-url" title={u}>{trunc(u,50)}</span><span className="q-rm" onClick={()=>doCmd('removequeue',i)}>{'\u00d7'}</span></div>
-        </SwipeItem>
-      )}
+    <div style={{maxHeight:220,overflowY:'auto',listStyle:'none'}}>
+      {(items||[]).slice(0,50).map((item,i)=>{
+        const u=typeof item==='string'?item:item.url;
+        const title=typeof item==='object'&&item.title?item.title:null;
+        const ch=typeof item==='object'&&item.channel?item.channel:null;
+        const dur=typeof item==='object'&&item.durationSec?item.durationSec:0;
+        const thumb=typeof item==='object'&&item.thumbnail?item.thumbnail:null;
+        return <SwipeItem key={i+u} onDismiss={()=>doCmd('removequeue',i)}>
+          <div className="q-item" style={{display:'flex',alignItems:'center',gap:8}}>
+            <span className="q-num">{i+1}</span>
+            {thumb?<img src={thumb} style={{width:40,height:28,objectFit:'cover',borderRadius:4,flexShrink:0}} loading="lazy" onError={e=>{e.target.style.display='none'}}/>:null}
+            <div style={{flex:1,minWidth:0}}>
+              <div className="q-url" title={u} style={{fontSize:title?11:12}}>{title||trunc(u,45)}</div>
+              {(ch||dur>0)&&<div style={{fontSize:9,color:'var(--mute)'}}>{ch?ch+' \u00b7 ':''}{dur>0?fmtSec(dur):''}</div>}
+            </div>
+            <span className="q-rm" onClick={()=>doCmd('removequeue',i)}>{'\u00d7'}</span>
+          </div>
+        </SwipeItem>;
+      })}
       {!(items?.length)&&<div style={{color:'var(--dim)',fontSize:11,padding:6}}>Empty</div>}
     </div>
     <QueueInput doCmd={doCmd}/>
@@ -1904,7 +2028,7 @@ function PlaylistCard({playlist,plOp,loadPl}){
     return ()=>{document.removeEventListener('touchstart',close);document.removeEventListener('click',close)};
   },[ctxMenu]);
 
-  return <div className="card glass">
+  return <div className="card">
     <div className="card-title"><span className="ci">{'\u2261'}</span> Playlist <span style={{color:'var(--mute)',fontWeight:400,fontSize:11,marginLeft:4}}>{playlist.length} items</span></div>
     <div className="row" style={{marginBottom:8}}>
       <button className="btn btn-g" onClick={loadPl}>{'\u21bb'} Reload</button>
@@ -1937,7 +2061,7 @@ function PlaylistCard({playlist,plOp,loadPl}){
     {/* Context menu */}
     {ctxMenu&&<div style={{position:'fixed',zIndex:999,left:Math.min(ctxMenu.x,window.innerWidth-180),top:Math.min(ctxMenu.y,window.innerHeight-200),
       background:'var(--card)',border:'1px solid var(--bdr2)',borderRadius:'var(--r)',padding:4,minWidth:160,
-      backdropFilter:'blur(16px)',boxShadow:'0 8px 30px rgba(0,0,0,.4)',animation:'rise .2s ease'}}
+      boxShadow:'0 8px 30px rgba(0,0,0,.4)',animation:'rise .2s ease'}}
       onClick={e=>e.stopPropagation()}>
       <div style={{padding:'6px 12px',fontSize:11,color:'var(--mute)',fontFamily:'var(--mono)',borderBottom:'1px solid var(--bdr)',marginBottom:2}}>#{ctxMenu.index+1}</div>
       <button className="btn btn-g" style={{width:'100%',justifyContent:'flex-start',borderRadius:4,marginBottom:2}} onClick={()=>{plOp('moveto',{from:ctxMenu.index,to:0});setCtxMenu(null)}}>Move to top</button>
