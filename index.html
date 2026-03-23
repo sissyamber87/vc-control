@@ -10,255 +10,236 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>VoidCapture</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-
-/* ═══ v14.1 DESIGN SYSTEM ═══ */
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></scr<style>
+/* ═══ DESIGN SYSTEM — Discord/Spotify Bold Dark ═══ */
 :root{
-/* Backgrounds */
---bg:#09090b;--bg2:#0c0c0e;--card:#111113;--card2:#161618;
-/* Borders */
---bdr:rgba(255,255,255,.06);--bdr2:rgba(255,255,255,.1);--bdrH:rgba(139,92,246,.3);
-/* Text */
---txt:#e4e4e7;--txt2:#a1a1aa;--dim:#71717a;--mute:#52525b;
-/* Accent - single refined violet */
---iris:#8b5cf6;--v1:#7c3aed;--v2:#6d28d9;--v3:#5b21b6;
-/* Semantic */
---red:#ef4444;--grn:#22c55e;--amb:#f59e0b;--sky:#3b82f6;
-/* Typography */
---sans:'Inter',system-ui,-apple-system,sans-serif;--mono:'JetBrains Mono',monospace;
-/* Radii */
---r:6px;--r2:8px;--r3:12px;
+--bg:#0c0c0c;--bg2:#111113;--bg3:#161618;
+--card:#1a1a1d;--card2:#202024;--card-hover:#222226;
+--bdr:#2a2a2e;--bdr2:#3a3a3e;--bdr-accent:rgba(124,92,246,.25);
+--txt:#e5e5e7;--txt2:#b0b0b4;--dim:#808086;--mute:#56565c;
+--accent:#7c5cf6;--accent2:#9b7cff;--accent-dim:rgba(124,92,246,.12);--accent-glow:rgba(124,92,246,.25);
+--green:#1db954;--green-dim:rgba(29,185,84,.12);
+--red:#ed4245;--red-dim:rgba(237,66,69,.12);
+--amber:#faa61a;--amber-dim:rgba(250,166,26,.12);
+--blue:#5865f2;--blue-dim:rgba(88,101,242,.12);
+--font:'Outfit',sans-serif;--mono:'JetBrains Mono',monospace;
+--r:8px;--r2:12px;--r3:16px;
 }
-
-html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--txt);overflow:hidden;-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5}
-
-/* ═══ REDUCED MOTION ═══ */
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important}}
-
-/* ═══ FOCUS ═══ */
-:focus-visible{outline:2px solid var(--iris);outline-offset:2px;border-radius:var(--r)}
-
+[data-theme="light"]{
+--bg:#f5f5f5;--bg2:#eee;--bg3:#e5e5e5;
+--card:#fff;--card2:#fafafa;--card-hover:#f5f5f7;
+--bdr:#ddd;--bdr2:#ccc;--bdr-accent:rgba(124,92,246,.2);
+--txt:#1a1a1d;--txt2:#444;--dim:#777;--mute:#aaa;
+--accent:#6d4ce0;--accent2:#8b6cf6;--accent-dim:rgba(109,76,224,.08);--accent-glow:rgba(109,76,224,.15);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--txt);overflow:hidden;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+/* ═══ SCROLLBAR ═══ */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--mute);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--dim)}
+/* ═══ ACCESSIBILITY ═══ */
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
 /* ═══ LAYOUT ═══ */
-#app-wrap{display:none;height:100vh;flex-direction:column;position:relative}
-#app-wrap.on{display:flex}
-.top-bar{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--bdr);background:var(--card);min-height:48px;gap:8px}
-.top-bar .logo{font-size:15px;font-weight:700;letter-spacing:-.02em}
-.top-actions{display:flex;gap:6px;margin-left:auto;align-items:center}
-.content{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch}
-
-/* ═══ NAVIGATION ═══ */
-.nav-bar{display:flex;border-bottom:1px solid var(--bdr);background:var(--card);padding:0 16px;gap:4px}
-.nav-item{padding:12px 16px;font-size:13px;font-weight:500;color:var(--mute);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s;min-height:44px;display:flex;align-items:center}
-.nav-item:hover{color:var(--txt2)}
-.nav-item.active{color:var(--iris);border-color:var(--iris)}
-.mob-nav{display:none}
-
-@media(max-width:640px){
-  .nav-bar{display:none}
-  .mob-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--card);border-top:1px solid var(--bdr);padding:4px 0;justify-content:space-around}
-  .mob-nav button{background:none;border:none;color:var(--mute);font-size:10px;padding:8px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:44px;min-width:44px}
-  .mob-nav button .icon{font-size:18px}
-  .mob-nav button.active{color:var(--iris)}
-  .content{padding-bottom:72px}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--bdr);display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-brand{padding:20px 16px 12px;font-size:18px;font-weight:800;color:var(--accent);letter-spacing:-.02em}
+.sidebar-brand small{display:block;font-size:10px;font-weight:500;color:var(--mute);letter-spacing:.05em;text-transform:uppercase;margin-top:2px}
+.sidebar-nav{flex:1;padding:4px 8px;display:flex;flex-direction:column;gap:2px}
+.sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r);font-size:13px;font-weight:500;color:var(--dim);cursor:pointer;transition:all .15s;min-height:44px;user-select:none}
+.sidebar-item:hover{background:var(--accent-dim);color:var(--txt2)}
+.sidebar-item.active{background:var(--accent-dim);color:var(--accent)}
+.sidebar-item .icon{font-size:16px;width:20px;text-align:center}
+.sidebar-footer{padding:12px;border-top:1px solid var(--bdr);display:flex;flex-direction:column;gap:6px}
+.sidebar-meta{font-size:10px;color:var(--mute);font-family:var(--mono);display:flex;align-items:center;gap:6px}
+.sidebar-meta .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sidebar-meta .dot.on{background:var(--green)}.sidebar-meta .dot.off{background:var(--mute)}
+.main{flex:1;overflow-y:auto;overflow-x:hidden;padding:24px;scroll-behavior:smooth}
+.main::-webkit-scrollbar{width:6px}
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main{padding:16px 12px 80px}
+  .mobile-bar{display:flex!important}
 }
-
+@media(min-width:769px){.mobile-bar{display:none!important}}
+.mobile-bar{position:fixed;bottom:0;left:0;right:0;height:56px;background:var(--bg2);border-top:1px solid var(--bdr);display:flex;z-index:100;padding:0 8px;align-items:stretch}
+.mobile-bar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;color:var(--mute);font-size:9px;font-weight:600;font-family:var(--font);cursor:pointer;min-height:56px;position:relative;transition:color .15s}
+.mobile-bar button.active{color:var(--accent)}
+.mobile-bar button.active::after{content:'';position:absolute;top:0;left:25%;right:25%;height:2px;background:var(--accent);border-radius:0 0 2px 2px}
+.mobile-bar button .mi{font-size:20px;line-height:1}
+/* ═══ PAGE HEADER ═══ */
+.page-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.page-hdr h2{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.page-hdr-actions{display:flex;gap:8px;align-items:center}
 /* ═══ CARDS ═══ */
-.card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r3);padding:16px;margin-bottom:12px;transition:border-color .15s}
+.card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r2);padding:16px;margin-bottom:12px;transition:border-color .15s}
 .card:hover{border-color:var(--bdr2)}
-.card-title{font-size:13px;font-weight:600;color:var(--txt2);margin-bottom:12px;display:flex;align-items:center;gap:6px}
-.card-title .ci{font-size:14px;color:var(--iris)}
-
+.card-title{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.card-title .ci{font-size:15px;color:var(--accent)}
+.card-sub{font-size:11px;color:var(--dim);margin-top:-6px;margin-bottom:10px}
 /* ═══ STAT CARDS ═══ */
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
-.stat-card{background:var(--card2);border:1px solid var(--bdr);border-radius:var(--r2);padding:12px;text-align:center}
-.stat-card .val{font-family:var(--mono);font-size:20px;font-weight:700;margin-bottom:2px}
-.stat-card .lbl{font-size:10px;font-weight:500;color:var(--mute);text-transform:uppercase;letter-spacing:.05em}
-.stat-card.purple .val{color:var(--iris)}.stat-card.blue .val{color:var(--sky)}.stat-card.green .val{color:var(--grn)}.stat-card.amber .val{color:var(--amb)}
-@media(max-width:480px){.stats-grid{grid-template-columns:1fr 1fr}}
-
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:480px){.stats-row{grid-template-columns:1fr 1fr}}
+.stat-card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--r2);padding:14px;position:relative;overflow:hidden}
+.stat-card .val{font-size:22px;font-weight:800;letter-spacing:-.02em;font-family:var(--mono);color:var(--txt)}
+.stat-card .lbl{font-size:10px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.stat-card.purple{border-left:3px solid var(--accent)}.stat-card.purple .val{color:var(--accent)}
+.stat-card.green{border-left:3px solid var(--green)}.stat-card.green .val{color:var(--green)}
+.stat-card.blue{border-left:3px solid var(--blue)}.stat-card.blue .val{color:var(--blue)}
+.stat-card.amber{border-left:3px solid var(--amber)}.stat-card.amber .val{color:var(--amber)}
 /* ═══ BUTTONS ═══ */
-.btn{border:none;border-radius:var(--r);padding:8px 14px;font-size:12px;font-weight:500;font-family:var(--sans);cursor:pointer;transition:all .15s;min-height:36px;display:inline-flex;align-items:center;justify-content:center;gap:4px}
-.btn-p{background:var(--iris);color:#fff}.btn-p:hover{background:var(--v1)}
-.btn-s{background:var(--card2);color:var(--iris);border:1px solid var(--iris)}.btn-s:hover{background:rgba(139,92,246,.1)}
-.btn-g{background:transparent;color:var(--txt2);border:1px solid var(--bdr2)}.btn-g:hover{border-color:var(--bdrH);color:var(--txt)}
-.btn-d{background:transparent;color:var(--red);border:1px solid rgba(239,68,68,.2)}.btn-d:hover{background:rgba(239,68,68,.06)}
-.btn-b{background:var(--card2);color:var(--sky);border:1px solid rgba(59,130,246,.2)}
-.tbtn{background:transparent;border:1px solid var(--bdr);border-radius:var(--r);padding:6px 10px;font-size:11px;color:var(--dim);cursor:pointer;font-family:var(--sans);min-height:32px}
-.tbtn:hover{border-color:var(--bdr2);color:var(--txt2)}
-.tbtn.danger{color:var(--red);border-color:rgba(239,68,68,.2)}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-
+.btn{border:none;border-radius:var(--r);padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);transition:all .15s;display:inline-flex;align-items:center;gap:6px;min-height:36px}
+.btn-p{background:var(--accent);color:#fff}.btn-p:hover{background:var(--accent2)}
+.btn-g{background:var(--card2);color:var(--txt2);border:1px solid var(--bdr)}.btn-g:hover{border-color:var(--bdr2);color:var(--txt)}
+.btn-d{background:var(--red-dim);color:var(--red);border:1px solid rgba(237,66,69,.2)}.btn-d:hover{background:rgba(237,66,69,.2)}
+.btn-sm{padding:4px 10px;font-size:11px;min-height:28px}
+.btn-icon{width:36px;height:36px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:var(--r);background:var(--card2);border:1px solid var(--bdr);color:var(--dim);cursor:pointer;transition:all .15s}
+.btn-icon:hover{border-color:var(--accent);color:var(--accent)}
 /* ═══ INPUTS ═══ */
-input[type=text],input[type=number],textarea,select{background:var(--bg);border:1px solid var(--bdr2);border-radius:var(--r);padding:10px 12px;font-family:var(--mono);font-size:13px;color:var(--txt);outline:none;transition:border-color .15s;width:100%;min-height:40px}
-input:focus,textarea:focus,select:focus{border-color:var(--iris)}
-textarea{resize:vertical;min-height:80px}
-
+input[type="text"],input[type="password"],input[type="number"],textarea,select{
+  background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 12px;
+  font-size:13px;color:var(--txt);font-family:var(--font);outline:none;transition:border-color .15s;width:100%}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+input::placeholder,textarea::placeholder{color:var(--mute)}
 /* ═══ TOGGLE ═══ */
-.toggle-row{display:flex;align-items:center;padding:8px 0;gap:10px}
-.toggle-label{flex:1;font-size:13px;color:var(--txt2)}
-.switch{position:relative;width:40px;height:22px;cursor:pointer}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.toggle-label{font-size:13px;font-weight:500;color:var(--txt2)}
+.switch{position:relative;width:40px;height:22px;cursor:pointer;flex-shrink:0}
 .switch input{opacity:0;width:0;height:0}
-.switch span{position:absolute;inset:0;background:var(--card2);border:1px solid var(--bdr2);border-radius:11px;transition:all .2s}
-.switch span::after{content:'';position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--mute);transition:all .2s}
-.switch input:checked+span{background:rgba(139,92,246,.15);border-color:var(--iris)}
-.switch input:checked+span::after{transform:translateX(18px);background:var(--iris)}
-
+.switch span{position:absolute;inset:0;background:var(--card2);border:1px solid var(--bdr);border-radius:22px;transition:all .2s}
+.switch span::after{content:'';position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--dim);transition:all .2s}
+.switch input:checked+span{background:var(--accent-dim);border-color:var(--accent)}
+.switch input:checked+span::after{transform:translateX(18px);background:var(--accent)}
 /* ═══ SLIDER ═══ */
-.slider-row{display:flex;align-items:center;gap:10px;padding:6px 0}
-.slider-row .label{font-size:12px;color:var(--txt2);min-width:60px}
-.slider-row .val{font-size:12px;color:var(--iris);font-family:var(--mono);min-width:40px;text-align:right}
-input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:rgba(255,255,255,.08);outline:none;flex:1}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--iris);cursor:pointer;border:none}
-
-/* ═══ NUM ROW ═══ */
-.num-row{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px}
-.num-row .info{flex:1;color:var(--txt2)}.num-row .info strong{display:block;margin-bottom:1px}
-.num-row input[type=number]{width:60px;min-height:32px;padding:4px 8px;text-align:center}
-
-/* ═══ PROGRESS RING ═══ */
-.ring-container{display:flex;justify-content:center;padding:20px 0;touch-action:none}
-.ring-container svg{filter:none}
-
-/* ═══ LOGIN ═══ */
-.login-wrap{height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.login-card{width:100%;max-width:360px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r3);padding:32px;border-top:2px solid var(--iris)}
-.login-card h2{font-size:20px;font-weight:700;margin-bottom:4px;letter-spacing:-.02em}
-.login-card .tag{text-align:center;font-size:11px;color:var(--mute);font-family:var(--mono);letter-spacing:.15em;text-transform:uppercase;margin:4px 0 24px}
-.field{margin-bottom:14px}
-.field label{display:block;font-size:11px;font-weight:600;color:var(--mute);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
-.field input{min-height:44px;font-size:14px}
-
-/* ═══ TOAST ═══ */
-.toast-wrap{position:fixed;top:12px;right:12px;z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none}
-.toast{padding:10px 14px;border-radius:var(--r2);font-size:12px;font-weight:500;pointer-events:auto;animation:fadeIn .2s ease;border:1px solid var(--bdr)}
-.toast.ok{background:rgba(34,197,94,.08);color:var(--grn);border-color:rgba(34,197,94,.15)}
-.toast.err{background:rgba(239,68,68,.08);color:var(--red);border-color:rgba(239,68,68,.15)}
-.toast.inf{background:var(--card);color:var(--txt2)}
-@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
-@keyframes fadeOut{from{opacity:1}to{opacity:0;transform:translateY(-8px)}}
-
-/* ═══ PANIC FAB ═══ */
-.fab-panic{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:var(--red);border:none;color:#fff;font-size:20px;cursor:pointer;z-index:999;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(239,68,68,.2);transition:transform .15s}
-.fab-panic:hover{transform:scale(1.05)}
-.fab-panic:active{transform:scale(.95)}
-@media(max-width:640px){.fab-panic{bottom:76px;right:16px;width:48px;height:48px}}
-
-/* ═══ CHART ═══ */
-.chart-wrap{position:relative;height:160px;margin:8px 0}
-
-/* ═══ HEATMAP ═══ */
-.hm-cell{border-radius:2px;transition:opacity .15s}
-
-/* ═══ INFO ROW ═══ */
-.info-row{display:flex;justify-content:space-between;padding:6px 0;font-size:12px;border-bottom:1px solid var(--bdr)}
-.info-row .k{color:var(--mute)}.info-row .v{color:var(--txt);font-family:var(--mono)}
-
-/* ═══ TOP VIDEOS ═══ */
-.tv-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bdr);font-size:11px;transition:background .1s}
-.tv-item:hover{background:rgba(255,255,255,.02)}
-.tv-rank{color:var(--mute);font-family:var(--mono);min-width:20px;text-align:right}
-.tv-url{color:var(--txt2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono);font-size:10px}
-.tv-stats{color:var(--dim);font-family:var(--mono);font-size:10px;min-width:48px;text-align:right}
-
-/* ═══ HISTORY ═══ */
-.hist-item{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--bdr);font-size:10px}
-.hist-time{color:var(--mute);font-family:var(--mono);min-width:60px;flex-shrink:0}
-.hist-url{color:var(--txt2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-
+.slider-row{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.slider-row label{display:flex;justify-content:space-between;font-size:13px;font-weight:500;color:var(--txt2);margin-bottom:6px}
+.slider-row label span{font-family:var(--mono);color:var(--accent);font-weight:600}
+input[type="range"]{-webkit-appearance:none;width:100%;height:4px;border-radius:2px;background:var(--bdr);outline:none;margin:4px 0}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid var(--bg)}
+/* ═══ NOW PLAYING ═══ */
+.np-idle{text-align:center;padding:32px 16px;color:var(--mute)}
+.np-idle .np-icon{font-size:40px;margin-bottom:8px;opacity:.3}
+.np-idle .np-msg{font-size:13px}
+.np-active{padding:4px 0}
+.np-meta{text-align:center;margin-bottom:12px}
+.np-title{font-size:15px;font-weight:700;color:var(--txt);margin-bottom:2px}
+.np-channel{font-size:11px;color:var(--dim)}
+.np-progress{height:4px;border-radius:2px;background:var(--bdr);margin:12px 0 4px;overflow:hidden;cursor:pointer}
+.np-bar{height:100%;border-radius:2px;background:var(--accent);transition:width .3s ease}
+.np-time{display:flex;justify-content:space-between;font-size:10px;color:var(--mute);font-family:var(--mono);margin-bottom:12px}
+.np-controls{display:flex;justify-content:center;gap:8px}
+.np-info{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bdr);border-radius:var(--r);overflow:hidden;margin-top:12px}
+.np-info-cell{background:var(--card);padding:8px 12px}
+.np-info-cell .k{font-size:10px;color:var(--dim);text-transform:uppercase;font-weight:600;letter-spacing:.04em}
+.np-info-cell .v{font-size:14px;font-weight:700;color:var(--txt);font-family:var(--mono)}
 /* ═══ QUEUE ═══ */
-.q-item{display:flex;align-items:center;gap:6px;padding:6px 8px;border-bottom:1px solid var(--bdr);font-size:11px}
-.q-num{color:var(--mute);font-family:var(--mono);min-width:20px}
-.q-url{flex:1;color:var(--txt2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono);font-size:10px}
-.q-rm{color:var(--dim);cursor:pointer;font-size:14px;min-width:24px;min-height:24px;display:flex;align-items:center;justify-content:center}.q-rm:hover{color:var(--red)}
-
-/* ═══ PLAYLIST ═══ */
-.pl-item{display:flex;align-items:center;gap:6px;padding:5px 4px;border-bottom:1px solid var(--bdr);font-size:11px;min-height:36px}
-.pl-num{color:var(--mute);font-family:var(--mono);min-width:20px;font-size:10px}
-.pl-url{flex:1;color:var(--txt2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--mono);font-size:10px}
-.pl-url.dir{color:var(--iris);font-style:italic}
-.pl-actions{display:flex;gap:2px}
-
-/* ═══ MARQUEE PREVIEW ═══ */
-.mq-preview{font-family:var(--mono);font-size:11px;padding:8px;background:var(--bg);border-radius:var(--r);color:var(--txt2);min-height:36px;margin-bottom:8px;word-break:break-all}
+.q-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.03);transition:background .1s}
+.q-item:hover{background:var(--accent-dim);margin:0 -16px;padding:8px 16px}
+.q-num{width:24px;font-size:11px;color:var(--mute);font-family:var(--mono);text-align:center;flex-shrink:0}
+.q-thumb{width:48px;height:32px;object-fit:cover;border-radius:4px;flex-shrink:0;background:var(--bg3)}
+.q-meta{flex:1;min-width:0}
+.q-meta-title{font-size:12px;font-weight:500;color:var(--txt2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.q-meta-sub{font-size:10px;color:var(--mute);margin-top:1px}
+.q-rm{color:var(--mute);cursor:pointer;font-size:14px;padding:4px 8px;border-radius:4px;transition:all .15s;min-width:28px;min-height:28px;display:flex;align-items:center;justify-content:center}
+.q-rm:hover{color:var(--red);background:var(--red-dim)}
+/* ═══ HEATMAP ═══ */
+.heatmap{display:grid;grid-template-columns:repeat(24,1fr);gap:2px}
+.heatmap-cell{aspect-ratio:1;border-radius:2px;transition:all .15s;position:relative}
+.heatmap-cell:hover{transform:scale(1.3);z-index:1}
+.heatmap-labels{display:flex;justify-content:space-between;font-size:8px;color:var(--mute);font-family:var(--mono);margin-top:4px;padding:0 1px}
+.heatmap-day{font-size:9px;color:var(--mute);font-family:var(--mono);text-align:right;padding-right:6px;line-height:1}
+/* ═══ LOGIN ═══ */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;padding:24px;background:var(--bg)}
+.login-card{width:100%;max-width:380px;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r3);padding:32px;position:relative;overflow:hidden}
+.login-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--blue),var(--accent))}
+.login-card h1{font-size:28px;font-weight:800;color:var(--txt);text-align:center;letter-spacing:-.03em;margin-bottom:2px}
+.login-card .tag{font-size:11px;color:var(--mute);text-align:center;text-transform:uppercase;letter-spacing:.15em;margin-bottom:28px;font-weight:500}
+.login-card .field{margin-bottom:14px}
+.login-card .field label{display:block;font-size:11px;font-weight:600;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.login-card .field input{background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;font-size:14px}
+.login-card .field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.login-btn{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all .15s;margin-top:8px}
+.login-btn:hover{background:var(--accent2)}
+.login-btn:disabled{opacity:.6;cursor:not-allowed}
+.login-err{text-align:center;color:var(--red);font-size:12px;margin-top:10px;min-height:18px}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+/* ═══ TOAST ═══ */
+.toast-container{position:fixed;top:12px;right:12px;z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.toast{padding:10px 16px;border-radius:var(--r);font-size:12px;font-weight:500;color:var(--txt);background:var(--card2);border:1px solid var(--bdr);pointer-events:auto;animation:toastIn .25s ease;font-family:var(--font);max-width:320px}
+.toast.ok{border-left:3px solid var(--green)}.toast.err{border-left:3px solid var(--red)}.toast.inf{border-left:3px solid var(--accent)}
+@keyframes toastIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+/* ═══ ACHIEVEMENT ═══ */
+.ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+.ach-badge{text-align:center;padding:12px 8px;border-radius:var(--r2);border:1px solid var(--bdr);background:var(--card);transition:all .2s;cursor:default}
+.ach-badge.earned{border-color:var(--accent);background:var(--accent-dim)}
+.ach-badge .ach-icon{font-size:24px;margin-bottom:4px}
+.ach-badge .ach-name{font-size:10px;font-weight:700;color:var(--txt)}
+.ach-badge .ach-cat{font-size:8px;color:var(--mute);text-transform:uppercase;letter-spacing:.05em}
+.ach-badge .ach-prog{height:3px;border-radius:2px;background:var(--bdr);margin-top:6px;overflow:hidden}
+.ach-badge .ach-prog-bar{height:100%;border-radius:2px;background:var(--accent);transition:width .3s}
+/* ═══ SUGGESTION ═══ */
+.suggestion-card{background:var(--accent-dim);border:1px solid var(--bdr-accent);border-radius:var(--r2);padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px}
+.suggestion-card .sug-icon{font-size:22px;flex-shrink:0}
+.suggestion-card .sug-text{flex:1;font-size:13px;color:var(--txt2)}
+/* ═══ INSIGHT ═══ */
+.insight-card{background:var(--green-dim);border:1px solid rgba(29,185,84,.15);border-radius:var(--r2);padding:16px;margin-bottom:12px}
+.insight-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center}
+.insight-val{font-size:20px;font-weight:800;color:var(--txt);font-family:var(--mono)}
+.insight-lbl{font-size:9px;color:var(--dim);text-transform:uppercase;font-weight:600;letter-spacing:.04em;margin-top:2px}
+/* ═══ ONBOARDING ═══ */
+.onboard-overlay{position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;padding:24px}
+.onboard-card{background:var(--card);border:1px solid var(--bdr2);border-radius:var(--r3);padding:40px 32px;max-width:400px;width:100%;text-align:center}
+.onboard-icon{font-size:56px;margin-bottom:16px}
+.onboard-title{font-size:20px;font-weight:800;color:var(--txt);margin-bottom:8px;letter-spacing:-.02em}
+.onboard-body{font-size:13px;color:var(--dim);line-height:1.7;margin-bottom:24px}
+.onboard-dots{display:flex;justify-content:center;gap:6px;margin-bottom:20px}
+.onboard-dot{width:8px;height:8px;border-radius:4px;background:var(--bdr);transition:all .2s}
+.onboard-dot.active{background:var(--accent);width:20px}
+/* ═══ OFFLINE ═══ */
+.offline-bar{background:var(--amber-dim);border:1px solid rgba(250,166,26,.15);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--amber);display:flex;align-items:center;gap:8px}
+/* ═══ WIDGET CONFIG ═══ */
+.widget-cfg{border:1px solid var(--accent);background:var(--accent-dim);border-radius:var(--r2);padding:16px;margin-bottom:16px}
+.widget-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.03)}
+.widget-row label{flex:1;font-size:12px;color:var(--txt2)}
+/* ═══ SMART PLAYLIST ═══ */
+.sp-item{display:flex;align-items:center;justify-content:space-between;padding:6px 0}
+.sp-item .sp-name{font-size:12px;font-weight:600;color:var(--txt)}
+.sp-item .sp-count{font-size:10px;color:var(--mute);margin-left:4px}
 
 /* ═══ GUIDE OVERLAY ═══ */
-.guide-overlay{position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.85);overflow-y:auto;padding:20px;display:none}
+.guide-overlay{position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.9);overflow-y:auto;padding:24px;display:none}
 .guide-overlay.open{display:block}
-.guide-inner{max-width:560px;margin:40px auto;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r3);padding:28px;position:relative}
-.guide-inner h2{font-size:20px;margin-bottom:16px}.gs{font-weight:600;margin:16px 0 4px;color:var(--iris);font-size:14px}
-.guide-inner p{font-size:13px;color:var(--txt2);line-height:1.6}
-
-/* ═══ TAB ANIMATION ═══ */
-.tab-pane{display:none;opacity:0;transition:opacity .2s ease}
-.tab-pane.active{display:block;opacity:1;animation:fadeIn .2s ease}
-
-/* ═══ SKELETON ═══ */
-.skeleton{border-radius:var(--r);background:rgba(255,255,255,.04);position:relative;overflow:hidden}
-.skeleton::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.03),transparent);animation:shimmer 1.5s infinite}
-@keyframes shimmer{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
-.skel-stat{height:48px;border-radius:var(--r2)}.skel-chart{height:120px;border-radius:var(--r2)}.skel-row{height:24px;margin:4px 0;border-radius:4px}
-
-/* ═══ SWIPE ═══ */
-.swipe-item{transition:transform .2s ease,opacity .2s ease}
-.swipe-item.dismissed{transform:translateX(-100%);opacity:0;height:0;padding:0;margin:0;overflow:hidden;transition:all .25s ease}
-
-/* ═══ PULL TO REFRESH ═══ */
-.ptr-indicator{text-align:center;height:0;overflow:hidden;transition:height .2s ease;color:var(--iris);font-size:11px;font-family:var(--mono);display:flex;align-items:center;justify-content:center}
-.ptr-indicator.pulling{height:32px}
-.ptr-indicator .ptr-spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--bdr);border-top-color:var(--iris);border-radius:50%;animation:sp .6s linear infinite;margin-right:6px}
-@keyframes sp{to{transform:rotate(360deg)}}
-
-/* ═══ THEME TOGGLE ═══ */
-.theme-btn{background:none;border:1px solid var(--bdr);border-radius:var(--r);width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;transition:all .15s;color:var(--dim)}
-.theme-btn:hover{border-color:var(--bdr2);color:var(--txt)}
-
+.guide-inner{max-width:600px;margin:0 auto;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r3);padding:32px;position:relative}
+.guide-inner h2{font-size:20px;font-weight:800;margin-bottom:16px;color:var(--txt)}
+.guide-inner .gs{font-size:14px;font-weight:700;color:var(--accent);margin-top:16px;margin-bottom:4px}
+.guide-inner p{font-size:13px;color:var(--txt2);line-height:1.6;margin-bottom:8px}
 /* ═══ INSTALL BANNER ═══ */
-.install-banner{position:fixed;bottom:90px;left:16px;right:16px;z-index:90;padding:12px 16px;border-radius:var(--r2);background:var(--card);border:1px solid var(--bdr2);display:flex;align-items:center;gap:10px;animation:fadeIn .2s ease;box-shadow:0 4px 16px rgba(0,0,0,.3)}
-.install-banner .ib-text{flex:1;font-size:12px;color:var(--dim)}
-.install-banner .ib-text strong{color:var(--txt);display:block;margin-bottom:2px}
-
-/* ═══ AMBIENT ═══ */
-.ambient{position:fixed;inset:0;pointer-events:none;z-index:0;transition:opacity 1.5s ease}
-.ambient-idle{opacity:0}
-.ambient-playing{opacity:1;background:radial-gradient(ellipse at 50% 80%,rgba(139,92,246,.02),transparent 60%)}
-
-/* ═══ OFFLINE BANNER ═══ */
-/* offline-banner defined in accessibility section */
-
-/* ═══ LIGHT THEME ═══ */
-[data-theme="light"]{
---bg:#fafafa;--bg2:#f4f4f5;--card:#ffffff;--card2:#f9fafb;
---bdr:rgba(0,0,0,.06);--bdr2:rgba(0,0,0,.1);--bdrH:rgba(139,92,246,.3);
---txt:#18181b;--txt2:#3f3f46;--dim:#71717a;--mute:#a1a1aa;
---iris:#7c3aed;--v1:#6d28d9;--v2:#5b21b6;--v3:#4c1d95;
---red:#dc2626;--grn:#16a34a;--amb:#d97706;--sky:#2563eb;
-}
-[data-theme="light"] body{background:var(--bg)}
-[data-theme="light"] .fab-panic{box-shadow:0 4px 12px rgba(220,38,38,.15)}
-/* ═══ ACCESSIBILITY ═══ */
-@media(prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:0.01ms !important;animation-iteration-count:1 !important;transition-duration:0.01ms !important;scroll-behavior:auto !important}
-  .tab-pane.active{animation:none}
-  .ambient{display:none}
-}
-:focus-visible{outline:2px solid var(--iris);outline-offset:2px;border-radius:var(--r)}
-button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,[role="tab"]:focus-visible{outline:2px solid var(--iris);outline-offset:2px}
-/* Minimum 44px touch targets */
-.btn,.tbtn,.theme-btn,.nav-item,button,.toggle-row label.switch,.fab-panic{min-height:44px;min-width:44px}
-.mobile-nav button{min-height:48px;min-width:48px}
-.pl-actions button{min-height:36px;min-width:36px;padding:6px 8px}
-/* Screen reader announcements */
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-[aria-live="polite"]{position:fixed;bottom:-100px;left:0;width:1px;height:1px;overflow:hidden}
-/* Offline banner */
-.offline-banner{position:fixed;top:0;left:0;right:0;z-index:9999;padding:10px 16px;background:rgba(245,158,11,.06);border-bottom:1px solid rgba(245,158,11,.15);font-size:12px;color:var(--amb);display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--sans)}
-</style>
+.install-banner{position:fixed;bottom:64px;left:12px;right:12px;z-index:99;background:var(--card);border:1px solid var(--bdr);border-radius:var(--r2);padding:12px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+.ib-text{flex:1;font-size:12px;color:var(--txt2);line-height:1.4}
+.ib-text strong{display:block;color:var(--txt);font-size:13px;margin-bottom:2px}
+/* ═══ MISC LEGACY ═══ */
+.row{display:flex;gap:8px;align-items:center}
+.mq-preview{font-family:var(--mono);font-size:11px;padding:8px;background:var(--bg3);border-radius:var(--r);margin-bottom:8px;word-break:break-all}
+.hist-item{display:flex;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:10px}
+.hist-time{color:var(--mute);font-family:var(--mono);flex-shrink:0;min-width:48px}
+.hist-url{color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.tv-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.03);transition:background .1s}
+.tv-item:hover{background:var(--accent-dim)}
+.tv-url{font-size:11px;color:var(--txt2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tv-stats{font-size:10px;color:var(--dim);font-family:var(--mono);flex-shrink:0;min-width:48px;text-align:right}
+.time-picker{display:flex;align-items:center;gap:4px}
+.tp-select{background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r);padding:6px 8px;font-size:13px;color:var(--txt);font-family:var(--mono)}
+.tp-sep{font-size:16px;color:var(--dim);font-weight:700}
+.tp-ampm{font-size:11px;color:var(--mute);font-family:var(--mono);margin-left:4px}
+</style>tyle>
 </head>
 <body>
 <div id="root"></div>
@@ -362,15 +343,15 @@ function LoginScreen({onLogin}){
     }
   };
 
-  return <div id="login-wrap">
+  return <div className="login-wrap">
     <div className="login-card">
       <h1>VoidCapture</h1>
       <div className="tag">Remote Controller</div>
       <div className="field"><label>Tunnel URL</label><input type="text" value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://xxxx.trycloudflare.com" aria-label="Tunnel URL" onKeyDown={e=>e.key==='Enter'&&codeRef.current?.focus()} autoComplete="off" spellCheck="false"/></div>
-      <div className="field"><label>Session Code</label><input ref={codeRef} type="text" value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="ABC123" maxLength={6} aria-label="Session code" style={{textTransform:'uppercase',letterSpacing:'.2em'}} onKeyDown={e=>e.key==='Enter'&&pinRef.current?.focus()} autoComplete="off"/></div>
+      <div className="field"><label>Session Code</label><input ref={codeRef} type="text" value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="ABC123" maxLength={6} aria-label="Session code" style={{textTransform:'uppercase',letterSpacing:'.2em',fontFamily:'var(--mono)'}} onKeyDown={e=>e.key==='Enter'&&pinRef.current?.focus()} autoComplete="off"/></div>
       <div className="field"><label>PIN</label><input ref={pinRef} type="password" value={pin} onChange={e=>setPin(e.target.value)} placeholder={'\u2022\u2022\u2022\u2022\u2022\u2022'} maxLength={6} inputMode="numeric" onKeyDown={e=>e.key==='Enter'&&submit()} autoComplete="off"/></div>
-      <button className="btn-primary" onClick={submit} disabled={busy}>{busy?<><span className="spin"/> Connecting{'\u2026'}</>:'Connect'}</button>
-      <div className={`login-err ${err?'show':''}`}>{err}</div>
+      <button className="login-btn" onClick={submit} disabled={busy}>{busy?<><span className="spin"/> Connecting{'\u2026'}</>:'Connect'}</button>
+      <div className="login-err">{err||''}</div>
     </div>
   </div>;
 }
@@ -464,18 +445,22 @@ function TrendChart({data}){
 /* ─── Heatmap ─── */
 function SessionHeatmap({data}){
   const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  const max=Math.max(1,...Object.values(data||{}));
-  return <div className="heatmap">
-    <div/>{Array.from({length:24},(_, i)=><div key={i} className="hm-hour">{i%3===0?i:''}</div>)}
-    {days.map((d,di)=><React.Fragment key={d}>
-      <div className="hm-label">{d}</div>
-      {Array.from({length:24},(_,h)=>{
-        const v=data?.[`${di}-${h}`]||0;const pct=v/max;
-        const bg=pct>0?`rgba(160,124,255,${.08+pct*.5})`:'rgba(255,255,255,.015)';
-        const shadow=pct>.5?`0 0 6px rgba(140,100,255,${pct*.3})`:'none';
-        return <div key={h} className="hm-cell" style={{background:bg,boxShadow:shadow}} title={`${d} ${h}:00 \u2014 ${Math.round(v/60)}min`}/>;
-      })}
-    </React.Fragment>)}
+  const max=Math.max(1,...Object.values(data||{}).map(v=>Number(v)||0));
+  return <div>
+    {days.map((d,di)=><div key={d} style={{display:'flex',alignItems:'center',gap:4,marginBottom:2}}>
+      <span className="heatmap-day" style={{width:28,flexShrink:0}}>{d}</span>
+      <div style={{display:'flex',gap:2,flex:1}}>
+        {Array.from({length:24},(_,h)=>{
+          const v=Number(data?.[`${di}-${h}`])||0;
+          const pct=v/max;
+          const bg=pct>0?`rgba(124,92,246,${.1+pct*.6})`:'rgba(255,255,255,.03)';
+          return <div key={h} className="heatmap-cell" style={{flex:1,height:14,borderRadius:2,background:bg}} title={`${d} ${h}:00 \u2014 ${Math.round(v/60)}min`}/>;
+        })}
+      </div>
+    </div>)}
+    <div style={{display:'flex',gap:2,marginLeft:32}}>
+      {[0,3,6,9,12,15,18,21].map(h=><span key={h} style={{flex:3,fontSize:8,color:'var(--mute)',fontFamily:'var(--mono)'}}>{h}</span>)}
+    </div>
   </div>;
 }
 
@@ -1145,53 +1130,54 @@ function App(){
   if(!authed)return <><LoginScreen onLogin={onLogin}/><ToastContainer aria-live="polite"/></>;
 
   return <>
-    <div id="app-wrap" className="on">
-      {/* Ambient background */}
-      <div className={`ambient ${playing?'ambient-playing':'ambient-idle'}`}/>
-
-      {/* Top bar */}
-      <div className="topbar">
-        <span className="logo">VoidCapture</span>
-        <span className={`pill ${playing?'live':'idle'}`}><span className="dot"/>{playing?'Playing':'Idle'}</span>
-        <span className="tz">{tz}</span>
-        <div className="top-actions">
-          <span style={{fontSize:8,color:isOffline?'var(--amb)':wsRef.current?.readyState===1?'var(--grn)':'var(--mute)',fontFamily:'var(--mono)',marginRight:4}}>{isOffline?'\u26a0 Offline':wsRef.current?.readyState===1?'\u26a1 WS':'\u21bb Poll'}</span>
-          {st.connectedDevices>1&&<span style={{fontSize:8,color:'var(--iris)',fontFamily:'var(--mono)',marginRight:4}}>{st.connectedDevices} devices</span>}
-          <button className="theme-btn" onClick={toggleTheme} title={theme==='dark'?'Light mode':'Dark mode'} aria-label={theme==='dark'?'Switch to light mode':'Switch to dark mode'}>{theme==='dark'?'\u2600':'\u263e'}</button>
-          <button className="tbtn" onClick={()=>{poll();toast('Synced','inf')}} aria-label="Sync status">{'\u21bb'}</button>
-          <button className="tbtn danger" onClick={()=>doCmd('panic')} aria-label="Panic stop">{'\u26a0'} Panic</button>
-          <button className="tbtn" onClick={()=>setGuide(true)} aria-label="Open help guide">?</button>
-          <button className="tbtn" onClick={logout} aria-label="Logout">Logout</button>
+    <div className="app">
+      {/* ═══ SIDEBAR (desktop) ═══ */}
+      <div className="sidebar">
+        <div className="sidebar-brand">VoidCapture<small>Remote Controller</small></div>
+        <nav className="sidebar-nav" role="tablist" aria-label="Main navigation">
+          {[['home','\u25c8','Home'],['ctrl','\u2699','Controls'],['list','\u2261','Playlist']].map(([k,icon,label])=>
+            <div key={k} className={`sidebar-item ${tab===k?'active':''}`} onClick={()=>setTab(k)} role="tab" aria-selected={tab===k}>
+              <span className="icon">{icon}</span>{label}
+            </div>)}
+        </nav>
+        <div className="sidebar-footer">
+          <div className="sidebar-meta">
+            <span className={`dot ${wsRef.current?.readyState===1?'on':'off'}`}/>
+            {isOffline?'Offline':wsRef.current?.readyState===1?'WS Connected':'Polling'}
+            {st.connectedDevices>1&&` \u00b7 ${st.connectedDevices} devices`}
+          </div>
+          <div style={{display:'flex',gap:4}}>
+            <button className="btn btn-g btn-sm" style={{flex:1}} onClick={toggleTheme} aria-label="Toggle theme">{theme==='dark'?'\u2600':'\u263e'}</button>
+            <button className="btn btn-g btn-sm" style={{flex:1}} onClick={()=>{poll();toast('Synced','inf')}} aria-label="Sync">{'\u21bb'}</button>
+            <button className="btn btn-d btn-sm" style={{flex:1}} onClick={logout} aria-label="Logout">Logout</button>
+          </div>
         </div>
       </div>
 
-      {/* Desktop nav */}
-      <div className="nav-bar" role="tablist" aria-label="Main navigation">
-        {[['home','\u25c8 Home'],['ctrl','\u2699 Controls'],['list','\u2261 Playlist & Queue']].map(([k,l])=>
-          <div key={k} className={`nav-item ${tab===k?'active':''}`} onClick={()=>setTab(k)} role="tab" aria-selected={tab===k}>{l}</div>)}
-      </div>
-
-      {/* Mobile nav */}
-      <div className="mob-nav">
-        {[['home','\u25c8','Home'],['ctrl','\u2699','Controls'],['list','\u2261','Playlist']].map(([k,i,l])=>
-          <button key={k} className={tab===k?'active':''} onClick={()=>setTab(k)}><span className="icon">{i}</span>{l}</button>)}
-      </div>
-
+      {/* ═══ MAIN CONTENT ═══ */}
+      <div className="main">
       <PullToRefresh onRefresh={()=>poll()}>
-      <div className="content">
-        {isOffline&&<div className="offline-banner" role="alert">
-          {'\u26a0'} <span>Offline{lastStatusTimeRef.current?` \u2014 last updated ${Math.round((Date.now()-lastStatusTimeRef.current)/1000)}s ago`:''}{offlineQueueRef.current.length>0?` \u2022 ${offlineQueueRef.current.length} command(s) queued`:''}</span>
-        </div>}
-        {/* ═══ HOME ═══ */}
-        <div className={`tab-pane ${tab==='home'?'active':''}`} role="tabpanel" aria-label="Home">
-
-          {/* Customize button */}
-          <div style={{display:'flex',justifyContent:'flex-end',marginBottom:4}}>
-            <button className="btn btn-g" style={{fontSize:9,padding:'3px 8px'}} onClick={()=>setWidgetEditMode(!widgetEditMode)} aria-label="Customize dashboard">{widgetEditMode?'\u2715 Done':'\u2699 Customize'}</button>
+        {/* Page header */}
+        <div className="page-hdr">
+          <h2>{tab==='home'?'Dashboard':tab==='ctrl'?'Controls':'Playlist & Queue'}</h2>
+          <div className="page-hdr-actions">
+            <span style={{fontSize:10,color:playing?'var(--green)':'var(--mute)',fontFamily:'var(--mono)',display:'flex',alignItems:'center',gap:4}}>
+              <span style={{width:6,height:6,borderRadius:3,background:playing?'var(--green)':'var(--mute)',display:'inline-block'}}/>{playing?'Playing':'Idle'}
+            </span>
+            {tab==='home'&&<button className="btn btn-g btn-sm" onClick={()=>setWidgetEditMode(!widgetEditMode)} aria-label="Customize">{widgetEditMode?'\u2715 Done':'\u2699 Customize'}</button>}
+            <button className="btn btn-d btn-sm" onClick={()=>doCmd('panic')} aria-label="Panic">{'\u26a0'} Panic</button>
           </div>
+        </div>
+
+        {isOffline&&<div className="offline-bar" role="alert">
+          {'\u26a0'} Offline{lastStatusTimeRef.current?` \u2014 last updated ${Math.round((Date.now()-lastStatusTimeRef.current)/1000)}s ago`:''}{offlineQueueRef.current.length>0?` \u2022 ${offlineQueueRef.current.length} queued`:''}
+        </div>}
+
+        {/* ═══ HOME ═══ */}
+        <div role="tabpanel" aria-label="Home" style={{display:tab==='home'?'block':'none'}}>
 
           {/* Widget config panel */}
-          {widgetEditMode&&<div className="card" style={{border:'1px solid var(--iris)',marginBottom:12}}>
+          {widgetEditMode&&<div className="widget-cfg">
             <div className="card-title" style={{fontSize:12}}>Dashboard Widgets</div>
             <div style={{fontSize:11,color:'var(--dim)',marginBottom:8}}>Toggle visibility and use arrows to reorder.</div>
             {defaultWidgets.map(id=>{
@@ -1208,7 +1194,7 @@ function App(){
           </div>}
 
           {/* Overview stats */}
-          {isWidgetVisible('stats')&&<div className="stats-grid">
+          {isWidgetVisible('stats')&&<div className="stats-row">
             <div className="stat-card purple"><div className="val">{st.todayTime||'\u2014'}</div><div className="lbl">Today</div></div>
             <div className="stat-card blue"><div className="val">{st.totalTime||'\u2014'}</div><div className="lbl">All Time</div></div>
             <div className="stat-card green"><div className="val"><AnimatedValue value={st.todayVideos??0}/></div><div className="lbl">Videos</div></div>
@@ -1227,7 +1213,7 @@ function App(){
           {/* v15.2: Session insight (shows after session ends) */}
           {isWidgetVisible('insight')&&an?.sessionInsight&&!playing&&an.sessionInsight.videos>0&&<div className="card" style={{border:'1px solid rgba(34,197,94,.15)',background:'rgba(34,197,94,.04)'}}>
             <div className="card-title"><span className="ci">{'\u2139'}</span> Last Session</div>
-            <div className="stats-grid" style={{gridTemplateColumns:'repeat(3,1fr)'}}>
+            <div className="stats-row" style={{gridTemplateColumns:'repeat(3,1fr)'}}>
               <div style={{textAlign:'center'}}><div style={{fontSize:18,fontWeight:700,color:'var(--txt)'}}>{fmtSec(an.sessionInsight.durationSec)}</div><div style={{fontSize:9,color:'var(--mute)'}}>Duration</div></div>
               <div style={{textAlign:'center'}}><div style={{fontSize:18,fontWeight:700,color:'var(--grn)'}}>{an.sessionInsight.completed}/{an.sessionInsight.videos}</div><div style={{fontSize:9,color:'var(--mute)'}}>Completed</div></div>
               <div style={{textAlign:'center'}}><div style={{fontSize:18,fontWeight:700,color:an.sessionInsight.completionRate>70?'var(--grn)':'var(--amb)'}}>{an.sessionInsight.completionRate}%</div><div style={{fontSize:9,color:'var(--mute)'}}>Completion</div></div>
@@ -1240,27 +1226,42 @@ function App(){
           {/* Now Playing */}
           {isWidgetVisible('nowplaying')&&<div className="card">
             <div className="card-title"><span className="ci">{'\u25b6'}</span> Now Playing</div>
-            {st.currentVideo?.title&&<div style={{textAlign:'center',padding:'4px 8px',marginBottom:4}}>
-              <div style={{fontSize:14,fontWeight:600,color:'var(--txt)'}}>{st.currentVideo.title}</div>
-              {st.currentVideo.channel&&<div style={{fontSize:11,color:'var(--dim)',marginTop:2}}>{st.currentVideo.channel}</div>}
+            {!playing?<div className="np-idle">
+              <div className="np-icon">{'\u23f8'}</div>
+              <div className="np-msg">No session active</div>
+              <button className="btn btn-p" style={{marginTop:12}} onClick={()=>doCmd('autostartnow')}>Start Session</button>
+            </div>:
+            <div className="np-active">
+              {st.currentVideo?.title&&<div className="np-meta">
+                <div className="np-title">{st.currentVideo.title}</div>
+                {st.currentVideo.channel&&<div className="np-channel">{st.currentVideo.channel}</div>}
+              </div>}
+              <div className="np-progress"><div className="np-bar" style={{width:pos+'%'}}/></div>
+              <div className="np-time"><span>{fmtSec(curSec)}</span><span>{lenSec>0?fmtSec(lenSec):'--:--'}</span></div>
+              {st.sessionStartedAt&&o.maxTime>0&&(()=>{
+                const elapsed=(Date.now()-new Date(st.sessionStartedAt).getTime())/1000;
+                const remain=o.maxTime*60-elapsed;
+                return <div style={{textAlign:'center',fontFamily:'var(--mono)',fontSize:12,color:remain<60?'var(--red)':'var(--amber)',marginBottom:8}}>{remain>0?fmtSec(remain)+' remaining':'Expired'}</div>
+              })()}
+              <div className="np-controls">
+                <button className="btn-icon" onClick={()=>doCmd('skip')} aria-label="Skip">{'\u23ed'}</button>
+                <button className="btn-icon" onClick={()=>{const v=Math.max(0,(o.volume||100)-10);doCmd('volume',v,true)}} aria-label="Volume down">{'\ud83d\udd09'}</button>
+                <button className="btn-icon" onClick={()=>{const v=Math.min(200,(o.volume||100)+10);doCmd('volume',v,true)}} aria-label="Volume up">{'\ud83d\udd0a'}</button>
+                <button className="btn-icon" style={{borderColor:'var(--red)',color:'var(--red)'}} onClick={()=>doCmd('panic')} aria-label="Panic">{'\u26a0'}</button>
+              </div>
+              <div className="np-info">
+                <div className="np-info-cell"><div className="k">Speed</div><div className="v">{o.speed!==undefined?o.speed+'\u00d7':'\u2014'}</div></div>
+                <div className="np-info-cell"><div className="k">Volume</div><div className="v">{o.volume??'\u2014'}</div></div>
+                <div className="np-info-cell"><div className="k">Loop</div><div className="v">{o.loop!==undefined?(o.loop?'On':'Off'):'\u2014'}</div></div>
+                <div className="np-info-cell"><div className="k">Queue</div><div className="v">{st.queueLength||0}</div></div>
+              </div>
             </div>}
-            <ProgressRing progress={pos} time={fmtSec(curSec)} total={lenSec>0?fmtSec(lenSec):'--:--'} url={st.currentUrl} playing={playing} onVolumeChange={d=>{const v=Math.max(0,Math.min(200,(o.volume||100)+d));doCmd('volume',v,true);toast('Volume: '+v,'inf')}} onSpeedChange={d=>{const s=Math.max(0.25,Math.min(1.5,(o.speed||1)+d));doCmd('speed',+s.toFixed(2),true);toast('Speed: '+s.toFixed(2)+'\u00d7','inf')}}/>
-            <div style={{textAlign:'center',fontSize:9,color:'var(--mute)',fontFamily:'var(--mono)',marginTop:-4,marginBottom:8}}>Swipe \u2191\u2193 volume \u00b7 \u2190\u2192 speed</div>
-            {st.sessionStartedAt&&o.maxTime>0&&playing&&(()=>{
-              const elapsed=(Date.now()-new Date(st.sessionStartedAt).getTime())/1000;
-              const remain=o.maxTime*60-elapsed;
-              return <div style={{textAlign:'center',fontFamily:'var(--mono)',fontSize:12,color:remain<60?'var(--red)':'var(--amb)',padding:'4px 0'}}>{remain>0?fmtSec(remain)+' remaining':'Expired'}</div>
-            })()}
-            <div className="info-row"><span className="k">Speed</span><span className="v">{o.speed!==undefined?o.speed+'\u00d7':'\u2014'}</span></div>
-            <div className="info-row"><span className="k">Volume</span><span className="v">{o.volume??'\u2014'}</span></div>
-            <div className="info-row"><span className="k">Loop</span><span className="v">{o.loop!==undefined?(o.loop?'On':'Off'):'\u2014'}</span></div>
-            <div className="info-row"><span className="k">Marquee</span><span className="v">{o.marqueeText?.trim()||'Off'}</span></div>
           </div>}
 
           {/* Streaks */}
           {an.streaks?<div className="card">
             <div className="card-title"><span className="ci">{'\ud83d\udd25'}</span> Streaks</div>
-            <div className="stats-grid">
+            <div className="stats-row">
               <div className="stat-card amber"><div className="val">{an.streaks.currentStreak||0}</div><div className="lbl">Current</div></div>
               <div className="stat-card red"><div className="val">{an.streaks.longestStreak||0}</div><div className="lbl">Longest</div></div>
               <div className="stat-card purple"><div className="val">{an.streaks.totalActiveDays||0}</div><div className="lbl">Active Days</div></div>
@@ -1370,7 +1371,7 @@ function App(){
           {/* Session Patterns */}
           <div className="card">
             <div className="card-title"><span className="ci">{'\u2606'}</span> Session Patterns</div>
-            <div className="stats-grid">
+            <div className="stats-row">
               {(()=>{const sess=an.sessions||[];const avgDur=sess.length?Math.round(sess.reduce((s,x)=>s+x.durationSec,0)/sess.length):0;
                 const cr=an.completionRates||[];const avgCr=cr.length?Math.round(cr.reduce((s,x)=>s+x.rate,0)/cr.length):0;
                 const tv=an.topVideos||[];const totalSkips=tv.reduce((s,x)=>s+(x.skipped||0),0);const totalPlays=tv.reduce((s,x)=>s+(x.plays||0),0);
@@ -1528,7 +1529,7 @@ function App(){
 
 
         {/* ═══ CONTROLS ═══ */}
-        <div className={`tab-pane ${tab==='ctrl'?'active':''}`} role="tabpanel" aria-label="Controls">
+        <div style={{display:tab==='ctrl'?'block':'none'}} role="tabpanel" aria-label="Controls">
           <div className="card">
             <div className="card-title"><span className="ci">{'\u23ef'}</span> Remote</div>
             <div className="remote">
@@ -1592,7 +1593,7 @@ function App(){
         </div>
 
         {/* ═══ PLAYLIST ═══ */}
-        <div className={`tab-pane ${tab==='list'?'active':''}`} role="tabpanel" aria-label="Playlist">
+        <div style={{display:tab==='list'?'block':'none'}} role="tabpanel" aria-label="Playlist">
           <div className="card">
             <div className="card-title"><span className="ci">{'\u25b6'}</span> Now Playing</div>
             <div className="mq-preview" style={{color:st.currentUrl?'var(--txt)':'var(--mute)'}}>{st.currentUrl||'\u2014'}</div>
@@ -1611,12 +1612,16 @@ function App(){
             <NumRow label="Start From" defVal={plSettings.startFrom||0} onSet={v=>doCmd('startfrom',v)} info="0 = beginning"/>
           </div>
         </div>
-      </div>
       </PullToRefresh>
-
-      {/* Floating Panic */}
-      <button className="fab-panic" aria-label="Emergency panic stop" onClick={()=>{haptic(50);doCmd('panic')}} title="Panic Stop">{'\u26a0'}</button>
-    </div>
+      </div>{/* end main */}
+      {/* ═══ MOBILE BOTTOM BAR ═══ */}
+      <div className="mobile-bar">
+        {[['home','\u25c8','Home'],['ctrl','\u2699','Controls'],['list','\u2261','Playlist']].map(([k,icon,label])=>
+          <button key={k} className={tab===k?'active':''} onClick={()=>setTab(k)} aria-label={label}>
+            <span className="mi">{icon}</span>{label}
+          </button>)}
+      </div>
+    </div>{/* end app */}
 
     {/* PWA Install Banner */}
     {showInstallBanner&&!isStandalone&&<div className="install-banner">
@@ -1677,7 +1682,7 @@ function NumRow({label,unit,defVal,onSet,info}){
 
 /* ─── Skeleton Loading ─── */
 function Skeleton({type='text',count=3}){
-  if(type==='stats')return <div className="stats-grid">{Array.from({length:4},(_,i)=><div key={i} className="skeleton skel-stat"/>)}</div>;
+  if(type==='stats')return <div className="stats-row">{Array.from({length:4},(_,i)=><div key={i} className="skeleton skel-stat"/>)}</div>;
   if(type==='chart')return <div className="skeleton skel-chart"/>;
   return <>{Array.from({length:count},(_,i)=><div key={i} className="skeleton skel-row"/>)}</>;
 }
