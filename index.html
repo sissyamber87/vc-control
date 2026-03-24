@@ -6,10 +6,10 @@
 <meta name="theme-color" id="meta-theme" content="#06060c">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="VoidCapture">
+<meta name="apple-mobile-web-app-title" content="VoidPulse">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>VoidCapture</title>
+<title>VoidPulse</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -248,10 +248,11 @@ input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;hei
 const {useState,useEffect,useRef,useCallback,useMemo}=React;
 
 /* ─── API Layer ─── */
-let S={u:null,t:null};
+let S={u:null,t:null,csrf:null};
 const api=async(m,p,b)=>{
   const o={method:m,headers:{'Content-Type':'application/json'}};
   if(S.t)o.headers['Authorization']='Bearer '+S.t;
+  if(S.csrf&&m==='POST')o.headers['X-CSRF-Token']=S.csrf;
   if(b!==undefined)o.body=JSON.stringify(b);
   const r=await fetch(S.u+p,o);
   if(!r.ok){const e=await r.json().catch(()=>({error:'HTTP '+r.status}));throw new Error(e.error||e.message||'HTTP '+r.status)}
@@ -270,6 +271,92 @@ const fmtSec=s=>{s=Math.max(0,Math.floor(s));const m=Math.floor(s/60),sec=s%60;r
 const fmtLocal=iso=>{try{return new Date(iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',timeZone:tz})}catch(e){return iso}};
 const trunc=(s,n)=>s&&s.length>n?s.slice(0,n)+'\u2026':s;
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* ═══ OFFLINE-FIRST: IndexedDB Store + Sync Engine ═══ */
+const DB_NAME='VoidPulseOffline';const DB_VER=1;
+const openVcDb=()=>new Promise((res,rej)=>{
+  const req=indexedDB.open(DB_NAME,DB_VER);
+  req.onupgradeneeded=e=>{
+    const db=e.target.result;
+    if(!db.objectStoreNames.contains('store'))db.createObjectStore('store');
+    if(!db.objectStoreNames.contains('syncQueue'))db.createObjectStore('syncQueue',{keyPath:'id',autoIncrement:true});
+  };
+  req.onsuccess=e=>res(e.target.result);
+  req.onerror=e=>rej(e.target.error);
+});
+const vcGet=async(key)=>{const db=await openVcDb();return new Promise((res,rej)=>{const tx=db.transaction('store','readonly');const r=tx.objectStore('store').get(key);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})};
+const vcSet=async(key,val)=>{const db=await openVcDb();return new Promise((res,rej)=>{const tx=db.transaction('store','readwrite');tx.objectStore('store').put(val,key);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})};
+const vcDel=async(key)=>{const db=await openVcDb();return new Promise((res,rej)=>{const tx=db.transaction('store','readwrite');tx.objectStore('store').delete(key);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})};
+
+// Sync queue operations
+const syncQueueAdd=async(op,data)=>{const db=await openVcDb();return new Promise((res,rej)=>{const tx=db.transaction('syncQueue','readwrite');tx.objectStore('syncQueue').add({op,data,ts:Date.now()});tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})};
+const syncQueueGetAll=async()=>{const db=await openVcDb();return new Promise((res,rej)=>{const tx=db.transaction('syncQueue','readonly');const r=tx.objectStore('syncQueue').getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})};
+const syncQueueClear=async()=>{const db=await openVcDb();return new Promise((res,rej)=>{const tx=db.transaction('syncQueue','readwrite');tx.objectStore('syncQueue').clear();tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})};
+
+// SEC: PBKDF2-HMAC-SHA256 for PIN hashing (100K iterations + 16-byte salt)
+const genSalt=()=>crypto.getRandomValues(new Uint8Array(16));
+const buf2hex=b=>Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');
+const hex2buf=h=>new Uint8Array(h.match(/.{2}/g).map(x=>parseInt(x,16)));
+const hashPin=async(pin,salt)=>{
+  if(typeof salt==='string')salt=hex2buf(salt);
+  const enc=new TextEncoder().encode(pin);
+  const key=await crypto.subtle.importKey('raw',enc,'PBKDF2',false,['deriveBits']);
+  const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:100000,hash:'SHA-256'},key,256);
+  return buf2hex(bits);
+};
+// SEC: AES-GCM for token encryption at rest
+const deriveAesKey=async(pin,salt)=>{
+  if(typeof salt==='string')salt=hex2buf(salt);
+  const enc=new TextEncoder().encode(pin);
+  const bk=await crypto.subtle.importKey('raw',enc,'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:100000,hash:'SHA-256'},bk,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+};
+const encryptToken=async(token,pin,salt)=>{
+  const key=await deriveAesKey(pin,salt);const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(token));
+  return {iv:buf2hex(iv),ct:buf2hex(ct)};
+};
+const decryptToken=async(enc,pin,salt)=>{
+  const key=await deriveAesKey(pin,salt);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:hex2buf(enc.iv)},key,hex2buf(enc.ct));
+  return new TextDecoder().decode(pt);
+};
+// SEC: Tunnel URL entropy check
+const checkTunnelEntropy=(url)=>{try{const sub=new URL(url).hostname.split('.')[0];return sub.length>=6}catch{return true}};
+
+// Cache current state to IndexedDB
+const cacheState=async(st,an,pl,sched,profs)=>{
+  try{
+    if(st)await vcSet('lastStatus',{...st,_cachedAt:Date.now()});
+    if(an)await vcSet('lastAnalytics',{...an,_cachedAt:Date.now()});
+    if(pl?.length)await vcSet('playlist',pl);
+    if(sched?.length)await vcSet('weeklySchedule',sched);
+    if(profs?.length)await vcSet('profiles',profs);
+  }catch(e){console.warn('Cache failed:',e)}
+};
+
+// Sync engine: replay queued commands, then pull fresh state
+const syncEngine=async(apiCall,cmdCall,onStatus,onAnalytics,onToast)=>{
+  const queue=await syncQueueGetAll();
+  if(!queue.length){onToast&&onToast('Synced \u2014 no pending changes','inf');return 0}
+  let ok=0,fail=0;const changes=[];
+  for(const item of queue){
+    try{
+      await cmdCall(item.op,item.data);
+      ok++;changes.push(item.op);
+    }catch(e){fail++;console.warn('Sync fail:',item.op,e)}
+  }
+  await syncQueueClear();
+  // Pull fresh state
+  try{
+    const st=await apiCall('GET','/status');if(st&&onStatus)onStatus(st);
+    const an=await apiCall('GET','/analytics?days=30');if(an&&onAnalytics)onAnalytics(an);
+  }catch(e){}
+  // Build summary
+  const summary=changes.length?`Synced ${ok} change${ok>1?'s':''}: ${[...new Set(changes)].join(', ')}${fail?` (${fail} failed)`:''}`:null;
+  if(summary&&onToast)onToast(summary,'ok');
+  return ok;
+};
 
 /* ─── Toast System ─── */
 let toastId=0;
@@ -319,9 +406,19 @@ function LoginScreen({onLogin}){
   const [pin,setPin]=useState('');
   const [err,setErr]=useState('');
   const [busy,setBusy]=useState(false);
+  const [hasCache,setHasCache]=useState(false);
   const codeRef=useRef(),pinRef=useRef();
 
   useEffect(()=>{
+    // Load cached session
+    (async()=>{
+      try{
+        const sess=await vcGet('session');
+        if(sess?.tunnelUrl&&sess?.code){
+          setUrl(sess.tunnelUrl);setCode(sess.code);setHasCache(true);
+        }
+      }catch(e){}
+    })();
     try{const h=window.location.hash.slice(1);if(!h)return;const p={};h.split('&').forEach(x=>{const[k,v]=x.split('=');if(k&&v)p[decodeURIComponent(k)]=decodeURIComponent(v)});
     if(p.T)setUrl(p.T);if(p.C)setCode(p.C.toUpperCase());history.replaceState(null,'',window.location.pathname)}catch(e){}
   },[]);
@@ -335,25 +432,225 @@ function LoginScreen({onLogin}){
     try{
       const res=await api('POST','/auth',{code,pin});
       if(!res.ok){setErr(res.error||'Auth failed');setBusy(false);return}
-      S.t=res.token;onLogin();
+      S.t=res.token;S.csrf=res.csrfToken||null;
+      // SEC: Save session with PBKDF2 salt + AES-GCM encrypted token
+      const salt=genSalt();const saltHex=buf2hex(salt);
+      const ph=await hashPin(pin,salt);
+      const encTok=await encryptToken(res.token,pin,salt);
+      await vcSet('session',{tunnelUrl:S.u,code,pinHash:ph,salt:saltHex,encryptedToken:encTok,savedAt:Date.now()});
+      // SEC: Entropy check
+      if(!checkTunnelEntropy(S.u))setTimeout(()=>toast('Warning: Tunnel URL may be guessable. Consider regenerating.','err'),1500);
+      onLogin(false); // online login
     }catch(e){
       S.u=S.t=null;const m=e.message||'';
-      if(m.includes('Failed to fetch')||m.includes('NetworkError'))setErr('Cannot reach tunnel URL.');
+      if(m.includes('Failed to fetch')||m.includes('NetworkError'))setErr('Cannot reach server. Use Offline Mode below if available.');
       else if(m.includes('401'))setErr('Incorrect code or PIN.');
       else setErr('Failed: '+m);setBusy(false);
     }
   };
 
+  const offlineLogin=async()=>{
+    setErr('');
+    if(!/^\d{6}$/.test(pin)){setErr('Enter your 6-digit PIN');return}
+    setBusy(true);
+    try{
+      const sess=await vcGet('session');
+      if(!sess?.pinHash||!sess?.salt){setErr('No saved session. Connect online first.');setBusy(false);return}
+      const ph=await hashPin(pin,sess.salt);
+      if(ph!==sess.pinHash){setErr('Incorrect PIN');setBusy(false);return}
+      S.u=sess.tunnelUrl;
+      // Decrypt token from AES-GCM
+      if(sess.encryptedToken){
+        try{S.t=await decryptToken(sess.encryptedToken,pin,sess.salt)}catch{S.t=null}
+      }
+      onLogin(true); // offline login
+    }catch(e){setErr('Offline login failed');setBusy(false)}
+  };
+
   return <div className="login-wrap">
     <div className="login-card">
-      <h1>VoidCapture</h1>
+      <h1>VoidPulse</h1>
       <div className="tag">Remote Controller</div>
       <div className="field"><label>Tunnel URL</label><input type="text" value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://xxxx.trycloudflare.com" aria-label="Tunnel URL" onKeyDown={e=>e.key==='Enter'&&codeRef.current?.focus()} autoComplete="off" spellCheck="false"/></div>
       <div className="field"><label>Session Code</label><input ref={codeRef} type="text" value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="ABC123" maxLength={6} aria-label="Session code" style={{textTransform:'uppercase',letterSpacing:'.2em',fontFamily:'var(--mono)'}} onKeyDown={e=>e.key==='Enter'&&pinRef.current?.focus()} autoComplete="off"/></div>
       <div className="field"><label>PIN</label><input ref={pinRef} type="password" value={pin} onChange={e=>setPin(e.target.value)} placeholder={'\u2022\u2022\u2022\u2022\u2022\u2022'} maxLength={6} inputMode="numeric" onKeyDown={e=>e.key==='Enter'&&submit()} autoComplete="off"/></div>
       <button className="login-btn" onClick={submit} disabled={busy}>{busy?<><span className="spin"/> Connecting{'\u2026'}</>:'Connect'}</button>
+      {hasCache&&<button className="login-btn" style={{marginTop:8,background:'var(--card2)',color:'var(--txt2)',border:'1px solid var(--bdr)'}} onClick={offlineLogin} disabled={busy}>{'\u26a1'} Offline Mode</button>}
+      {hasCache&&<div style={{textAlign:'center',fontSize:10,color:'var(--mute)',marginTop:6}}>Uses cached data from last session</div>}
       <div className="login-err">{err||''}</div>
     </div>
+  </div>;
+}
+
+/* ─── Focus Growth Orb (v17.1) ─── */
+function FocusOrb({sessionStartedAt,playing,panicked}){
+  const canvasRef=useRef(null);
+  const frameRef=useRef(0);
+  useEffect(()=>{
+    if(!canvasRef.current)return;
+    const c=canvasRef.current,ctx=c.getContext('2d');
+    c.width=160;c.height=160;
+    let raf;
+    const draw=()=>{
+      frameRef.current++;
+      const cx=80,cy=80;
+      ctx.clearRect(0,0,160,160);
+      if(!playing||!sessionStartedAt){
+        // Idle: dim ring
+        ctx.beginPath();ctx.arc(cx,cy,30,0,Math.PI*2);
+        ctx.strokeStyle='rgba(124,92,246,.15)';ctx.lineWidth=2;ctx.stroke();
+        ctx.fillStyle='rgba(124,92,246,.05)';ctx.fill();
+        return;
+      }
+      const elapsed=(Date.now()-new Date(sessionStartedAt).getTime())/1000;
+      const mins=elapsed/60;
+      const growth=Math.min(1,mins/45); // full size at 45 min
+      const r=20+growth*40;
+      const t=frameRef.current/60;
+      // Color shift: blue → violet → gold
+      const hue=240-growth*180; // 240(blue) → 60(gold)
+      const sat=70+growth*20;
+      // Pulsing glow
+      const pulse=Math.sin(t*2)*0.15+0.85;
+      // Outer glow
+      const grad=ctx.createRadialGradient(cx,cy,r*0.3,cx,cy,r*1.5);
+      grad.addColorStop(0,`hsla(${hue},${sat}%,60%,${0.3*pulse})`);
+      grad.addColorStop(1,'transparent');
+      ctx.fillStyle=grad;ctx.fillRect(0,0,160,160);
+      // Main orb
+      ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);
+      ctx.fillStyle=`hsla(${hue},${sat}%,55%,${0.4*pulse})`;ctx.fill();
+      ctx.strokeStyle=`hsla(${hue},${sat}%,65%,${0.6*pulse})`;ctx.lineWidth=2;ctx.stroke();
+      // Inner core
+      ctx.beginPath();ctx.arc(cx,cy,r*0.4,0,Math.PI*2);
+      ctx.fillStyle=`hsla(${hue},${sat}%,70%,${0.5*pulse})`;ctx.fill();
+      // Floating particles
+      for(let i=0;i<6;i++){
+        const a=t*0.5+i*(Math.PI*2/6);
+        const pr=r*0.8+Math.sin(t+i)*8;
+        const px=cx+Math.cos(a)*pr,py=cy+Math.sin(a)*pr;
+        ctx.beginPath();ctx.arc(px,py,1.5+growth,0,Math.PI*2);
+        ctx.fillStyle=`hsla(${hue},${sat}%,70%,${0.4+growth*0.3})`;ctx.fill();
+      }
+      // Time badge
+      ctx.font='600 11px "JetBrains Mono"';ctx.textAlign='center';
+      ctx.fillStyle=`hsla(${hue},${sat}%,80%,.8)`;
+      ctx.fillText(Math.floor(mins)+'m',cx,cy+4);
+      raf=requestAnimationFrame(draw);
+    };
+    draw();
+    return ()=>cancelAnimationFrame(raf);
+  },[playing,sessionStartedAt,panicked]);
+  return <div style={{display:'flex',justifyContent:'center',padding:'8px 0'}}>
+    <canvas ref={canvasRef} width={160} height={160} style={{width:120,height:120}}/>
+  </div>;
+}
+
+/* ─── Session Share Card Generator (v17.1) ─── */
+function SessionShareCard({insight,xp,level,streak,onClose}){
+  const canvasRef=useRef(null);
+  useEffect(()=>{
+    if(!canvasRef.current||!insight)return;
+    const c=canvasRef.current,ctx=c.getContext('2d');
+    c.width=600;c.height=340;
+    // Background
+    const bg=ctx.createLinearGradient(0,0,600,340);
+    bg.addColorStop(0,'#0c0c0c');bg.addColorStop(1,'#1a1a2e');
+    ctx.fillStyle=bg;ctx.fillRect(0,0,600,340);
+    // Border
+    ctx.strokeStyle='#7c5cf6';ctx.lineWidth=2;
+    ctx.strokeRect(1,1,598,338);
+    // Accent bar
+    ctx.fillStyle='#7c5cf6';ctx.fillRect(0,0,600,4);
+    // Brand
+    ctx.font='800 24px Outfit,sans-serif';ctx.fillStyle='#7c5cf6';
+    ctx.fillText('VoidPulse',24,40);
+    ctx.font='500 11px Outfit,sans-serif';ctx.fillStyle='#808086';
+    ctx.fillText('Session Summary',24,58);
+    // Stats grid
+    const stats=[
+      {v:Math.floor(insight.durationSec/60)+'m',l:'Duration',c:'#7c5cf6'},
+      {v:String(insight.videos),l:'Videos',c:'#1db954'},
+      {v:Math.round(insight.completionRate*100)+'%',l:'Completion',c:'#5865f2'},
+      {v:String(streak||0),l:'Day Streak',c:'#faa61a'},
+    ];
+    stats.forEach((s,i)=>{
+      const x=24+i*144,y=80;
+      ctx.fillStyle='rgba(255,255,255,.04)';
+      ctx.fillRect(x,y,130,70);
+      ctx.fillStyle=s.c;ctx.font='800 28px "JetBrains Mono",monospace';
+      ctx.fillText(s.v,x+12,y+38);
+      ctx.fillStyle='#808086';ctx.font='600 10px Outfit,sans-serif';
+      ctx.fillText(s.l.toUpperCase(),x+12,y+56);
+    });
+    // XP Bar
+    const bx=24,by=170,bw=552,bh=20;
+    ctx.fillStyle='rgba(255,255,255,.06)';ctx.fillRect(bx,by,bw,bh);
+    const xpPct=level&&xp?Math.min(1,xp/(level*500+500)):0;
+    ctx.fillStyle='#7c5cf6';ctx.fillRect(bx,by,bw*xpPct,bh);
+    ctx.font='600 10px "JetBrains Mono",monospace';ctx.fillStyle='#e5e5e7';
+    ctx.fillText(`Level ${level||1}  \u2022  ${xp||0} XP`,bx+8,by+14);
+    // Mood/timestamp
+    ctx.font='400 11px Outfit,sans-serif';ctx.fillStyle='#56565c';
+    ctx.fillText(new Date().toLocaleDateString([],{weekday:'long',month:'long',day:'numeric',year:'numeric'}),24,220);
+    // Verdict
+    const rate=insight.completionRate||0;
+    const verdict=rate>=0.9?'\u{1f525} Incredible session!':rate>=0.7?'\u2b50 Solid session':rate>=0.5?'\u{1f44d} Good effort':'\u{1f4aa} Keep going';
+    ctx.font='700 18px Outfit,sans-serif';ctx.fillStyle='#e5e5e7';
+    ctx.fillText(verdict,24,260);
+    // Footer
+    ctx.fillStyle='#2a2a2e';ctx.fillRect(0,290,600,50);
+    ctx.font='600 11px Outfit,sans-serif';ctx.fillStyle='#56565c';
+    ctx.fillText('Generated by VoidPulse \u2022 voidpulse.app',24,318);
+  },[insight,xp,level,streak]);
+  const share=()=>{
+    if(!canvasRef.current)return;
+    canvasRef.current.toBlob(blob=>{
+      if(!blob)return;
+      if(navigator.clipboard&&window.ClipboardItem){
+        navigator.clipboard.write([new ClipboardItem({'image/png':blob})]).then(()=>toast('Card copied to clipboard!','ok')).catch(()=>{
+          const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='voidpulse-session.png';a.click();URL.revokeObjectURL(url);toast('Card downloaded','ok');
+        });
+      }else{
+        const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='voidpulse-session.png';a.click();URL.revokeObjectURL(url);toast('Card downloaded','ok');
+      }
+    },'image/png');
+  };
+  if(!insight)return null;
+  return <div style={{position:'fixed',inset:0,zIndex:9997,background:'rgba(0,0,0,.85)',display:'flex',alignItems:'center',justifyContent:'center',padding:16,flexDirection:'column',gap:12}} onClick={e=>{if(e.target===e.currentTarget)onClose()}}>
+    <canvas ref={canvasRef} width={600} height={340} style={{maxWidth:'100%',borderRadius:'var(--r2)',border:'1px solid var(--bdr)'}}/>
+    <div style={{display:'flex',gap:8}}>
+      <button className="btn btn-p" onClick={share}>{'\ud83d\udcf7'} Copy / Download</button>
+      <button className="btn btn-g" onClick={onClose}>{'\u2715'} Close</button>
+    </div>
+  </div>;
+}
+
+/* ─── Notes Journal (v17.1) ─── */
+function NotesJournal({notes,onSave,sessionId}){
+  const [text,setText]=useState('');
+  const [mood,setMood]=useState('');
+  const moods=[{e:'\ud83d\udc4d',v:'good'},{e:'\ud83d\udd25',v:'great'},{e:'\ud83d\ude10',v:'meh'},{e:'\ud83d\udc4e',v:'bad'},{e:'\u2b50',v:'star'}];
+  const save=()=>{if(!text.trim())return;onSave({sessionId:sessionId||0,note:text.trim(),mood});setText('');setMood('')};
+  return <div className="card">
+    <div className="card-title"><span className="ci">{'\ud83d\udcdd'}</span> Session Journal</div>
+    <div style={{display:'flex',gap:4,marginBottom:8}}>
+      {moods.map(m=><button key={m.v} className={`btn ${mood===m.v?'btn-p':'btn-g'}`} style={{padding:'4px 8px',fontSize:16,minHeight:32}} onClick={()=>setMood(mood===m.v?'':m.v)}>{m.e}</button>)}
+    </div>
+    <div style={{display:'flex',gap:6}}>
+      <input type="text" value={text} onChange={e=>setText(e.target.value)} placeholder="How was this session?" style={{flex:1,fontSize:12}} onKeyDown={e=>e.key==='Enter'&&save()}/>
+      <button className="btn btn-p btn-sm" onClick={save} disabled={!text.trim()}>Save</button>
+    </div>
+    {notes?.length>0&&<div style={{marginTop:10,maxHeight:200,overflowY:'auto'}}>
+      {notes.map((n,i)=><div key={i} style={{padding:'6px 0',borderBottom:'1px solid rgba(255,255,255,.03)',fontSize:11}}>
+        <div style={{display:'flex',gap:6,alignItems:'center'}}>
+          {n.mood&&<span style={{fontSize:14}}>{moods.find(m=>m.v===n.mood)?.e||''}</span>}
+          <span style={{color:'var(--txt2)',flex:1}}>{n.note}</span>
+          <span style={{color:'var(--mute)',fontFamily:'var(--mono)',fontSize:9,flexShrink:0}}>{n.durationSec?Math.floor(n.durationSec/60)+'m':''}</span>
+        </div>
+        <div style={{color:'var(--mute)',fontSize:9,marginTop:2}}>{new Date(n.createdAt).toLocaleDateString()}</div>
+      </div>)}
+    </div>}
   </div>;
 }
 
@@ -361,12 +658,12 @@ function LoginScreen({onLogin}){
 function OnboardingWizard({onComplete}){
   const [step,setStep]=useState(0);
   const steps=[
-    {icon:'\u2728',title:'Welcome to VoidCapture',body:'Your personal video session manager. Control playback remotely, track your habits, and build a watching routine \u2014 all from your phone.'},
-    {icon:'\u26a1',title:'How It Works',body:'VoidCapture runs on your desktop and creates a secure tunnel. You connect from any device using the tunnel URL + session code + PIN. Everything stays private.'},
+    {icon:'\u2728',title:'Welcome to VoidPulse',body:'Your personal video session manager. Control playback remotely, track your habits, and build a watching routine \u2014 all from your phone.'},
+    {icon:'\u26a1',title:'How It Works',body:'VoidPulse runs on your desktop and creates a secure tunnel. You connect from any device using the tunnel URL + session code + PIN. Everything stays private.'},
     {icon:'\u25b6',title:'Queue Videos',body:'Use the browser extension to queue videos from any site with one click. Or paste URLs directly in the Queue tab. Videos play fullscreen on your desktop.'},
     {icon:'\u2699',title:'Take Control',body:'Adjust volume, speed, and marquee text remotely. Set session time limits. Lock the panic button. Everything updates in real-time over WebSocket.'},
     {icon:'\u2b50',title:'Track & Grow',body:'Watch your streaks grow, unlock achievements, and hit daily goals. Smart playlists auto-generate from your watch patterns. The app learns what you like.'},
-    {icon:'\u2764',title:'You\u2019re Ready!',body:'Explore the tabs, queue your first video, and set a daily goal. VoidCapture gets better the more you use it.'},
+    {icon:'\u2764',title:'You\u2019re Ready!',body:'Explore the tabs, queue your first video, and set a daily goal. VoidPulse gets better the more you use it.'},
   ];
   const s=steps[step];
   const finish=()=>{localStorage.setItem('vc-onboarded','1');onComplete()};
@@ -859,10 +1156,13 @@ function SwipeItem({children,onDismiss}){
 /* ─── Main App ─── */
 function App(){
   const [authed,setAuthed]=useState(false);
+  const [offlineMode,setOfflineMode]=useState(false);
+  const [syncPending,setSyncPending]=useState(0);
+  const hasSyncedRef=useRef(false);
   const [tab,setTab]=useState('home');
   const [showOnboarding,setShowOnboarding]=useState(false);
   const [onboardStep,setOnboardStep]=useState(0);
-  const defaultWidgets=['stats','suggestion','insight','nowplaying','trend','heatmap','timeline','topvideos','smartplaylists','achievements','history'];
+  const defaultWidgets=['stats','suggestion','insight','nowplaying','trend','heatmap','timeline','topvideos','smartplaylists','achievements','journal','history'];
   const [widgetOrder,setWidgetOrder]=useState(()=>{try{return JSON.parse(localStorage.getItem('vc-widgets'))||defaultWidgets}catch{return defaultWidgets}});
   const [widgetEditMode,setWidgetEditMode]=useState(false);
   const isWidgetVisible=(id)=>widgetOrder.includes(id);
@@ -880,6 +1180,7 @@ function App(){
   const [status,setStatus]=useState(null);
   const [analytics,setAnalytics]=useState(null);
   const [showConfetti,setShowConfetti]=useState(false);
+  const [showShareCard,setShowShareCard]=useState(false);
   const prevAchCountRef=useRef(0);
   const [playlist,setPlaylist]=useState([]);
   const [plSettings,setPlSettings]=useState({});
@@ -910,25 +1211,35 @@ function App(){
     if(st.profiles)try{setProfiles(JSON.parse(st.profiles))}catch(e){}
     if(st.pendingChain){doCmd('loadprofile',st.pendingChain,true);toast('Chain: loading '+st.pendingChain,'inf')}
     if(st.playlistSettings)setPlSettings(st.playlistSettings);
+    // Cache state to IndexedDB for offline use
+    const sched=st.weeklySchedule?JSON.parse(st.weeklySchedule):null;
+    const profs=st.profiles?JSON.parse(st.profiles):null;
+    cacheState(st,null,null,sched,profs).catch(()=>{});
   },[]);
 
-  // Offline detection + command replay
+  // Offline detection + sync engine
   useEffect(()=>{
     const goOffline=()=>setIsOffline(true);
-    const goOnline=()=>{
+    const goOnline=async()=>{
       setIsOffline(false);
-      // Replay queued commands
+      // Old in-memory queue replay
       const q=offlineQueueRef.current.splice(0);
-      if(q.length>0){
-        toast(`Replaying ${q.length} queued command(s)`,'inf');
-        q.forEach(({n,v})=>cmd(n,v).catch(()=>{}));
-        setTimeout(poll,500);
+      if(q.length>0){q.forEach(({n,v})=>cmd(n,v).catch(()=>{}));}
+      // IndexedDB sync queue replay
+      if(S.t){
+        const count=await syncEngine(api,cmd,
+          st=>processStatus(st),
+          an=>{setAnalytics(an);cacheState(null,an).catch(()=>{})},
+          (msg,lvl)=>toast(msg,lvl)
+        );
+        setSyncPending(0);
+        if(offlineMode){setOfflineMode(false);connectWs();toast('Back online!','ok')}
       }
     };
     window.addEventListener('offline',goOffline);
     window.addEventListener('online',goOnline);
     return ()=>{window.removeEventListener('offline',goOffline);window.removeEventListener('online',goOnline)};
-  },[poll]);
+  },[poll,processStatus,offlineMode]);
 
   // HTTP poll (fallback when WS unavailable)
   const poll=useCallback(async()=>{
@@ -1002,7 +1313,6 @@ function App(){
   const loadAnalytics=useCallback(async(days)=>{
     try{
       const d=await api('GET','/analytics'+(days?'?days='+days:''));
-      // Detect new achievement unlocks
       const unlocked=(d.achievements||[]).filter(a=>a.unlocked).length;
       if(unlocked>prevAchCountRef.current&&prevAchCountRef.current>0){
         const newOnes=(d.achievements||[]).filter(a=>a.unlocked).slice(-1);
@@ -1011,6 +1321,8 @@ function App(){
       }
       prevAchCountRef.current=unlocked;
       setAnalytics(d);
+      // Cache for offline use
+      cacheState(null,d).catch(()=>{});
     }catch(e){}
   },[]);
 
@@ -1033,23 +1345,56 @@ function App(){
       const csv=await resp.text();
       const blob=new Blob([csv],{type:'text/csv'});
       const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-      a.download='voidcapture-history.csv';a.click();URL.revokeObjectURL(a.href);
+      a.download='voidpulse-history.csv';a.click();URL.revokeObjectURL(a.href);
       toast('CSV downloaded','ok');
     }catch(e){toast('Export failed','err')}
   },[]);
 
   const loadPl=useCallback(async()=>{
-    try{const r=await api('GET','/playlist');setPlaylist(r.entries||[]);setPlSettings({shuffle:r.shuffle,noRepeat:r.noRepeat,maxVideos:r.maxVideos,startFrom:r.startFrom})}catch(e){}
+    try{const r=await api('GET','/playlist');setPlaylist(r.entries||[]);setPlSettings({shuffle:r.shuffle,noRepeat:r.noRepeat,maxVideos:r.maxVideos,startFrom:r.startFrom});
+    vcSet('playlist',r.entries||[]).catch(()=>{});}catch(e){}
   },[]);
 
-  const onLogin=useCallback(async()=>{
-    setAuthed(true);await poll();loadAnalytics(30);loadPl();
-    connectWs();
-    if(!wsRef.current)pollRef.current=setInterval(poll,2500);
-    toast('Connected','ok');
-    // v16.0: Show onboarding on first use
+  const onLogin=useCallback(async(isOfflineLogin=false)=>{
+    setAuthed(true);
+    if(isOfflineLogin){
+      // Offline mode: load cached data from IndexedDB
+      setOfflineMode(true);setIsOffline(true);
+      try{
+        const cachedSt=await vcGet('lastStatus');
+        if(cachedSt){setStatus(cachedSt);if(cachedSt.playlistSettings)setPlSettings(cachedSt.playlistSettings)}
+        const cachedAn=await vcGet('lastAnalytics');
+        if(cachedAn)setAnalytics(cachedAn);
+        const cachedPl=await vcGet('playlist');
+        if(cachedPl)setPlaylist(cachedPl);
+        const cachedSched=await vcGet('weeklySchedule');
+        if(cachedSched)setWeekSched(cachedSched);
+        const cachedProfs=await vcGet('profiles');
+        if(cachedProfs)setProfiles(cachedProfs);
+        const pending=await syncQueueGetAll();
+        setSyncPending(pending.length);
+      }catch(e){console.warn('Cache load failed:',e)}
+      toast('Offline mode \u2014 changes will sync when desktop app is online','inf');
+    }else{
+      // Online mode: normal flow
+      setOfflineMode(false);
+      await poll();loadAnalytics(30);loadPl();
+      connectWs();
+      if(!wsRef.current)pollRef.current=setInterval(poll,2500);
+      // Auto-sync any pending offline changes
+      const pending=await syncQueueGetAll().catch(()=>[]);
+      if(pending.length>0){
+        toast(`Syncing ${pending.length} offline change(s)...`,'inf');
+        await syncEngine(api,cmd,
+          st=>processStatus(st),
+          an=>{setAnalytics(an);cacheState(null,an).catch(()=>{})},
+          (msg,lvl)=>toast(msg,lvl)
+        );
+        setSyncPending(0);
+      }else{toast('Connected','ok')}
+    }
     if(!localStorage.getItem('vc-onboarded'))setShowOnboarding(true);
-  },[poll,loadAnalytics,loadPl,connectWs]);
+  },[poll,loadAnalytics,loadPl,connectWs,processStatus]);
 
   const logout=()=>{
     try{fetch(S.u+'/disconnect',{method:'POST',headers:{'Authorization':'Bearer '+S.t},keepalive:true}).catch(()=>{})}catch(e){}
@@ -1107,8 +1452,14 @@ function App(){
 
   const doCmd=async(n,v,silent)=>{
     if(!silent)haptic(10);
-    // Queue if offline
-    if(isOffline){offlineQueueRef.current.push({n,v});if(!silent)toast(`Queued: ${n} (offline)`,'inf');return null}
+    // Queue if offline or in offline mode
+    if(isOffline||offlineMode){
+      offlineQueueRef.current.push({n,v});
+      await syncQueueAdd(n,v).catch(()=>{});
+      setSyncPending(p=>p+1);
+      if(!silent)toast(`Queued: ${n} (offline)`,'inf');
+      return null;
+    }
     // Try WebSocket first for instant response
     if(wsSend(n,v)){if(!silent)toast('\u2713 '+n,'ok');return null}
     // Fall back to HTTP
@@ -1134,7 +1485,13 @@ function App(){
     <div className="app">
       {/* ═══ SIDEBAR (desktop) ═══ */}
       <div className="sidebar">
-        <div className="sidebar-brand">VoidCapture<small>Remote Controller</small></div>
+        <div className="sidebar-brand">VoidPulse<small>Level {st.level||1} \u2022 {st.xp||0} XP</small></div>
+        {st.xpForNext>0&&<div style={{padding:'0 16px 8px'}}>
+          <div style={{height:3,borderRadius:2,background:'var(--bdr)',overflow:'hidden'}}>
+            <div style={{height:'100%',borderRadius:2,background:'var(--accent)',width:Math.min(100,((st.xp||0)/(st.xpForNext||1))*100)+'%',transition:'width .5s ease'}}/>
+          </div>
+          <div style={{fontSize:8,color:'var(--mute)',marginTop:2,fontFamily:'var(--mono)'}}>{st.xpForNext-(st.xp||0)} XP to level {(st.level||1)+1}</div>
+        </div>}
         <nav className="sidebar-nav" role="tablist" aria-label="Main navigation">
           {[['home','\u25c8','Home'],['ctrl','\u2699','Controls'],['list','\u2261','Playlist']].map(([k,icon,label])=>
             <div key={k} className={`sidebar-item ${tab===k?'active':''}`} onClick={()=>setTab(k)} role="tab" aria-selected={tab===k}>
@@ -1143,13 +1500,14 @@ function App(){
         </nav>
         <div className="sidebar-footer">
           <div className="sidebar-meta">
-            <span className={`dot ${wsRef.current?.readyState===1?'on':'off'}`}/>
-            {isOffline?'Offline':wsRef.current?.readyState===1?'WS Connected':'Polling'}
-            {st.connectedDevices>1&&` \u00b7 ${st.connectedDevices} devices`}
+            <span className={`dot ${offlineMode?'off':wsRef.current?.readyState===1?'on':'off'}`}/>
+            {offlineMode?'Offline Mode':isOffline?'Offline':wsRef.current?.readyState===1?'WS Connected':'Polling'}
+            {syncPending>0&&<span style={{marginLeft:4,color:'var(--amber)'}}>({syncPending} pending)</span>}
+            {!offlineMode&&st.connectedDevices>1&&` \u00b7 ${st.connectedDevices} devices`}
           </div>
           <div style={{display:'flex',gap:4}}>
             <button className="btn btn-g btn-sm" style={{flex:1}} onClick={toggleTheme} aria-label="Toggle theme">{theme==='dark'?'\u2600':'\u263e'}</button>
-            <button className="btn btn-g btn-sm" style={{flex:1}} onClick={()=>{poll();toast('Synced','inf')}} aria-label="Sync">{'\u21bb'}</button>
+            <button className="btn btn-g btn-sm" style={{flex:1}} onClick={()=>{if(offlineMode){toast('Offline \u2014 will sync when desktop is online','inf')}else{poll();toast('Synced','inf')}}} aria-label="Sync">{'\u21bb'}</button>
             <button className="btn btn-d btn-sm" style={{flex:1}} onClick={logout} aria-label="Logout">Logout</button>
           </div>
         </div>
@@ -1170,8 +1528,10 @@ function App(){
           </div>
         </div>
 
-        {isOffline&&<div className="offline-bar" role="alert">
-          {'\u26a0'} Offline{lastStatusTimeRef.current?` \u2014 last updated ${Math.round((Date.now()-lastStatusTimeRef.current)/1000)}s ago`:''}{offlineQueueRef.current.length>0?` \u2022 ${offlineQueueRef.current.length} queued`:''}
+        {(isOffline||offlineMode)&&<div className="offline-bar" role="alert">
+          {'\u26a0'} {offlineMode?'Offline Mode':'Offline'}
+          {lastStatusTimeRef.current?` \u2014 data from ${Math.round((Date.now()-lastStatusTimeRef.current)/1000)}s ago`:''}
+          {syncPending>0&&<span style={{marginLeft:8,background:'var(--amber)',color:'#000',borderRadius:10,padding:'1px 8px',fontSize:10,fontWeight:700}}>{syncPending} pending</span>}
         </div>}
 
         {/* ═══ HOME ═══ */}
@@ -1182,7 +1542,7 @@ function App(){
             <div className="card-title" style={{fontSize:12}}>Dashboard Widgets</div>
             <div style={{fontSize:11,color:'var(--dim)',marginBottom:8}}>Toggle visibility and use arrows to reorder.</div>
             {defaultWidgets.map(id=>{
-              const names={stats:'Stats Overview',suggestion:'Suggestions',insight:'Session Insight',nowplaying:'Now Playing',trend:'Trend Chart',heatmap:'Session Heatmap',timeline:'Session Timeline',topvideos:'Top Videos',smartplaylists:'Smart Playlists',achievements:'Achievements',history:'Watch History'};
+              const names={stats:'Stats Overview',suggestion:'Suggestions',insight:'Session Insight',nowplaying:'Now Playing',trend:'Trend Chart',heatmap:'Session Heatmap',timeline:'Session Timeline',topvideos:'Top Videos',smartplaylists:'Smart Playlists',achievements:'Achievements',journal:'Session Journal',history:'Watch History'};
               const vis=isWidgetVisible(id);
               return <div key={id} style={{display:'flex',alignItems:'center',gap:6,padding:'4px 0',borderBottom:'1px solid rgba(255,255,255,.03)'}}>
                 <input type="checkbox" checked={vis} onChange={()=>toggleWidget(id)} style={{accentColor:'var(--iris)'}}/>
@@ -1222,15 +1582,18 @@ function App(){
             {an.sessionInsight.avgDurationSec>0&&<div style={{fontSize:10,color:'var(--dim)',textAlign:'center',marginTop:4}}>
               {an.sessionInsight.durationSec>an.sessionInsight.avgDurationSec?'\u2191':'\u2193'} {Math.abs(Math.round((an.sessionInsight.durationSec-an.sessionInsight.avgDurationSec)/60))} min vs your average
             </div>}
+            <div style={{textAlign:'center',marginTop:8}}>
+              <button className="btn btn-g btn-sm" onClick={()=>setShowShareCard(true)}>{'\ud83d\udcf7'} Share Card</button>
+            </div>
           </div>}
 
           {/* Now Playing */}
           {isWidgetVisible('nowplaying')&&<div className="card">
             <div className="card-title"><span className="ci">{'\u25b6'}</span> Now Playing</div>
+            <FocusOrb sessionStartedAt={st.sessionStartedAt} playing={playing}/>
             {!playing?<div className="np-idle">
-              <div className="np-icon">{'\u23f8'}</div>
               <div className="np-msg">No session active</div>
-              <button className="btn btn-p" style={{marginTop:12}} onClick={()=>doCmd('autostartnow')}>Start Session</button>
+              <button className="btn btn-p" style={{marginTop:8}} onClick={()=>doCmd('autostartnow')}>Start Session</button>
             </div>:
             <div className="np-active">
               {st.currentVideo?.title&&<div className="np-meta">
@@ -1491,6 +1854,13 @@ function App(){
             </div>
           </div>}
 
+          {/* v17.1: Session Journal */}
+          {isWidgetVisible('journal')&&<NotesJournal notes={an?.notes||[]} sessionId={st.currentSessionId||0} onSave={async(data)=>{
+            await doCmd('savenote',data,true);
+            loadAnalytics(30);
+            toast('Note saved','ok');
+          }}/>}
+
           {/* Watch History */}
           {isWidgetVisible('history')&&<div className="card">
             <div className="card-title"><span className="ci">{'\u23f3'}</span> Watch History</div>
@@ -1629,10 +1999,10 @@ function App(){
       <span style={{fontSize:24}}>{isIos?'\u2b06':'\ud83d\udcf1'}</span>
       <div className="ib-text">
         {isIos?<>
-          <strong>Install VoidCapture</strong>
+          <strong>Install VoidPulse</strong>
           Tap <span style={{fontWeight:700,color:'var(--iris)'}}>Share</span> <span style={{fontSize:16}}>{'\u2b06'}</span> then <span style={{fontWeight:700,color:'var(--iris)'}}>Add to Home Screen</span>
         </>:<>
-          <strong>Install VoidCapture</strong>
+          <strong>Install VoidPulse</strong>
           Add to your home screen for instant access
         </>}
       </div>
@@ -1644,7 +2014,7 @@ function App(){
     <div className={`guide-overlay ${guide?'open':''}`} onClick={e=>{if(e.target===e.currentTarget)setGuide(false)}}>
       <div className="guide-inner">
         <button className="btn btn-g" style={{position:'absolute',top:12,right:12}} onClick={()=>setGuide(false)}>{'\u2715'} Close</button>
-        <div style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--iris)',textTransform:'uppercase',letterSpacing:'.2em',marginBottom:4}}>VoidCapture</div>
+        <div style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--iris)',textTransform:'uppercase',letterSpacing:'.2em',marginBottom:4}}>VoidPulse</div>
         <h2>Controller Guide</h2>
         <div className="gs">{'\u25c8'} Getting Connected</div><p>Enter the Tunnel URL, Code, and PIN from the desktop app. Only one controller can be connected at a time.</p>
         <div className="gs">{'\u25ce'} Controls</div><p><strong>Skip</strong> \u2014 next video. <strong>Clear Queue</strong> \u2014 removes waiting videos. <strong>Panic</strong> \u2014 stops everything immediately. Volume (0\u2013200) and Speed (0.25\u20131.5\u00d7) adjust in real-time.</p>
@@ -1656,6 +2026,13 @@ function App(){
       </div>
     </div>
 
+    {showShareCard&&an?.sessionInsight&&<SessionShareCard
+      insight={an.sessionInsight}
+      xp={an?.xpStatus?.xp||st.xp||0}
+      level={an?.xpStatus?.level||st.level||1}
+      streak={an?.streaks?.currentStreak||0}
+      onClose={()=>setShowShareCard(false)}
+    />}
     {showOnboarding&&<OnboardingWizard onComplete={()=>setShowOnboarding(false)}/>}
     <Confetti active={showConfetti}/>
     <ToastContainer aria-live="polite"/>
@@ -1759,7 +2136,7 @@ function BackupCard({doCmd}){
         const blob=new Blob([res],{type:'text/plain'});
         const a=document.createElement('a');
         a.href=URL.createObjectURL(blob);
-        a.download='voidcapture-backup-'+new Date().toISOString().slice(0,10)+'.vcb';
+        a.download='voidpulse-backup-'+new Date().toISOString().slice(0,10)+'.vcb';
         a.click();URL.revokeObjectURL(a.href);
         toast('Backup downloaded','ok');
       }

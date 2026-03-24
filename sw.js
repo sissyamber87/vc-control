@@ -1,5 +1,5 @@
-// VoidCapture Service Worker v14.1 — Intelligent per-resource caching
-const CACHE_NAME = 'vc-v16.0';
+// VoidPulse Service Worker v14.1 — Intelligent per-resource caching
+const CACHE_NAME = 'vp-v17.0';
 const SHELL_ASSETS = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 // ── Install: Pre-cache shell ──

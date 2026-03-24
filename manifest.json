@@ -1,7 +1,7 @@
 {
-  "name": "VoidCapture Controller",
-  "short_name": "VoidCapture",
-  "description": "Remote controller for VoidCapture playback system",
+  "name": "VoidPulse Controller",
+  "short_name": "VoidPulse",
+  "description": "Remote controller for VoidPulse playback system",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",
