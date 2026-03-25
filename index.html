@@ -288,10 +288,13 @@ const vcGet=async(key)=>{const db=await openVcDb();return new Promise((res,rej)=
 const vcSet=async(key,val)=>{const db=await openVcDb();return new Promise((res,rej)=>{const tx=db.transaction('store','readwrite');tx.objectStore('store').put(val,key);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})};
 const vcDel=async(key)=>{const db=await openVcDb();return new Promise((res,rej)=>{const tx=db.transaction('store','readwrite');tx.objectStore('store').delete(key);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})};
 
-// Sync queue operations
-const syncQueueAdd=async(op,data)=>{const db=await openVcDb();return new Promise((res,rej)=>{const tx=db.transaction('syncQueue','readwrite');tx.objectStore('syncQueue').add({op,data,ts:Date.now()});tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})};
+// Sync queue operations (with human-readable labels for sync preview)
+const syncQueueAdd=async(op,data,label)=>{const db=await openVcDb();return new Promise((res,rej)=>{const tx=db.transaction('syncQueue','readwrite');tx.objectStore('syncQueue').add({op,data,label:label||op,ts:Date.now()});tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})};
 const syncQueueGetAll=async()=>{const db=await openVcDb();return new Promise((res,rej)=>{const tx=db.transaction('syncQueue','readonly');const r=tx.objectStore('syncQueue').getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)})};
 const syncQueueClear=async()=>{const db=await openVcDb();return new Promise((res,rej)=>{const tx=db.transaction('syncQueue','readwrite');tx.objectStore('syncQueue').clear();tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})};
+
+// Offline access code (hardcoded — change this to your preferred code)
+const OFFLINE_CODE='voidpulse';
 
 // SEC: PBKDF2-HMAC-SHA256 for PIN hashing (100K iterations + 16-byte salt)
 const genSalt=()=>crypto.getRandomValues(new Uint8Array(16));
@@ -400,27 +403,20 @@ function ToastContainer(){
 const toast=(m,t)=>window._addToast?.(m,t);
 
 /* ─── Login Screen ─── */
-function LoginScreen({onLogin}){
+function LoginScreen({onLogin,onOffline}){
   const [url,setUrl]=useState('');
   const [code,setCode]=useState('');
   const [pin,setPin]=useState('');
+  const [offCode,setOffCode]=useState('');
   const [err,setErr]=useState('');
   const [busy,setBusy]=useState(false);
-  const [hasCache,setHasCache]=useState(false);
   const codeRef=useRef(),pinRef=useRef();
 
+  // Only pre-fill from shareable link hash
   useEffect(()=>{
-    // Load cached session
-    (async()=>{
-      try{
-        const sess=await vcGet('session');
-        if(sess?.tunnelUrl&&sess?.code){
-          setUrl(sess.tunnelUrl);setCode(sess.code);setHasCache(true);
-        }
-      }catch(e){}
-    })();
-    try{const h=window.location.hash.slice(1);if(!h)return;const p={};h.split('&').forEach(x=>{const[k,v]=x.split('=');if(k&&v)p[decodeURIComponent(k)]=decodeURIComponent(v)});
-    if(p.T)setUrl(p.T);if(p.C)setCode(p.C.toUpperCase());history.replaceState(null,'',window.location.pathname)}catch(e){}
+    try{const h=window.location.hash.slice(1);if(!h)return;const p={};h.split('&').forEach(x=>{const eq=x.indexOf('=');if(eq>0)p[decodeURIComponent(x.slice(0,eq))]=decodeURIComponent(x.slice(eq+1))});
+    if(p.T)setUrl(p.T);if(p.C)setCode(p.C.toUpperCase());
+    history.replaceState(null,'',window.location.pathname)}catch(e){}
   },[]);
 
   const submit=async()=>{
@@ -433,38 +429,20 @@ function LoginScreen({onLogin}){
       const res=await api('POST','/auth',{code,pin});
       if(!res.ok){setErr(res.error||'Auth failed');setBusy(false);return}
       S.t=res.token;S.csrf=res.csrfToken||null;
-      // SEC: Save session with PBKDF2 salt + AES-GCM encrypted token
-      const salt=genSalt();const saltHex=buf2hex(salt);
-      const ph=await hashPin(pin,salt);
-      const encTok=await encryptToken(res.token,pin,salt);
-      await vcSet('session',{tunnelUrl:S.u,code,pinHash:ph,salt:saltHex,encryptedToken:encTok,savedAt:Date.now()});
-      // SEC: Entropy check
-      if(!checkTunnelEntropy(S.u))setTimeout(()=>toast('Warning: Tunnel URL may be guessable. Consider regenerating.','err'),1500);
-      onLogin(false); // online login
+      if(!checkTunnelEntropy(S.u))setTimeout(()=>toast('Warning: Tunnel URL may be guessable.','err'),1500);
+      onLogin();
     }catch(e){
       S.u=S.t=null;const m=e.message||'';
-      if(m.includes('Failed to fetch')||m.includes('NetworkError'))setErr('Cannot reach server. Use Offline Mode below if available.');
+      if(m.includes('Failed to fetch')||m.includes('NetworkError'))setErr('Cannot reach '+url.slice(0,40)+'\u2026 Check tunnel is running.');
       else if(m.includes('401'))setErr('Incorrect code or PIN.');
       else setErr('Failed: '+m);setBusy(false);
     }
   };
 
-  const offlineLogin=async()=>{
+  const goOffline=()=>{
     setErr('');
-    if(!/^\d{6}$/.test(pin)){setErr('Enter your 6-digit PIN');return}
-    setBusy(true);
-    try{
-      const sess=await vcGet('session');
-      if(!sess?.pinHash||!sess?.salt){setErr('No saved session. Connect online first.');setBusy(false);return}
-      const ph=await hashPin(pin,sess.salt);
-      if(ph!==sess.pinHash){setErr('Incorrect PIN');setBusy(false);return}
-      S.u=sess.tunnelUrl;
-      // Decrypt token from AES-GCM
-      if(sess.encryptedToken){
-        try{S.t=await decryptToken(sess.encryptedToken,pin,sess.salt)}catch{S.t=null}
-      }
-      onLogin(true); // offline login
-    }catch(e){setErr('Offline login failed');setBusy(false)}
+    if(offCode.toLowerCase()!==OFFLINE_CODE){setErr('Incorrect offline code');return}
+    onOffline();
   };
 
   return <div className="login-wrap">
@@ -473,11 +451,164 @@ function LoginScreen({onLogin}){
       <div className="tag">Remote Controller</div>
       <div className="field"><label>Tunnel URL</label><input type="text" value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://xxxx.trycloudflare.com" aria-label="Tunnel URL" onKeyDown={e=>e.key==='Enter'&&codeRef.current?.focus()} autoComplete="off" spellCheck="false"/></div>
       <div className="field"><label>Session Code</label><input ref={codeRef} type="text" value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="ABC123" maxLength={6} aria-label="Session code" style={{textTransform:'uppercase',letterSpacing:'.2em',fontFamily:'var(--mono)'}} onKeyDown={e=>e.key==='Enter'&&pinRef.current?.focus()} autoComplete="off"/></div>
-      <div className="field"><label>PIN</label><input ref={pinRef} type="password" value={pin} onChange={e=>setPin(e.target.value)} placeholder={'••••••'} maxLength={6} inputMode="numeric" onKeyDown={e=>e.key==='Enter'&&submit()} autoComplete="off"/></div>
-      <button className="login-btn" onClick={submit} disabled={busy}>{busy?<><span className="spin"/> Connecting{'…'}</>:'Connect'}</button>
-      {hasCache&&<button className="login-btn" style={{marginTop:8,background:'var(--card2)',color:'var(--txt2)',border:'1px solid var(--bdr)'}} onClick={offlineLogin} disabled={busy}>{'⚡'} Offline Mode</button>}
-      {hasCache&&<div style={{textAlign:'center',fontSize:10,color:'var(--mute)',marginTop:6}}>Uses cached data from last session</div>}
+      <div className="field"><label>PIN</label><input ref={pinRef} type="password" value={pin} onChange={e=>setPin(e.target.value)} placeholder={'\u2022\u2022\u2022\u2022\u2022\u2022'} maxLength={6} inputMode="numeric" onKeyDown={e=>e.key==='Enter'&&submit()} autoComplete="off"/></div>
+      <button className="login-btn" onClick={submit} disabled={busy}>{busy?<><span className="spin"/> Connecting{'\u2026'}</>:'Connect'}</button>
+      <div style={{display:'flex',alignItems:'center',gap:12,margin:'16px 0 8px',color:'var(--mute)',fontSize:11}}>
+        <div style={{flex:1,height:1,background:'var(--bdr)'}}/><span>or</span><div style={{flex:1,height:1,background:'var(--bdr)'}}/>
+      </div>
+      <div className="field"><label>Offline Code</label><input type="password" value={offCode} onChange={e=>setOffCode(e.target.value)} placeholder="Enter offline code" onKeyDown={e=>e.key==='Enter'&&goOffline()} autoComplete="off"/></div>
+      <button className="login-btn" style={{background:'var(--card2)',color:'var(--txt2)',border:'1px solid var(--bdr)'}} onClick={goOffline}>Plan Ahead (Offline)</button>
       <div className="login-err">{err||''}</div>
+    </div>
+  </div>;
+}
+
+/* ─── Sync Preview (shows pending offline changes before applying) ─── */
+function SyncPreview({changes,onApply,onDiscard}){
+  const [applying,setApplying]=useState(false);
+  const [progress,setProgress]=useState(0);
+  const grouped=useMemo(()=>{
+    const g={};changes.forEach(c=>{const k=c.label||c.op;g[k]=(g[k]||0)+1});
+    return Object.entries(g).map(([label,count])=>({label,count}));
+  },[changes]);
+  const doApply=async()=>{
+    setApplying(true);
+    for(let i=0;i<changes.length;i++){
+      try{await cmd(changes[i].op,changes[i].data)}catch(e){console.warn('Sync fail:',changes[i].op,e)}
+      setProgress(Math.round((i+1)/changes.length*100));
+    }
+    await syncQueueClear();
+    toast(`Synced ${changes.length} change(s)`,'ok');
+    onApply();
+  };
+  const doDiscard=async()=>{await syncQueueClear();toast('Offline changes discarded','inf');onDiscard()};
+  return <div style={{position:'fixed',inset:0,zIndex:9998,background:'rgba(0,0,0,.9)',display:'flex',alignItems:'center',justifyContent:'center',padding:24}}>
+    <div style={{background:'var(--card)',border:'1px solid var(--bdr2)',borderRadius:'var(--r3)',padding:28,maxWidth:420,width:'100%'}}>
+      <h2 style={{fontSize:18,fontWeight:800,color:'var(--txt)',marginBottom:4}}>Offline Changes Ready</h2>
+      <p style={{fontSize:12,color:'var(--dim)',marginBottom:16}}>You made {changes.length} change(s) while offline. Review and apply to your desktop app.</p>
+      <div style={{maxHeight:200,overflowY:'auto',marginBottom:16}}>
+        {grouped.map((g,i)=><div key={i} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid rgba(255,255,255,.04)',fontSize:12}}>
+          <span style={{color:'var(--txt2)'}}>{g.label}</span>
+          <span style={{color:'var(--accent)',fontFamily:'var(--mono)',fontWeight:600}}>{g.count>1?'\u00d7'+g.count:'\u2713'}</span>
+        </div>)}
+      </div>
+      {applying&&<div style={{marginBottom:12}}>
+        <div style={{height:4,borderRadius:2,background:'var(--bdr)',overflow:'hidden'}}>
+          <div style={{height:'100%',background:'var(--accent)',width:progress+'%',transition:'width .2s'}}/>
+        </div>
+        <div style={{fontSize:10,color:'var(--mute)',textAlign:'center',marginTop:4}}>Applying... {progress}%</div>
+      </div>}
+      <div style={{display:'flex',gap:8}}>
+        <button className="btn btn-p" style={{flex:1}} onClick={doApply} disabled={applying}>Apply All</button>
+        <button className="btn btn-d" onClick={doDiscard} disabled={applying}>Discard</button>
+      </div>
+    </div>
+  </div>;
+}
+
+/* ─── Offline Editor (full access without desktop connection) ─── */
+function OfflineEditor({onExit,cachedAnalytics}){
+  const [tab,setTab]=useState('queue');
+  const [urls,setUrls]=useState('');
+  const [pendingCount,setPendingCount]=useState(0);
+  const [scheduleJson,setScheduleJson]=useState('');
+  const [goalMins,setGoalMins]=useState('');
+
+  useEffect(()=>{syncQueueGetAll().then(q=>setPendingCount(q.length)).catch(()=>{})},[]);
+
+  const addUrls=async()=>{
+    const list=urls.split('\n').map(u=>u.trim()).filter(u=>u.startsWith('http'));
+    if(!list.length){toast('No valid URLs','err');return}
+    for(const u of list){await syncQueueAdd('appendurl',u,'Queue: '+u.slice(0,40))}
+    setPendingCount(p=>p+list.length);
+    toast(`Queued ${list.length} URL(s) for sync`,'ok');setUrls('');
+  };
+
+  const addSchedule=async()=>{
+    if(!scheduleJson.trim()){toast('Enter schedule JSON','err');return}
+    try{JSON.parse(scheduleJson)}catch{toast('Invalid JSON','err');return}
+    await syncQueueAdd('weeklyschedule',scheduleJson,'Updated weekly schedule');
+    setPendingCount(p=>p+1);toast('Schedule saved for sync','ok');
+  };
+
+  const setGoal=async()=>{
+    const mins=parseInt(goalMins);if(!mins||mins<1){toast('Enter minutes','err');return}
+    await syncQueueAdd('setgoals',JSON.stringify({dailyMinutes:mins}),'Set daily goal: '+mins+' min');
+    setPendingCount(p=>p+1);toast('Goal saved for sync','ok');setGoalMins('');
+  };
+
+  const an=cachedAnalytics||{};
+
+  return <div className="app">
+    <div className="sidebar">
+      <div className="sidebar-brand">VoidPulse<small>Offline Editor</small></div>
+      <nav className="sidebar-nav">
+        {[['queue','\u25b6','Queue URLs'],['schedule','\u23f1','Schedule'],['goals','\ud83c\udfaf','Goals'],['stats','\u2606','Stats']].map(([k,icon,label])=>
+          <div key={k} className={`sidebar-item ${tab===k?'active':''}`} onClick={()=>setTab(k)}><span className="icon">{icon}</span>{label}</div>)}
+      </nav>
+      <div className="sidebar-footer">
+        <div className="sidebar-meta" style={{color:'var(--amber)'}}>
+          {'\u26a0'} Offline \u2022 {pendingCount} pending change(s)
+        </div>
+        <button className="btn btn-d btn-sm" style={{width:'100%'}} onClick={onExit}>Back to Login</button>
+        <span style={{fontSize:8,color:'var(--mute)',fontFamily:'var(--mono)',marginTop:2}}>v17.1</span>
+      </div>
+    </div>
+    <div className="main">
+      <div className="page-hdr">
+        <h2>{tab==='queue'?'Queue Videos':tab==='schedule'?'Weekly Schedule':tab==='goals'?'Goals':'Analytics'}</h2>
+        <span style={{fontSize:11,color:'var(--amber)',fontFamily:'var(--mono)',display:'flex',alignItems:'center',gap:4}}>
+          <span style={{width:6,height:6,borderRadius:3,background:'var(--amber)',display:'inline-block'}}/>Offline
+        </span>
+      </div>
+
+      {tab==='queue'&&<div>
+        <div className="card">
+          <div className="card-title"><span className="ci">{'\u25b6'}</span> Add URLs to Queue</div>
+          <textarea value={urls} onChange={e=>setUrls(e.target.value)} placeholder="Paste video URLs (one per line)" rows={6} style={{width:'100%',resize:'vertical',fontFamily:'var(--mono)',fontSize:11}}/>
+          <button className="btn btn-p" style={{width:'100%',marginTop:8}} onClick={addUrls}>Queue for Sync ({urls.split('\n').filter(u=>u.trim().startsWith('http')).length} URLs)</button>
+        </div>
+        <div className="card">
+          <div className="card-sub" style={{marginTop:0}}>URLs will be sent to your desktop app when you connect next. They'll be added to the playback queue in order.</div>
+        </div>
+      </div>}
+
+      {tab==='schedule'&&<div>
+        <div className="card">
+          <div className="card-title"><span className="ci">{'\u23f1'}</span> Weekly Schedule</div>
+          <p style={{fontSize:12,color:'var(--dim)',marginBottom:8}}>Paste your schedule JSON below. This will replace the current schedule when synced.</p>
+          <textarea value={scheduleJson} onChange={e=>setScheduleJson(e.target.value)} placeholder='[{"name":"Evening","days":["mon","wed","fri"],"hour":"21","min":"00"}]' rows={6} style={{width:'100%',resize:'vertical',fontFamily:'var(--mono)',fontSize:10}}/>
+          <button className="btn btn-p" style={{width:'100%',marginTop:8}} onClick={addSchedule}>Save Schedule for Sync</button>
+        </div>
+      </div>}
+
+      {tab==='goals'&&<div>
+        <div className="card">
+          <div className="card-title"><span className="ci">{'\ud83c\udfaf'}</span> Daily Goal</div>
+          <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            <input type="number" value={goalMins} onChange={e=>setGoalMins(e.target.value)} placeholder="Minutes per day" min={1} style={{flex:1}}/>
+            <button className="btn btn-p" onClick={setGoal}>Set Goal</button>
+          </div>
+        </div>
+      </div>}
+
+      {tab==='stats'&&<div>
+        <div className="card">
+          <div className="card-title"><span className="ci">{'\u2606'}</span> Last Synced Analytics</div>
+          {an.streaks?<div className="stats-row">
+            <div className="stat-card purple"><div className="val">{an.streaks.currentStreak||0}</div><div className="lbl">Streak</div></div>
+            <div className="stat-card green"><div className="val">{an.streaks.longestStreak||0}</div><div className="lbl">Best</div></div>
+            <div className="stat-card blue"><div className="val">{an.xpStatus?.level||'?'}</div><div className="lbl">Level</div></div>
+            <div className="stat-card amber"><div className="val">{an.xpStatus?.xp||0}</div><div className="lbl">XP</div></div>
+          </div>:<div style={{color:'var(--mute)',fontSize:12,padding:16,textAlign:'center'}}>No cached analytics yet. Connect online first to see stats here.</div>}
+        </div>
+      </div>}
+    </div>
+
+    {/* Mobile bottom bar */}
+    <div className="mobile-bar">
+      {[['queue','\u25b6','Queue'],['schedule','\u23f1','Schedule'],['goals','\ud83c\udfaf','Goals'],['stats','\u2606','Stats']].map(([k,icon,label])=>
+        <button key={k} className={tab===k?'active':''} onClick={()=>setTab(k)}><span className="mi">{icon}</span>{label}</button>)}
     </div>
   </div>;
 }
@@ -1156,8 +1287,9 @@ function SwipeItem({children,onDismiss}){
 /* ─── Main App ─── */
 function App(){
   const [authed,setAuthed]=useState(false);
-  const [offlineMode,setOfflineMode]=useState(false);
-  const [syncPending,setSyncPending]=useState(0);
+  const [offlineEditor,setOfflineEditor]=useState(false);
+  const [showSyncPreview,setShowSyncPreview]=useState(null);
+  const [cachedAnalytics,setCachedAnalytics]=useState(null);
   const hasSyncedRef=useRef(false);
   const [tab,setTab]=useState('home');
   const [showOnboarding,setShowOnboarding]=useState(false);
@@ -1217,29 +1349,22 @@ function App(){
     cacheState(st,null,null,sched,profs).catch(()=>{});
   },[]);
 
-  // Offline detection + sync engine
+  // Offline detection + command replay
   useEffect(()=>{
     const goOffline=()=>setIsOffline(true);
-    const goOnline=async()=>{
+    const goOnline=()=>{
       setIsOffline(false);
-      // Old in-memory queue replay
       const q=offlineQueueRef.current.splice(0);
-      if(q.length>0){q.forEach(({n,v})=>cmd(n,v).catch(()=>{}));}
-      // IndexedDB sync queue replay
-      if(S.t){
-        const count=await syncEngine(api,cmd,
-          st=>processStatus(st),
-          an=>{setAnalytics(an);cacheState(null,an).catch(()=>{})},
-          (msg,lvl)=>toast(msg,lvl)
-        );
-        setSyncPending(0);
-        if(offlineMode){setOfflineMode(false);connectWs();toast('Back online!','ok')}
+      if(q.length>0){
+        toast(`Replaying ${q.length} queued command(s)`,'inf');
+        q.forEach(({n,v})=>cmd(n,v).catch(()=>{}));
+        setTimeout(poll,500);
       }
     };
     window.addEventListener('offline',goOffline);
     window.addEventListener('online',goOnline);
     return ()=>{window.removeEventListener('offline',goOffline);window.removeEventListener('online',goOnline)};
-  },[poll,processStatus,offlineMode]);
+  },[poll]);
 
   // HTTP poll (fallback when WS unavailable)
   const poll=useCallback(async()=>{
@@ -1355,46 +1480,22 @@ function App(){
     vcSet('playlist',r.entries||[]).catch(()=>{});}catch(e){}
   },[]);
 
-  const onLogin=useCallback(async(isOfflineLogin=false)=>{
+  const onLogin=useCallback(async()=>{
     setAuthed(true);
-    if(isOfflineLogin){
-      // Offline mode: load cached data from IndexedDB
-      setOfflineMode(true);setIsOffline(true);
-      try{
-        const cachedSt=await vcGet('lastStatus');
-        if(cachedSt){setStatus(cachedSt);if(cachedSt.playlistSettings)setPlSettings(cachedSt.playlistSettings)}
-        const cachedAn=await vcGet('lastAnalytics');
-        if(cachedAn)setAnalytics(cachedAn);
-        const cachedPl=await vcGet('playlist');
-        if(cachedPl)setPlaylist(cachedPl);
-        const cachedSched=await vcGet('weeklySchedule');
-        if(cachedSched)setWeekSched(cachedSched);
-        const cachedProfs=await vcGet('profiles');
-        if(cachedProfs)setProfiles(cachedProfs);
-        const pending=await syncQueueGetAll();
-        setSyncPending(pending.length);
-      }catch(e){console.warn('Cache load failed:',e)}
-      toast('Offline mode — changes will sync when desktop app is online','inf');
+    await poll();loadAnalytics(30);loadPl();
+    connectWs();
+    if(!wsRef.current)pollRef.current=setInterval(poll,2500);
+    // Check for pending offline changes
+    const pending=await syncQueueGetAll().catch(()=>[]);
+    if(pending.length>0){
+      setShowSyncPreview(pending);
     }else{
-      // Online mode: normal flow
-      setOfflineMode(false);
-      await poll();loadAnalytics(30);loadPl();
-      connectWs();
-      if(!wsRef.current)pollRef.current=setInterval(poll,2500);
-      // Auto-sync any pending offline changes
-      const pending=await syncQueueGetAll().catch(()=>[]);
-      if(pending.length>0){
-        toast(`Syncing ${pending.length} offline change(s)...`,'inf');
-        await syncEngine(api,cmd,
-          st=>processStatus(st),
-          an=>{setAnalytics(an);cacheState(null,an).catch(()=>{})},
-          (msg,lvl)=>toast(msg,lvl)
-        );
-        setSyncPending(0);
-      }else{toast('Connected','ok')}
+      toast('Connected','ok');
     }
+    // Cache analytics for offline stats viewer
+    try{const an=await api('GET','/analytics?days=30');if(an)vcSet('cachedAnalytics',an).catch(()=>{})}catch(e){}
     if(!localStorage.getItem('vc-onboarded'))setShowOnboarding(true);
-  },[poll,loadAnalytics,loadPl,connectWs,processStatus]);
+  },[poll,loadAnalytics,loadPl,connectWs]);
 
   const logout=()=>{
     try{fetch(S.u+'/disconnect',{method:'POST',headers:{'Authorization':'Bearer '+S.t},keepalive:true}).catch(()=>{})}catch(e){}
@@ -1452,18 +1553,9 @@ function App(){
 
   const doCmd=async(n,v,silent)=>{
     if(!silent)haptic(10);
-    // Queue if offline or in offline mode
-    if(isOffline||offlineMode){
-      offlineQueueRef.current.push({n,v});
-      await syncQueueAdd(n,v).catch(()=>{});
-      setSyncPending(p=>p+1);
-      if(!silent)toast(`Queued: ${n} (offline)`,'inf');
-      return null;
-    }
-    // Try WebSocket first for instant response
-    if(wsSend(n,v)){if(!silent)toast('✓ '+n,'ok');return null}
-    // Fall back to HTTP
-    try{const r=await cmd(n,v);if(!silent)toast('✓ '+n,'ok');setTimeout(poll,300);return r?.message}catch(e){toast(e.message,'err');return null}
+    if(isOffline){offlineQueueRef.current.push({n,v});if(!silent)toast(`Queued: ${n} (offline)`,'inf');return null}
+    if(wsSend(n,v)){if(!silent)toast('\u2713 '+n,'ok');return null}
+    try{const r=await cmd(n,v);if(!silent)toast('\u2713 '+n,'ok');setTimeout(poll,300);return r?.message}catch(e){toast(e.message,'err');return null}
   };
 
   const plOp=async(action,data)=>{
@@ -1479,7 +1571,21 @@ function App(){
   const lenSec=st.videoLengthSec||0;
   const an=analytics||{};
 
-  if(!authed)return <><LoginScreen onLogin={onLogin}/><ToastContainer aria-live="polite"/></>;
+  // Load cached analytics for offline editor
+  useEffect(()=>{vcGet('cachedAnalytics').then(a=>{if(a)setCachedAnalytics(a)}).catch(()=>{})},[]);
+
+  if(!authed&&!offlineEditor)return <><LoginScreen onLogin={onLogin} onOffline={async()=>{
+    setOfflineEditor(true);
+    try{const a=await vcGet('cachedAnalytics');if(a)setCachedAnalytics(a)}catch(e){}
+  }}/><ToastContainer aria-live="polite"/></>;
+
+  if(offlineEditor)return <><OfflineEditor cachedAnalytics={cachedAnalytics} onExit={()=>setOfflineEditor(false)}/><ToastContainer aria-live="polite"/></>;
+
+  // Sync preview overlay (shown after connecting with pending offline changes)
+  const syncPreviewEl=showSyncPreview?<SyncPreview changes={showSyncPreview}
+    onApply={()=>{setShowSyncPreview(null);poll();loadAnalytics(30);loadPl();toast('All changes applied','ok')}}
+    onDiscard={()=>{setShowSyncPreview(null);toast('Offline changes discarded','inf')}}
+  />:null;
 
   return <>
     <div className="app">
@@ -1500,14 +1606,13 @@ function App(){
         </nav>
         <div className="sidebar-footer">
           <div className="sidebar-meta">
-            <span className={`dot ${offlineMode?'off':wsRef.current?.readyState===1?'on':'off'}`}/>
-            {offlineMode?'Offline Mode':isOffline?'Offline':wsRef.current?.readyState===1?'WS Connected':'Polling'}
-            {syncPending>0&&<span style={{marginLeft:4,color:'var(--amber)'}}>({syncPending} pending)</span>}
-            {!offlineMode&&st.connectedDevices>1&&` \u00b7 ${st.connectedDevices} devices`}
+            <span className={`dot ${isOffline?'off':wsRef.current?.readyState===1?'on':'off'}`}/>
+            {isOffline?'Offline':wsRef.current?.readyState===1?'WS Connected':'Polling'}
+            {st.connectedDevices>1&&` \u00b7 ${st.connectedDevices} devices`}
           </div>
           <div style={{display:'flex',gap:4}}>
             <button className="btn btn-g btn-sm" style={{flex:1}} onClick={toggleTheme} aria-label="Toggle theme">{theme==='dark'?'\u2600':'\u263e'}</button>
-            <button className="btn btn-g btn-sm" style={{flex:1}} onClick={()=>{if(offlineMode){toast('Offline \u2014 will sync when desktop is online','inf')}else{poll();toast('Synced','inf')}}} aria-label="Sync">{'\u21bb'}</button>
+            <button className="btn btn-g btn-sm" style={{flex:1}} onClick={()=>{poll();toast('Synced','inf')}} aria-label="Sync">{'\u21bb'}</button>
             <button className="btn btn-d btn-sm" style={{flex:1}} onClick={logout} aria-label="Logout">Logout</button>
           </div>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:2}}>
@@ -1538,10 +1643,9 @@ function App(){
           </div>
         </div>
 
-        {(isOffline||offlineMode)&&<div className="offline-bar" role="alert">
-          {'⚠'} {offlineMode?'Offline Mode':'Offline'}
-          {lastStatusTimeRef.current?` — data from ${Math.round((Date.now()-lastStatusTimeRef.current)/1000)}s ago`:''}
-          {syncPending>0&&<span style={{marginLeft:8,background:'var(--amber)',color:'#000',borderRadius:10,padding:'1px 8px',fontSize:10,fontWeight:700}}>{syncPending} pending</span>}
+        {isOffline&&<div className="offline-bar" role="alert">
+          {'\u26a0'} Offline{lastStatusTimeRef.current?` \u2014 last data ${Math.round((Date.now()-lastStatusTimeRef.current)/1000)}s ago`:''}
+          {offlineQueueRef.current.length>0&&` \u2022 ${offlineQueueRef.current.length} queued`}
         </div>}
 
         {/* ═══ HOME ═══ */}
@@ -2036,6 +2140,7 @@ function App(){
       </div>
     </div>
 
+    {syncPreviewEl}
     {showShareCard&&an?.sessionInsight&&<SessionShareCard
       insight={an.sessionInsight}
       xp={an?.xpStatus?.xp||st.xp||0}
